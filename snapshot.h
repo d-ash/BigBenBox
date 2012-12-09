@@ -35,7 +35,8 @@ typedef struct s_snapshot {
 
 SNAPSHOT* create_snapshot(char* path);
 void destroy_snapshot(SNAPSHOT* ss);
-void output_snapshot(SNAPSHOT* ss);
+void serialize_entry(SSENTRY* ssentry);
+void serialize_snapshot(SNAPSHOT* ss);
 SSENTRY* search_by_path(char* path, SNAPSHOT* ss);
 SSENTRY* search_by_hash(unsigned char* longhash, SNAPSHOT* ss);
 

@@ -1,7 +1,5 @@
 #include "snapshot.h"
 
-// TODO treat DIRs and EMPTYs correctly
-
 SSHASHTABLE* find_hashtable(uint16_t hash, SSHASHTABLE* ht) {
 	while (ht != NULL) {
 		if (ht->hash == hash) {
@@ -106,52 +104,25 @@ SSENTRY* search_by_hash(unsigned char* longhash, SNAPSHOT* ss) {
 	}
 }
 
-void output_snapshot(SNAPSHOT* ss) {
+void serialize_entry(SSENTRY* ssentry) {
+	printf("%s,%s,", ssentry->is_dir ? "1" : "0", ssentry->is_empty ? "1" : "0");
+	print_md5_sum(ssentry->hash);
+	printf(",%llu,\"%s\"\n", (long long) ssentry->size, ssentry->path);
+}
+
+void serialize_snapshot(SNAPSHOT* ss) {
 	SSHASHTABLE* ht = NULL;
 	SSENTRY* ssentry = NULL;
-	int count = 0;
 
-	printf("ht_by_hash\n");
 	ht = ss->ht_by_hash;
 	while (ht != NULL) {
-		printf("\t%04x\t", ht->hash);
-		count = 0;
 		ssentry = ht->entries;
 		while (ssentry != NULL) {
-			count += 1;
+			serialize_entry(ssentry);
 			ssentry = ssentry->next_by_hash;
 		}
-		printf("%d entries\n", count);
 		ht = ht->next;
 	}
-
-	printf("ht_by_path\n");
-	ht = ss->ht_by_path;
-	while (ht != NULL) {
-		printf("\t%04x\t", ht->hash);
-		count = 0;
-		ssentry = ht->entries;
-		while (ssentry != NULL) {
-			count += 1;
-			ssentry = ssentry->next_by_path;
-		}
-		printf("%d entries\n", count);
-		ht = ht->next;
-	}
-
-	/*
-	printf("%s\t%s\t", ssentry->is_dir ? "DIR" : "", ssentry->is_empty ? "EMPTY" : "");
-	if (ssentry->is_dir || ssentry->is_empty) {
-		printf("                                ");
-	} else {
-		print_md5_sum(ssentry->hash);
-	}
-	printf("\t%s\n", ssentry->path);
-
-	if (ssentry->next != NULL) {
-		output_ssentries(ssentry->next);
-	}
-	*/
 }
 
 // Returns 1 if the dir is empty, otherwise 0.
@@ -197,6 +168,8 @@ int process_dir(char* path, SNAPSHOT* ss) {
 			printf("Cannot strdup(): %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
+		ssentry->size = 0;
+		memset(ssentry->hash, 0, MD5_DIGEST_LENGTH);
 
 		if (S_ISDIR(entry_info.st_mode)) {
 			ssentry->is_dir = 1;
@@ -212,7 +185,6 @@ int process_dir(char* path, SNAPSHOT* ss) {
 				hash_file(entry_path, entry_info.st_size, ssentry->hash);
 			} else {
 				ssentry->is_empty = 1;
-				ssentry->size = 0;
 			}
 			if (is_empty) {
 				is_empty = 0;

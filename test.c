@@ -8,7 +8,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "file.h"
 #include "hash.h"
 
 int main(int argc, char* argv[]) {
@@ -19,10 +18,10 @@ int main(int argc, char* argv[]) {
 	s[0] = 0x01;
 	s[1] = 0x02;
 	s[2] = 0x03;
-	h = smallhash(s, 3);
+	h = uint16_hash(s, 3);
 	printf("%0X\n", h);
 
-	h = smallhash(str, strlen(str));
+	h = uint16_hash(str, strlen(str));
 	printf("%0X\n", h);
 
 	return 0;

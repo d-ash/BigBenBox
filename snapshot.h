@@ -7,8 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "file.h"
-#include "hash.h"
+#include "tools.h"
 
 typedef struct s_ssentry {
 	char* path;

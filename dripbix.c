@@ -13,13 +13,13 @@ int main(int argc, char* argv[]) {
 	SNAPSHOT* ss1 = NULL;
 	SNAPSHOT* ss2 = NULL;
 	SSENTRY* ssentry = NULL;
-	unsigned char key[MD5_DIGEST_LENGTH] =
+	unsigned char key[HASH_SUM_LENGTH] =
 		{ 0x53, 0x60, 0x4d, 0x2e, 0x37, 0x73, 0xd6, 0x2e,
 		0x90, 0xfa, 0x5a, 0x34, 0x0a, 0x36, 0x2e, 0x08 };
 	SSPATCH* sspatch = NULL;
 
-	ss2 = create_snapshot("/home/d-ash/distr");
-	//ss2 = create_snapshot("/home/d-ash/distr/keepassx-0.4.3");
+	//ss2 = create_snapshot("/home/d-ash/distr");
+	ss2 = create_snapshot("/home/d-ash/distr/keepassx-0.4.3");
 
 
 	printf("\nSearching...");

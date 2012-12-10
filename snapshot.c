@@ -16,8 +16,8 @@ void add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss) {
 	SSHASHTABLE* ht = NULL;
 
 	// put this entry to ss->ht_by_hash
-	// using the first two bytes of the hash, it is faster than:
-	// hash = uint16_hash(ssentry->hash, MD5_DIGEST_LENGTH);
+	// using the first two bytes of the hash
+	// it is faster than: uint16_hash();
 	hash = (* (uint16_t*) ssentry->hash);
 	ht = find_hashtable(hash, ss->ht_by_hash);
 
@@ -95,7 +95,7 @@ SSENTRY* search_by_hash(unsigned char* longhash, SNAPSHOT* ss) {
 	} else {
 		ssentry = ht->entries;
 		while (ssentry != NULL) {
-			if (memcmp(longhash, ssentry->hash, MD5_DIGEST_LENGTH) == 0) {
+			if (memcmp(longhash, ssentry->hash, HASH_SUM_LENGTH) == 0) {
 				break;
 			}
 			ssentry = ssentry->next_by_hash;
@@ -106,7 +106,7 @@ SSENTRY* search_by_hash(unsigned char* longhash, SNAPSHOT* ss) {
 
 void serialize_entry(SSENTRY* ssentry) {
 	printf("%s,%s,", ssentry->is_dir ? "1" : "0", ssentry->is_empty ? "1" : "0");
-	print_md5_sum(ssentry->hash);
+	print_hash_sum(ssentry->hash);
 	printf(",%llu,\"%s\"\n", (long long) ssentry->size, ssentry->path);
 }
 
@@ -163,7 +163,7 @@ int process_dir(char* path, SNAPSHOT* ss) {
 		strncat(ssentry->path, entry.d_name, strlen(entry.d_name) + 1);
 
 		ssentry->size = 0;
-		memset(ssentry->hash, 0, MD5_DIGEST_LENGTH);
+		memset(ssentry->hash, 0, HASH_SUM_LENGTH);
 
 		if (lstat(ssentry->path, &entry_info)) {
 			printf("Cannot get info about %s: %s\n", ssentry->path, strerror(errno));

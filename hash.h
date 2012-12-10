@@ -9,9 +9,4 @@
 
 #include <openssl/md5.h>
 
-uint16_t uint16_hash(unsigned char* buf, int len);
-
-// Print the MD5 sum as hex-digits.
-void print_md5_sum(unsigned char* md);
-
 #endif	// _HASH_H

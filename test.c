@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "hash.h"
+#include "tools.h"
 
 int main(int argc, char* argv[]) {
 	unsigned char s[3];

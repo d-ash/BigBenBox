@@ -2,7 +2,8 @@ var
 s1 = {
 	"1" : "abc2",
 	"2" : "zxcvb",
-	"3" : "abc"
+	"3" : "abc",
+	"9" : "tutta"
 },
 
 s2 = {
@@ -42,62 +43,100 @@ function diff(A, B) {
 	var patch = [],
 		contentLinks = {},
 		protect = [],
-		copy_move = [],
+		copy_move = {},
+		copy = {},
 		move = {},
-		b;
+		rsync = {},
+		k;
 
-	for (b in B) {
-		contentLinks[b] = searchContentLinks(B[b], A);
+	// Create actions are at the beginning, because they are not mutating data.
 
-		if (A.hasOwnProperty(b)) {
-			if (A[b] === B[b]) {
-				protect.push(b);
+	for (k in B) {
+		contentLinks[k] = searchContentLinks(B[k], A);
+
+		if (A.hasOwnProperty(k)) {
+			if (A[k] === B[k]) {
+				protect.push(k);
 			} else {
-				if (contentLinks[b].length > 0) {
-					copy_move.push(b);
+				if (contentLinks[k].length > 0) {
+					copy_move[k] = {
+						'backup': 1
+					};
 				} else {
-					protect.push(b);
-					patch.push({
-						'type': 'rsync',
-						'key': b,
-						'src_content': A[b],
-						'dst_content': B[b]
-					});
+					protect.push(k);
+					rsync[k] = {
+						'src_content': A[k],
+						'dst_content': B[k]
+					};
 				}
 			}
 		} else {
-			if (contentLinks[b].length > 0) {
-				copy_move.push(b);
+			if (contentLinks[k].length > 0) {
+				copy_move[k] = {
+					'backup': 0
+				};
 			} else {
 				patch.push({
 					'type': 'create',
-					'key': b,
-					'dst_content': B[b]
+					'key': k,
+					'dst_content': B[k]
 				});
 			}
 		}
 	}
 
-	for (var i = 0; i < copy_move.length; i += 1) {
-		b = copy_move[i];
-		var can = arrayDiff(contentLinks[b], protect);
+// TODO rsync protect (3 -> 1) does not work...
+// TODO do not modify dst of copy_move (backup)
+
+	// here 'k' is the destination key
+	for (k in copy_move) {
+		var can = arrayDiff(contentLinks[k], protect);
 		if (can.length > 0) {
 			protect.push(can[0]);
-			patch.push({
-				'type': 'move',
-				'key': can[0],
-				'to': b
-			});
+			move[can[0]] = {
+				'to': k
+			};
 		} else {
-			patch.push({
-				'type': 'copy',
-				'key': contentLinks[b][0],
-				'to': b
-			});
+			copy[contentLinks[k][0]] = {
+				'to': k
+			};
 		}
 	}
 
-	return patch.reverse();
+	for (k in copy) {
+		patch.push({
+			'type': 'copy',
+			'key': k,
+			'to': copy[k].to
+		});
+	}
+
+	for (k in move) {
+		patch.push({
+			'type': 'move',
+			'key': k,
+			'to': move[k].to
+		});
+	}
+
+	for (k in rsync) {
+		patch.push({
+			'type': 'rsync',
+			'key': k,
+			'src_content': rsync[k].src_content,
+			'dst_content': rsync[k].dst_content
+		});
+	}
+
+	return patch;
 }
 
-console.log(diff(s1, s2));
+function patch(A, P) {
+	return 'nothing...';
+}
+
+var d = diff(s1, s2);
+
+console.log(d);
+
+console.log(patch(s1, d));

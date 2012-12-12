@@ -1,27 +1,3 @@
-var
-s1 = {
-	"1" : "abc2",
-	"2" : "zxcvb",
-	"3" : "abc",
-	"9" : "tutta",
-	"11": "xxx",
-	"555": "need",
-	"777": "help"
-},
-
-s2 = {
-	"1" : "abc",
-	"2" : "zxcvb",
-	"3" : "t",
-	"4" : "abc",
-	"5" : "xxx",
-	"10": "tutta",
-	"11": "abc",
-	"12": "nice",
-	"555": "help",
-	"777": "222222"
-};
-
 function addLink(b, a) {
 	if (!contentLinks.hasOwnProperty(b)) {
 		contentLinks[b] = [];
@@ -199,14 +175,119 @@ function diff(A, B) {
 }
 
 function patch(A, P) {
-	return 'nothing...';
+	var act,
+		i,
+		backup = {},
+		storage = {};
+
+	// initially all contents are stored in the source
+	for (i = 0; i < P.length; i += 1) {
+		storage[P[i].key] = A;
+	}
+
+	for (i = 0; i < P.length; i += 1) {
+		act = P[i];
+		switch (act.type) {
+			case 'create':
+				if (A.hasOwnProperty(act.key)) {
+					console.log("Error: key exists already (create).");
+					process.exit(1);
+				}
+				A[act.key] = act.dst_content;
+				break;
+			case 'backup':
+				if (!A.hasOwnProperty(act.key)) {
+					console.log("Error: key does not exist (backup).");
+					process.exit(1);
+				}
+				backup[act.key] = A[act.key];
+				storage[act.key] = backup;		// storage for this content is changed
+				break;
+			case 'copy':
+				if (!A.hasOwnProperty(act.key)) {
+					console.log("Error: key does not exist (copy).");
+					process.exit(1);
+				}
+				A[act.to] = storage[act.key][act.key];
+				break;
+			case 'move':
+				if (!A.hasOwnProperty(act.key)) {
+					console.log("Error: key does not exist (move).");
+					process.exit(1);
+				}
+				A[act.to] = storage[act.key][act.key];
+				delete storage[act.key][act.key];	// delete link from the storage (can be backup!)
+				break;
+			case 'rsync':
+				if (A[act.key] !== act.src_content) {
+					console.log("Error: src_content is not equal (rsync).");
+					process.exit(1);
+				}
+				A[act.key] = act.dst_content;
+				break;
+			case 'delete':
+				if (!A.hasOwnProperty(act.key)) {
+					console.log("Error: key does not exist (delete).");
+					process.exit(1);
+				}
+				delete A[act.key];
+				break;
+			default:
+				console.log("Error: unknown action type.");
+				process.exit(1);
+				break;
+		}
+	}
+
+	return A;
 }
 
-var d = diff(s1, s2);
+function is_equal(A, B) {
+	var k;
 
-console.log(s1);
-console.log(s2);
-console.log(d);
+	for (k in A) {
+		if (!B.hasOwnProperty(k)) {
+			return false;
+		}
+		if (B[k] !== A[k]) {
+			return false;
+		}
+	}
 
-//console.log(patch(s1, d));
+	for (k in B) {
+		if (!A.hasOwnProperty(k)) {
+			return false;
+		}
+	}
 
+	return true;
+}
+
+function rnd(min, max) {
+	return Math.floor((Math.random() * max) + min);
+}
+
+function randSS() {
+	var s = {},
+		n = rnd(1, 1000);	// number of entities
+
+	while (n > 0) {
+		s[n] = rnd(1, 500);
+		n -= 1;
+	}
+
+	return s;
+}
+
+for (var i = 0; i < 200; i += 1) {
+	s1 = randSS();
+	s2 = randSS();
+	d = diff(s1, s2);
+	patch(s1, d);
+	if (!is_equal(s1, s2)) {
+		console.log("====== FUCKUP ======");
+		process.exit(1);
+	}
+}
+
+console.log("NICE!");

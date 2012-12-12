@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 		printf("Found: %0x\t%s\n", ssentry, ssentry->path);
 	}
 
-	//serialize_snapshot(ss2);
+	pack_snapshot(ss2);
 
 	destroy_snapshot(ss2);
 

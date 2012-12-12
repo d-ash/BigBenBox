@@ -15,6 +15,7 @@ typedef struct s_ssentry {
 	int is_empty;
 	unsigned char hash[MD5_DIGEST_LENGTH];
 	off_t size;
+	size_t path_mem;	// strlen(path) + 1
 
 	void* next_by_hash;	// link to the next SSENTRY in ht_by_hash
 	void* next_by_path;	// link to the next SSENTRY in ht_by_path
@@ -30,13 +31,18 @@ typedef struct s_sshashtable {
 typedef struct s_snapshot {
 	SSHASHTABLE* ht_by_hash;
 	SSHASHTABLE* ht_by_path;
+
+	int entries_count;
+	size_t path_total_mem;	// sum of path_len of internal entities
 } SNAPSHOT;
 
 SNAPSHOT* create_snapshot(char* path);
 void destroy_snapshot(SNAPSHOT* ss);
-void serialize_entry(SSENTRY* ssentry);
-void serialize_snapshot(SNAPSHOT* ss);
+
 SSENTRY* search_by_path(char* path, SNAPSHOT* ss);
 SSENTRY* search_by_hash(unsigned char* longhash, SNAPSHOT* ss);
+
+void process_dir(char* path, SNAPSHOT* ss);
+void process_entry(char* path, char* name, SNAPSHOT* ss);
 
 #endif	// _SNAPSHOT_H

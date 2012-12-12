@@ -1,5 +1,7 @@
 #include "snapshot.h"
 
+// TODO refactor! copy-paste
+
 SSHASHTABLE* find_hashtable(uint16_t hash, SSHASHTABLE* ht) {
 	while (ht != NULL) {
 		if (ht->hash == hash) {
@@ -14,6 +16,9 @@ SSHASHTABLE* find_hashtable(uint16_t hash, SSHASHTABLE* ht) {
 void add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss) {
 	uint16_t hash;
 	SSHASHTABLE* ht = NULL;
+
+	ss->entries_count += 1;
+	ss->path_total_mem += ssentry->path_mem;
 
 	// put this entry to ss->ht_by_hash
 	// using the first two bytes of the hash
@@ -104,31 +109,58 @@ SSENTRY* search_by_hash(unsigned char* longhash, SNAPSHOT* ss) {
 	}
 }
 
-void serialize_entry(SSENTRY* ssentry) {
-	printf("%s,%s,", ssentry->is_dir ? "1" : "0", ssentry->is_empty ? "1" : "0");
-	print_hash_sum(ssentry->hash);
-	printf(",%llu,\"%s\"\n", (long long) ssentry->size, ssentry->path);
-}
-
-void serialize_snapshot(SNAPSHOT* ss) {
-	SSHASHTABLE* ht = NULL;
+void process_entry(char* path, char* name, SNAPSHOT* ss) {
+	int processed = 0;
+	struct stat entry_info;
 	SSENTRY* ssentry = NULL;
+	size_t path_mem = 0;
 
-	ht = ss->ht_by_hash;
-	while (ht != NULL) {
-		ssentry = ht->entries;
-		while (ssentry != NULL) {
-			serialize_entry(ssentry);
-			ssentry = ssentry->next_by_hash;
+	// allocating memory for SSENTRY and for SSENTRY.path together
+	// SSENTRY.path will be located just after the SSENTRY structure
+	path_mem = strlen(path) + strlen(name) + 2;
+	ssentry = malloc(sizeof(SSENTRY) + path_mem);
+	ssentry->path = (char*) ssentry + sizeof(SSENTRY);
+	ssentry->path_mem = path_mem;
+
+	strncpy(ssentry->path, path, strlen(path) + 1);
+	strncat(ssentry->path, "/", 2);
+	strncat(ssentry->path, name, strlen(name) + 1);
+
+	ssentry->size = 0;
+	memset(ssentry->hash, 0, HASH_SUM_LENGTH);
+
+	if (lstat(ssentry->path, &entry_info)) {
+		printf("Cannot get info about %s: %s\n", ssentry->path, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	if (S_ISDIR(entry_info.st_mode)) {
+		ssentry->is_dir = 1;
+		ssentry->is_empty = 0;
+		process_dir(ssentry->path, ss);
+		processed = 1;
+	} else if (S_ISREG(entry_info.st_mode)) {
+		ssentry->is_dir = 0;
+		if (entry_info.st_size > 0) {
+			ssentry->is_empty = 0;
+			ssentry->size = entry_info.st_size;
+			hash_file(ssentry->path, entry_info.st_size, ssentry->hash);
+		} else {
+			ssentry->is_empty = 1;
 		}
-		ht = ht->next;
+		processed = 1;
+	}
+
+	if (processed) {
+		add_to_snapshot(ssentry, ss);
+	} else {
+		//printf("Skipping %s\n", ssentry->path);
+		free(ssentry);
 	}
 }
 
-// Returns 1 if the dir is empty, otherwise 0.
-int process_dir(char* path, SNAPSHOT* ss) {
+void process_dir(char* path, SNAPSHOT* ss) {
 	DIR* dir = NULL;
-	int is_empty = 0;
 
 	//printf("Processing dir: %s\n", path);
 	dir = opendir(path);
@@ -138,69 +170,26 @@ int process_dir(char* path, SNAPSHOT* ss) {
 	}
 
 	while (1) {
-		int retval = 0;
 		struct dirent entry;
 		struct dirent* entry_ptr = NULL;
-		struct stat entry_info;
-		SSENTRY* ssentry = NULL;
 
-		retval = readdir_r(dir, &entry, &entry_ptr);
+		readdir_r(dir, &entry, &entry_ptr);
 		if (entry_ptr == NULL) {
 			break;
 		}
+
 		if ((strncmp(entry.d_name, ".", PATH_MAX) == 0) || 
 			(strncmp(entry.d_name, "..", PATH_MAX) == 0)) {
 			continue;
 		}
 
-		// allocating memory for SSENTRY and for SSENTRY.path together
-		// SSENTRY.path will be located just after the SSENTRY structure
-		ssentry = malloc(sizeof(SSENTRY) + strlen(path) + strlen(entry.d_name) + 2);
-		ssentry->path = (char*) ssentry + sizeof(SSENTRY);
-
-		strncpy(ssentry->path, path, strlen(path) + 1);
-		strncat(ssentry->path, "/", 2);
-		strncat(ssentry->path, entry.d_name, strlen(entry.d_name) + 1);
-
-		ssentry->size = 0;
-		memset(ssentry->hash, 0, HASH_SUM_LENGTH);
-
-		if (lstat(ssentry->path, &entry_info)) {
-			printf("Cannot get info about %s: %s\n", ssentry->path, strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-
-		if (S_ISDIR(entry_info.st_mode)) {
-			ssentry->is_dir = 1;
-			ssentry->is_empty = process_dir(ssentry->path, ss);
-			if (is_empty) {
-				is_empty = 0;
-			}
-		} else if (S_ISREG(entry_info.st_mode)) {
-			ssentry->is_dir = 0;
-			if (entry_info.st_size > 0) {
-				ssentry->is_empty = 0;
-				ssentry->size = entry_info.st_size;
-				hash_file(ssentry->path, entry_info.st_size, ssentry->hash);
-			} else {
-				ssentry->is_empty = 1;
-			}
-			if (is_empty) {
-				is_empty = 0;
-			}
-		} else {
-			//printf("Skipping %s\n", ssentry->path);
-		}
-
-		add_to_snapshot(ssentry, ss);
-	}	// while (1) loop
+		process_entry(path, entry.d_name, ss);
+	}
 
 	if (closedir(dir) < 0) {
 		printf("Cannot close dir %s: %s\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-
-	return is_empty;
 }
 
 SNAPSHOT* create_snapshot(char* path) {
@@ -209,6 +198,8 @@ SNAPSHOT* create_snapshot(char* path) {
 	ss = malloc(sizeof(SNAPSHOT));
 	ss->ht_by_hash = NULL;
 	ss->ht_by_path = NULL;
+	ss->entries_count = 0;
+	ss->path_total_mem = 0;
 
 	process_dir(path, ss);
 

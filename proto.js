@@ -1,10 +1,3 @@
-function addLink(b, a) {
-	if (!contentLinks.hasOwnProperty(b)) {
-		contentLinks[b] = [];
-	}
-	contentLinks[b].push(a);
-}
-
 function arrayDiff(a, b) {
 	return a.filter(function (i) {
 		return (b.indexOf(i) === -1);
@@ -29,7 +22,7 @@ function searchContentLinks(content, A) {
 	return links;
 }
 
-function diff(A, B) {
+function morph(A, B) {
 	var patch = [],
 		contentLinks = {},
 		protect = [],		// items protected from moving
@@ -272,17 +265,34 @@ function randSS() {
 		n = rnd(1, 1000);	// number of entities
 
 	while (n > 0) {
-		s[n] = rnd(1, 500);
+		s[n] = rnd(1, 100);
 		n -= 1;
 	}
 
 	return s;
 }
 
-for (var i = 0; i < 200; i += 1) {
+var i,
+	s1len = 0,
+	s2len = 0,
+	dlen = 0,
+	s1total = 0,
+	s2total = 0,
+	dtotal = 0;
+
+for (i = 0; i < 100; i += 1) {
 	s1 = randSS();
 	s2 = randSS();
-	d = diff(s1, s2);
+	d = morph(s1, s2);
+
+	s1len = Object.keys(s1).length;
+	s2len = Object.keys(s2).length;
+	dlen = Object.keys(d).length;
+	s1total += s1len;
+	s2total += s2len;
+	dtotal += dlen;
+	console.log(s1len + "\t" + s2len + "\t" + dlen);
+
 	patch(s1, d);
 	if (!is_equal(s1, s2)) {
 		console.log("====== FUCKUP ======");
@@ -290,4 +300,8 @@ for (var i = 0; i < 200; i += 1) {
 	}
 }
 
+console.log("\n");
+console.log("s1total:\t" + s1total / i);
+console.log("s2total:\t" + s2total / i);
+console.log("dtotal:\t\t" + dtotal / i);
 console.log("NICE!");

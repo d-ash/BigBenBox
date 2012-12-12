@@ -1,35 +1,43 @@
-#include <stdlib.h>
 #include <stdio.h>
-#include <dirent.h>
-#include <errno.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
+#include "minunit.h"
 #include "tools.h"
 
-int main(int argc, char* argv[]) {
-	unsigned char s[3];
-	char str[6] = "abcde";
-	unsigned int h;
+int tests_run = 0;
+
+static char* test_md5() {
+	unsigned char md_true[HASH_SUM_LENGTH] =
+		{0xab,0x56,0xb4,0xd9,0x2b,0x40,0x71,0x3a,
+		0xcc,0x5a,0xf8,0x99,0x85,0xd4,0xb7,0x86};
 	unsigned char md[HASH_SUM_LENGTH];
 
-	s[0] = 0x01;
-	s[1] = 0x02;
-	s[2] = 0x03;
-	h = uint16_hash(s, 3);
-	printf("%0X\n", h);
-
-	h = uint16_hash(str, strlen(str));
-	printf("%0X\n", h);
-
-	MD5(str, strlen(str), md);
-	printf("MD5: ");
-	print_hash_sum(md);
-	printf("\nChk: ab56b4d92b40713acc5af89985d4b786");
-	printf("\n");
+	MD5("abcde", 5, md);
+	MU_ASSERT("MD5() failed", memcmp(md, md_true, HASH_SUM_LENGTH) == 0);
 
 	return 0;
+}
+
+static char* test_uint16_hash() {
+	MU_ASSERT("uint16_hash() failed", uint16_hash("abcde", 5) == 0x1d63);
+	return 0;
+}
+
+// ================================================
+
+static char* all_tests() {
+	mu_run_test(test_md5);
+	mu_run_test(test_uint16_hash);
+	return 0;
+}
+
+int main(int argc, char* argv[]) {
+	char* result = all_tests();
+	if (result != 0) {
+		printf("%s\n", result);
+	} else {
+		printf("ALL TESTS PASSED\n");
+	}
+	printf("Tests run: %d\n", tests_run);
+
+	return (int) (result != 0);
 }

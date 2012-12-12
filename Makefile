@@ -6,7 +6,8 @@ dripbix: dripbix.c \
 	tools.c tools.h
 	gcc -o dripbix dripbix.c snapshot.c pack.c morph.c md5.c tools.c
 
-test: test.c hash.c
+test: test.c minunit.h \
+	tools.c tools.h
 	gcc test.c tools.c md5.c -o test
 
 watcher: watcher.c

@@ -1,22 +1,22 @@
 #include "pack.h"
 
-// Returns new position of the pointer.
+// Returns new position of the pointer,
+// just after the end of this entry;
 unsigned char* pack_entry(SSENTRY* ssentry, unsigned char* ptr) {
+	PACK_ENTRY_HEADER* h;
+
+	h = (PACK_ENTRY_HEADER*) ptr;
+
 	// TODO status_byte
-	// unified size of data types
+	h->status = 0xFFFFFFFF;
+	memcpy(&h->hash, ssentry->hash, HASH_SUM_LENGTH);
+	h->fsize = ssentry->size;
+	h->pmem = ssentry->path_mem;
 
-	ptr[0] = 0xFF;
-	ptr += 1;
-	memcpy(ptr, ssentry->hash, HASH_SUM_LENGTH);
-	ptr += HASH_SUM_LENGTH;
-	memcpy(ptr, & ssentry->size, sizeof(off_t));
-	ptr += sizeof(off_t);
-	memcpy(ptr, & ssentry->path_mem, sizeof(size_t));
-	ptr += sizeof(size_t);
+	ptr += sizeof(PACK_ENTRY_HEADER);
 	memcpy(ptr, ssentry->path, ssentry->path_mem);
-	ptr += ssentry->path_mem;
 
-	return ptr;
+	return ptr + ssentry->path_mem;
 }
 
 unsigned char* pack_snapshot(SNAPSHOT* ss) {
@@ -25,7 +25,7 @@ unsigned char* pack_snapshot(SNAPSHOT* ss) {
 	SSENTRY* ssentry = NULL;
 	unsigned char* ptr = NULL;
 
-	data = malloc(ss->entries_count * PACK_HEADER_SIZE + ss->path_total_mem);
+	data = malloc(ss->entries_count * sizeof(PACK_ENTRY_HEADER) + ss->path_total_mem);
 	ptr = data;
 
 	ht = ss->ht_by_hash;

@@ -3,10 +3,28 @@
 
 #include "snapshot.h"
 
-// structure of the pack:
-// [ PACK: [ HEADER: status_byte, hash, file_size, path_len ], path ]
+//	[ ENTRY:
+//		[ HEADER:
+//			status,
+//			hash,
+//			file_size,
+//			path_len
+//		],
+//		path
+//	]
+//
+//	[ SNAPSHOT:
+//		[ ENTRY_1 ]
+//		[ ENTRY_2 ]
+//		...
+//	]
 
-#define PACK_HEADER_SIZE	(1 + HASH_SUM_LENGTH + sizeof(off_t) + sizeof(size_t))
+typedef struct s_entry_header {
+	uint32_t status;
+	unsigned char hash[HASH_SUM_LENGTH];
+	uint64_t fsize;
+	uint64_t pmem;
+} PACK_ENTRY_HEADER;
 
 unsigned char* pack_snapshot(SNAPSHOT* ss);
 SNAPSHOT* unpack_snapshot(unsigned char* data);

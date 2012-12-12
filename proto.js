@@ -10,18 +10,6 @@ function arrayCommon(a, b) {
 	});
 }
 
-function searchContentLinks(content, A) {
-	var links = [];
-
-	for (var a in A) {
-		if (A[a] === content) {
-			links.push(a);
-		}
-	}
-
-	return links;
-}
-
 function morph(A, B) {
 	var patch = [],
 		contentLinks = {},
@@ -33,12 +21,17 @@ function morph(A, B) {
 		copied = [],
 		moved = [],
 		rsync = {},
-		k, i, can;
+		k, a, i, can;
 
 	// 'create' actions are at the beginning, because they does not mutate data.
 
 	for (k in B) {
-		contentLinks[k] = searchContentLinks(B[k], A);
+		contentLinks[k] = [];
+		for (a in A) {
+			if (A[a] === B[k]) {
+				contentLinks[k].push(a);
+			}
+		}
 
 		if (A.hasOwnProperty(k)) {
 

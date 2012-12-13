@@ -6,13 +6,13 @@
 int tests_run = 0;
 
 static char* test_md5() {
-	unsigned char md_true[HASH_SUM_LENGTH] =
+	unsigned char md_true[MD5_DIGEST_LENGTH] =
 		{0xab,0x56,0xb4,0xd9,0x2b,0x40,0x71,0x3a,
 		0xcc,0x5a,0xf8,0x99,0x85,0xd4,0xb7,0x86};
-	unsigned char md[HASH_SUM_LENGTH];
+	unsigned char md[MD5_DIGEST_LENGTH];
 
 	MD5("abcde", 5, md);
-	MU_ASSERT("MD5() failed", memcmp(md, md_true, HASH_SUM_LENGTH) == 0);
+	MU_ASSERT("MD5() failed", memcmp(md, md_true, MD5_DIGEST_LENGTH) == 0);
 
 	return 0;
 }

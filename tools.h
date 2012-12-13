@@ -12,19 +12,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "md5.h"
-
-#define MD5_DIGEST_LENGTH	16
-#define HASH_SUM_LENGTH		16
-
-// Wrapping all those MD5_Init, MD5_Update and MD5_Final
-unsigned char* MD5(void* d, size_t n, unsigned char* md);
+#ifdef DEBUG
+#define DEBUG_LOG(...)	fprintf(stderr, __VA_ARGS__);
+#else
+#define DEBUG_LOG(...)	do {} while (0)
+#endif
 
 void hash_file(char* path, off_t size, unsigned char* result);
-
 uint16_t uint16_hash(unsigned char* buf, int len);
-
-// Print the hash sum as hex-digits.
-void print_hash_sum(unsigned char* md);
+void print_hex(unsigned char* md, int len);
 
 #endif	// _TOOLS_H

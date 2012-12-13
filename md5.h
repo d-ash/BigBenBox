@@ -28,6 +28,8 @@
 #elif !defined(_MD5_H)
 #define _MD5_H
 
+#define MD5_DIGEST_LENGTH	16
+
 /* Any 32-bit or wider unsigned integer data type will do */
 typedef unsigned int MD5_u32plus;
 
@@ -41,5 +43,8 @@ typedef struct {
 extern void MD5_Init(MD5_CTX *ctx);
 extern void MD5_Update(MD5_CTX *ctx, void *data, unsigned long size);
 extern void MD5_Final(unsigned char *result, MD5_CTX *ctx);
+
+// Wrapping all those MD5_Init, MD5_Update and MD5_Final
+unsigned char* MD5(void* d, size_t n, unsigned char* md);
 
 #endif

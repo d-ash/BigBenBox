@@ -292,4 +292,20 @@ void MD5_Final(unsigned char *result, MD5_CTX *ctx)
 	memset(ctx, 0, sizeof(*ctx));
 }
 
+unsigned char* MD5(void* d, size_t n, unsigned char* md) {
+	MD5_CTX c;
+	unsigned long chunk;
+
+	MD5_Init(&c);
+	while (n > 0) {
+		chunk = (n > 1024) ? 1024 : n;
+		MD5_Update(&c, d, chunk);
+		n -= chunk;
+		d += chunk;
+	}
+	MD5_Final(md, &c);
+
+	return md;
+}
+
 #endif

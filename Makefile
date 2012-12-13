@@ -4,7 +4,7 @@ dripbix: dripbix.c \
 	morph.c morph.h \
 	md5.c md5.h \
 	tools.c tools.h
-	gcc -o dripbix dripbix.c snapshot.c pack.c morph.c md5.c tools.c
+	gcc -o dripbix dripbix.c snapshot.c pack.c morph.c md5.c tools.c #-DDEBUG 
 
 test: test.c minunit.h \
 	tools.c tools.h

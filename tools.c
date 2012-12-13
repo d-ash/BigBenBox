@@ -1,20 +1,5 @@
+#include "snapshot.h"
 #include "tools.h"
-
-unsigned char* MD5(void* d, size_t n, unsigned char* md) {
-	MD5_CTX c;
-	unsigned long chunk;
-
-	MD5_Init(&c);
-	while (n > 0) {
-		chunk = (n > 1024) ? 1024 : n;
-		MD5_Update(&c, d, chunk);
-		n -= chunk;
-		d += chunk;
-	}
-	MD5_Final(md, &c);
-
-	return md;
-}
 
 void hash_file(char* path, off_t size, unsigned char* result) {
 	int fd;
@@ -72,10 +57,10 @@ uint16_t uint16_hash(unsigned char* buf, int len) {
 	return hash;
 }
 
-void print_hash_sum(unsigned char* md) {
+void print_hex(unsigned char* md, int len) {
     int i;
 
-    for (i = 0; i < HASH_SUM_LENGTH; i++) {
+    for (i = 0; i < len; i++) {
 		printf("%02x", md[i]);
     }
 }

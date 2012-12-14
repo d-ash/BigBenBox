@@ -12,6 +12,7 @@ void hash_file(char* path, off_t size, unsigned char* result) {
 		exit(EXIT_FAILURE);
 	}
 
+	// TODO replace mmap() with fread/seek
     file_buffer = mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
 	if (file_buffer == MAP_FAILED) {
 		printf("Cannot mmap() file %s (%lld bytes): %s\n", path, (long long) size, strerror(errno));

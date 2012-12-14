@@ -25,16 +25,12 @@
  */
 
 #define PACKFILE_MAGIC			0x8D
-
 #define PACKFILE_LITTLE_END		0x01
-#define PACKFILE_32_BITS		0x20
-#define PACKFILE_64_BITS		0x40
-
 #define PACKFILE_HEADER_SIZE	16
 
 typedef struct s_packfile_header {
 	uint8_t magic;
-	uint8_t runtime;		// 32 | 64 - different sizeof(size_t)
+	uint8_t runtime;		// endianess | sizeof(size_t)
 	uint16_t platform;
 	uint16_t version;
 	uint32_t reserved1;

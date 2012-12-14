@@ -3,7 +3,7 @@ dripbix: dripbix.c \
 	pack.c pack.h \
 	morph.c morph.h \
 	tools.c tools.h
-	gcc -DBITS32 -o dripbix dripbix.c snapshot.c pack.c morph.c tools.c #-DDEBUG 
+	gcc -o dripbix dripbix.c snapshot.c pack.c morph.c tools.c #-DDEBUG 
 
 test: test.c minunit.h \
 	tools.c tools.h

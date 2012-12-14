@@ -14,17 +14,10 @@ int save_snapshot(SNAPSHOT* ss, char* path) {
 		return 0;
 	}
 
+	// TODO construct a buffer and write it one time
 	phf.magic = PACKFILE_MAGIC;
 	phf.runtime = is_little_endian() ? PACKFILE_LITTLE_END : 0;
-#ifdef BITS32
-	phf.runtime |= PACKFILE_32_BITS;
-#else
-#ifdef BITS64
-	phf.runtime |= PACKFILE_64_BITS;
-#else
-#error "BITS.. is not defined"
-#endif
-#endif
+	phf.runtime |= sizeof(size_t);
 	phf.platform = htons(PLATFORM);
 	phf.version = htons(VERSION);
 	phf.reserved1 = 0;	// htonl()
@@ -120,6 +113,8 @@ SNAPSHOT* load_snapshot(char* path) {
 	char* file_buffer;
 	SNAPSHOT* ss;
 	struct stat st;
+
+	// TODO mmap is not portable! Replace with fread/seek...
 
 	fd = open(path, O_RDONLY);
 	if (fd < 0) {

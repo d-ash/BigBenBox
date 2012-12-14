@@ -49,7 +49,7 @@ void print_hex(void* md, int len) {
     int i;
 
     for (i = 0; i < len; i++) {
-		printf("%02x", ((unsigned char*) md)[i]);
+		printf("%02X", ((unsigned char*) md)[i]);
     }
 }
 

@@ -11,9 +11,8 @@
  *		sizeof(size_t)			size of the following list of entries
  *
  *		[ list of entries
- *			sizeof(size_t)			dummy value for malloc optimization, used for SSENTRY.next
- *			sizeof(SSENTRY_HEADER)	SSENTRY.header
- *			header.pathmem			path
+ *			sizeof(SSENTRY)			SSENTRY (SSENTRY.next has dummy value, we recognize NULL values only)
+ *			SSENTRY.pathmem			path
  *
  *			...
  *		]
@@ -28,6 +27,9 @@
 #define PACKFILE_LITTLE_END		0x01
 #define PACKFILE_HEADER_SIZE	16
 
+// WARNING: do not read/write the struct,
+// and do not use sizeof(PACKFILE_HEADER).
+// There is memory packing and it is not portable!
 typedef struct s_packfile_header {
 	uint8_t magic;
 	uint8_t runtime;		// endianess | sizeof(size_t)
@@ -37,14 +39,13 @@ typedef struct s_packfile_header {
 	uint32_t reserved2;
 	uint16_t reserved3;
 } PACKFILE_HEADER;
-// WARNING: do not use sizeof(PACKFILE_HEADER)
 
 typedef struct s_pack_hash_header {
 	hash_t hash;
-	size_t size;
+	size_t size;			// memory size used by the following list of entries
 } PACK_HASH_HEADER;
 
-int save_snapshot(SNAPSHOT* ss, char* path);
-SNAPSHOT* load_snapshot(char* path);
+int save_snapshot(snapshot_t ss, char* path);
+snapshot_t load_snapshot(char* path);
 
 #endif	// _PACK_H

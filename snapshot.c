@@ -1,16 +1,18 @@
 #include <sys/stat.h>
 #include "snapshot.h"
 
-void add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss) {
+void add_to_snapshot(SSENTRY* ssentry, snapshot_t ss) {
 	hash_t hash;
 
-	hash = uint16_hash(SSENTRY_PATH(ssentry), ssentry->header.pathmem - 1);
+	hash = uint16_hash(SSENTRY_PATH(ssentry), ssentry->pathmem - 1);
 
-	ssentry->next = ss->ht[hash];
-	ss->ht[hash] = ssentry;
+	// insert to the beginning of the list
+	ssentry->next = ss[hash].first;
+	ss[hash].first = ssentry;
+	ss[hash].size += sizeof(SSENTRY) + ssentry->pathmem;
 }
 
-SSENTRY* search(char* path, SNAPSHOT* ss) {
+SSENTRY* search(char* path, snapshot_t ss) {
 	hash_t hash;
 	SSENTRY* ssentry = NULL;
 	size_t pathlen;
@@ -18,7 +20,7 @@ SSENTRY* search(char* path, SNAPSHOT* ss) {
 	pathlen = strlen(path);
 	hash = uint16_hash(path, pathlen);
 
-	ssentry = ss->ht[hash];
+	ssentry = ss[hash].first;
 	while (ssentry != NULL) {
 		if (strncmp(path, SSENTRY_PATH(ssentry), pathlen + 1) == 0) {
 			break;
@@ -29,7 +31,7 @@ SSENTRY* search(char* path, SNAPSHOT* ss) {
 	return ssentry;
 }
 
-void process_entry(char* path, char* name, SNAPSHOT* ss) {
+void process_entry(char* path, char* name, snapshot_t ss) {
 	struct stat entry_info;
 	SSENTRY* ssentry = NULL;
 	size_t pathmem = 0;
@@ -43,8 +45,8 @@ void process_entry(char* path, char* name, SNAPSHOT* ss) {
 	// allocating memory for SSENTRY + path
 	pathmem = pl + nl + 2;
 	ssentry = malloc(sizeof(SSENTRY) + pathmem);
-	ssentry->header.status = 0;
-	ssentry->header.pathmem = pathmem;
+	ssentry->status = 0;
+	ssentry->pathmem = pathmem;
 
 	path_ptr = SSENTRY_PATH(ssentry);
 	strncpy(path_ptr, path, pl + 1);
@@ -56,14 +58,14 @@ void process_entry(char* path, char* name, SNAPSHOT* ss) {
 		exit(EXIT_FAILURE);
 	}
 
-	ssentry->header.content.size = entry_info.st_size;
-	ssentry->header.content.mtime = entry_info.st_mtime;
+	ssentry->content.size = entry_info.st_size;
+	ssentry->content.mtime = entry_info.st_mtime;
 
 	if (S_ISDIR(entry_info.st_mode)) {
-		ssentry->header.status |= SSENTRY_STATUS_DIR;
+		ssentry->status |= SSENTRY_STATUS_DIR;
 		process_dir(path_ptr, ss);
 	} else if (S_ISREG(entry_info.st_mode)) {
-		ssentry->header.status &= ~SSENTRY_STATUS_DIR;
+		ssentry->status &= ~SSENTRY_STATUS_DIR;
 	} else {
 		PLOG("Skipping irregular file: %s\n", path_ptr);
 		free(ssentry);
@@ -73,7 +75,7 @@ void process_entry(char* path, char* name, SNAPSHOT* ss) {
 	add_to_snapshot(ssentry, ss);
 }
 
-void process_dir(char* path, SNAPSHOT* ss) {
+void process_dir(char* path, snapshot_t ss) {
 	DIR* dir = NULL;
 	struct dirent entry;
 	struct dirent* entry_ptr = NULL;
@@ -105,25 +107,23 @@ void process_dir(char* path, SNAPSHOT* ss) {
 	}
 }
 
-SNAPSHOT* create_snapshot(char* path) {
-	SNAPSHOT* ss;
+snapshot_t create_snapshot() {
+	snapshot_t ss;
 
-	ss = malloc(sizeof(SNAPSHOT));
+	ss = malloc(sizeof(SSHASH_HEADER) * HASH_MAX);
 	// assuming NULL == 0
-	memset(ss->ht, 0, sizeof(void*) * HASH_MAX);
-
-	process_dir(path, ss);
+	memset(ss, 0, sizeof(SSHASH_HEADER) * HASH_MAX);
 
 	return ss;
 }
 
-void destroy_snapshot(SNAPSHOT* ss) {
+void destroy_snapshot(snapshot_t ss) {
 	hash_t i;
 	SSENTRY* ssentry = NULL;
 	void* mustdie = NULL;
 
 	for (i = 0; i < HASH_MAX; i++) {
-		ssentry = ss->ht[i];
+		ssentry = ss[i].first;
 		while (ssentry != NULL) {
 			mustdie = ssentry;
 			ssentry = ssentry->next;
@@ -132,4 +132,13 @@ void destroy_snapshot(SNAPSHOT* ss) {
 	}
 
 	free(ss);
+}
+
+snapshot_t generate_snapshot(char* path) {
+	snapshot_t ss;
+
+	ss = create_snapshot();
+	process_dir(path, ss);
+
+	return ss;
 }

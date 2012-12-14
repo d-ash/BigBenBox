@@ -1,12 +1,79 @@
 #include <sys/stat.h>
 #include "pack.h"
 
-pack_snapshot() {
+int pack_snapshot(snapshot_t ss, FILE* f) {
+	hash_t i;
+	SSENTRY* ssentry = NULL;
+	PACK_HASH_HEADER h;
+
+	for (i = 0; i < HASH_MAX; i++) {
+		if (ss[i].first == NULL) {
+			// do not store hash with no entries
+			continue;
+		}
+
+		h.hash = i;
+		h.size = ss[i].size;
+		fwrite(&h, sizeof(PACK_HASH_HEADER), 1, f);
+
+		ssentry = ss[i].first;
+		do {
+			fwrite(ssentry, sizeof(SSENTRY) + ssentry->pathmem, 1, f);
+			ssentry = ssentry->next;
+		} while (ssentry != NULL);
+	}
 }
 
-int save_snapshot(SNAPSHOT* ss, char* path) {
+snapshot_t unpack_snapshot(unsigned char* data, off_t len) {
+	unsigned char* ptr;
+	snapshot_t ss = NULL;
+	PACK_HASH_HEADER* h = NULL;
+	SSENTRY* ssentry = NULL;
+
+	if (data[0] != PACKFILE_MAGIC) {
+		PERR("Incorrect PACKFILE_MAGIC.\n");
+		return NULL;
+	}
+
+// TODO check header values
+// TODO check length (reading)
+// TODO check hash_header.size
+
+	ptr = data + PACKFILE_HEADER_SIZE;
+
+	ss = create_snapshot();
+
+	// iterating over the hash list
+	do {
+		h = (PACK_HASH_HEADER*) ptr;
+		ptr += sizeof(PACK_HASH_HEADER);
+
+		// allocating memory for all entries with this hash
+		ss[h->hash].first = malloc(h->size);
+		ss[h->hash].size = h->size;
+
+		memcpy(ss[h->hash].first, ptr, h->size);
+		ptr += h->size;
+		// now 'ptr' points to the next PACK_HASH_HEADER
+
+		// go through all entries, the last one must have ssentry->next == NULL
+		ssentry = ss[h->hash].first;
+		while (ssentry->next != NULL) {
+			PERR("ssentry = %0X\n", ssentry);
+			// set correct values for SSENTRY.next
+			// all restored pointers are incorrect,
+			// but we are searching for NULL value!
+			ssentry->next = (unsigned char*) ssentry + sizeof(SSENTRY) + ssentry->pathmem;
+			ssentry = ssentry->next;
+		}
+	} while (ptr - data < len);
+
+	return ss;
+}
+
+int save_snapshot(snapshot_t ss, char* path) {
 	FILE* f;
-	PACKFILE_HEADER phf;
+	unsigned char pfh[PACKFILE_HEADER_SIZE];
 
 	f = fopen(path, "w");
 	if (f == NULL) {
@@ -14,47 +81,18 @@ int save_snapshot(SNAPSHOT* ss, char* path) {
 		return 0;
 	}
 
-	// TODO construct a buffer and write it one time
-	phf.magic = PACKFILE_MAGIC;
-	phf.runtime = is_little_endian() ? PACKFILE_LITTLE_END : 0;
-	phf.runtime |= sizeof(size_t);
-	phf.platform = htons(PLATFORM);
-	phf.version = htons(VERSION);
-	phf.reserved1 = 0;	// htonl()
-	phf.reserved2 = 0;	// htonl()
-	phf.reserved3 = 0;	// htons()
+	pfh[0] = PACKFILE_MAGIC;
+	pfh[1] = is_little_endian() ? PACKFILE_LITTLE_END : 0;
+	pfh[1] |= sizeof(size_t);
 
-	// WARNING: do not write the struct,
-	// there is memory packing and it is not portable!
-	fwrite(&phf.magic, 1, 1, f);
-	fwrite(&phf.runtime, 1, 1, f);
-	fwrite(&phf.platform, sizeof(phf.platform), 1, f);
-	fwrite(&phf.version, sizeof(phf.version), 1, f);
-	fwrite(&phf.reserved1, sizeof(phf.reserved1), 1, f);
-	fwrite(&phf.reserved2, sizeof(phf.reserved2), 1, f);
-	fwrite(&phf.reserved3, sizeof(phf.reserved3), 1, f);
+	*(uint16_t*)(pfh + 2) = htons(PLATFORM);
+	*(uint16_t*)(pfh + 4) = htons(VERSION);
+	memset(pfh + 6, 0, 10);
+
+	fwrite(&pfh, sizeof(pfh), 1, f);
 	
-	/*
-	unsigned char* data = NULL;
-	SSENTRY* ssentry = NULL;
-	unsigned char* ptr = NULL;
-	size_t chunk = 0;
-
-	data = malloc(ss->entries_count * sizeof(SSENTRY_HEADER) + ss->pathmem_total);
-	ptr = data;
-
-	ht = ss->ht_by_hash;
-	while (ht != NULL) {
-		ssentry = ht->entries;
-		while (ssentry != NULL) {
-			chunk = sizeof(SSENTRY_HEADER) + ssentry->header.pathmem;
-			memcpy(ptr, &ssentry->header, chunk);	// coping header and path
-			ptr += chunk;
-			ssentry = ssentry->next_by_hash;
-		}
-		ht = ht->next;
-	}
-	*/
+	pack_snapshot(ss, f);
+	// TODO check errors
 
 	if (fclose(f) != 0) {
 		PERR("Cannot save a snapshot to %s: %s\n", path, strerror(errno));
@@ -64,54 +102,10 @@ int save_snapshot(SNAPSHOT* ss, char* path) {
 	return 1;
 }
 
-SNAPSHOT* unpack_snapshot(char* path, unsigned char* data, off_t len) {
-	unsigned char* ptr;
-	SNAPSHOT* ss = NULL;
-	PACK_HASH_HEADER* h = NULL;
-	SSENTRY* ssentry = NULL;
-
-	if (data[0] != PACKFILE_MAGIC) {
-		PERR("Incorrect PACKFILE_MAGIC in %s\n", path);
-		return NULL;
-	}
-
-// TODO check header values
-// TODO check length (reading)
-
-	ptr = data + PACKFILE_HEADER_SIZE;
-
-	ss = malloc(sizeof(SNAPSHOT));
-	memset(ss->ht, 0, sizeof(void*) * HASH_MAX);
-
-	// iterating over the hash list
-	do {
-		h = (PACK_HASH_HEADER*) ptr;
-		ptr += sizeof(PACK_HASH_HEADER);
-
-		// allocating memory for all entries with this hash
-		ss->ht[h->hash] = malloc(h->size);
-		memcpy(ss->ht[h->hash], ptr, h->size);
-		ptr += h->size;
-		// now 'ptr' points to the next PACK_HASH_HEADER
-
-		// go through all entries, the last one must have ssentry->next == NULL
-		ssentry = ss->ht[h->hash];
-		do {
-			// setting correct values of SSENTRY.next
-			// all restored pointers are incorrect,
-			// but we are searching for NULL value!
-			ssentry->next = ssentry + sizeof(SSENTRY) + ssentry->header.pathmem;
-			ssentry = ssentry->next;
-		} while (ssentry->next != NULL);
-	} while (ptr - data < len);
-
-	return ss;
-}
-
-SNAPSHOT* load_snapshot(char* path) {
+snapshot_t load_snapshot(char* path) {
 	int fd;
 	char* file_buffer;
-	SNAPSHOT* ss;
+	snapshot_t ss = NULL;
 	struct stat st;
 
 	// TODO mmap is not portable! Replace with fread/seek...
@@ -133,7 +127,8 @@ SNAPSHOT* load_snapshot(char* path) {
 		exit(EXIT_FAILURE);
 	}
 
-	ss = unpack_snapshot(path, file_buffer, st.st_size);
+	ss = unpack_snapshot(file_buffer, st.st_size);
+	// TODO check errors
 
 	if (munmap(file_buffer, st.st_size) < 0) {
 		PERR("Cannot munmap() file %s (%lld bytes): %s\n", path, (long long) st.st_size, strerror(errno));

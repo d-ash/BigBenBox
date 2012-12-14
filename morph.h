@@ -22,9 +22,9 @@ typedef struct s_sspatch {
 	SSACTION* actions;
 } SSPATCH;
 
-SSPATCH* morph(SNAPSHOT* A, SNAPSHOT* B);
-SNAPSHOT* patch(SNAPSHOT* A, SSPATCH* P);
+SSPATCH* morph(snapshot_t A, snapshot_t B);
+snapshot_t patch(snapshot_t A, SSPATCH* P);
 
-int is_equal(SNAPSHOT* A, SNAPSHOT* B);
+int is_equal(snapshot_t A, snapshot_t B);
 
 #endif	// _MORPH_H

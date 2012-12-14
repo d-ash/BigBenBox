@@ -19,32 +19,31 @@ typedef struct s_ssentry_content {
 
 #define SSENTRY_STATUS_DIR	0x01
 
-typedef struct s_ssentry_header {
+typedef struct s_ssentry {
 	uint8_t status;
 	SSENTRY_CONTENT content;
 	size_t pathmem;		// strlen(path) + 1
-} SSENTRY_HEADER;
 
-typedef struct s_ssentry {
 	void* next;			// link to the next SSENTRY
-
-	SSENTRY_HEADER header;
-	// WARNING: do not place anything after SSENTRY_HEADER
-	// 'path' is stored here, just after header.
 } SSENTRY;
+// WARNING: 'path' is stored here, just after SSENTRY.
 
 #define SSENTRY_PATH(s)	((char*) s + sizeof(SSENTRY))
 
-typedef struct s_snapshot {
-	void* ht[HASH_MAX];		// hashtable of SSENTRY lists
-} SNAPSHOT;
+typedef struct s_sshash_header {
+	SSENTRY* first;
+	size_t	size;	// total memory used by all entries of this hash value (with paths)
+} SSHASH_HEADER;
 
-SNAPSHOT* create_snapshot(char* path);
-void destroy_snapshot(SNAPSHOT* ss);
+typedef SSHASH_HEADER* snapshot_t;	// hashtable
 
-SSENTRY* search(char* path, SNAPSHOT* ss);
+snapshot_t create_snapshot();
+void destroy_snapshot(snapshot_t ss);
 
-void process_dir(char* path, SNAPSHOT* ss);
-void process_entry(char* path, char* name, SNAPSHOT* ss);
+snapshot_t generate_snapshot(char* path);
+SSENTRY* search(char* path, snapshot_t ss);
+
+void process_dir(char* path, snapshot_t ss);
+void process_entry(char* path, char* name, snapshot_t ss);
 
 #endif	// _SNAPSHOT_H

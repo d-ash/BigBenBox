@@ -26,7 +26,9 @@ static char* all_tests() {
 }
 
 int main(int argc, char* argv[]) {
-	char* result = all_tests();
+	char* result;
+	
+	result = all_tests();
 	if (result != 0) {
 		printf("%s\n", result);
 	} else {

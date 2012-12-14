@@ -1,6 +1,7 @@
 #include "snapshot.h"
 #include "tools.h"
 
+/*
 void hash_file(char* path, off_t size, unsigned char* result) {
 	int fd;
 	char* file_buffer;
@@ -28,39 +29,30 @@ void hash_file(char* path, off_t size, unsigned char* result) {
 		exit(EXIT_FAILURE);
 	}
 }
-
-/*
-// hand made hashing
-uint16_t uint16_hash(unsigned char* buf, int len) {
-	uint16_t res = 0xBABE;
-	uint16_t word;
-
-	while (--len >= 0) {
-		word = (len & 0x0001) ? buf[len] : (buf[len] << 8);
-		res ^= word;
-	}
-
-	return res;
-}
 */
 
 // SDBM hashing algorithm
-uint16_t uint16_hash(unsigned char* buf, int len) {
+uint16_t uint16_hash(void* buf, int len) {
 	uint16_t hash = 0;
 	uint16_t word;
 
 	while (--len >= 0) {
-		word = (uint16_t) buf[len];
+		word = (uint16_t) ((unsigned char*) buf)[len];
 		hash = word + (hash << 6) + (hash << 16) - hash;
 	}
 
 	return hash;
 }
 
-void print_hex(unsigned char* md, int len) {
+void print_hex(void* md, int len) {
     int i;
 
     for (i = 0; i < len; i++) {
-		printf("%02x", md[i]);
+		printf("%02x", ((unsigned char*) md)[i]);
     }
+}
+
+int is_little_endian() {
+	static const int i = 1;
+	return (* (char*) &i == 1);
 }

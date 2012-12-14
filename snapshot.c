@@ -1,116 +1,35 @@
+#include <sys/stat.h>
 #include "snapshot.h"
 
-// TODO refactor! copy-paste
+void add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss) {
+	hash_t hash;
 
-SSHASHTABLE* find_hashtable(uint16_t hash, SSHASHTABLE* ht) {
-	while (ht != NULL) {
-		if (ht->hash == hash) {
+	hash = uint16_hash(SSENTRY_PATH(ssentry), ssentry->header.pathmem - 1);
+
+	ssentry->next = ss->ht[hash];
+	ss->ht[hash] = ssentry;
+}
+
+SSENTRY* search(char* path, SNAPSHOT* ss) {
+	hash_t hash;
+	SSENTRY* ssentry = NULL;
+	size_t pathlen;
+
+	pathlen = strlen(path);
+	hash = uint16_hash(path, pathlen);
+
+	ssentry = ss->ht[hash];
+	while (ssentry != NULL) {
+		if (strncmp(path, SSENTRY_PATH(ssentry), pathlen + 1) == 0) {
 			break;
 		}
-		ht = ht->next;
+		ssentry = ssentry->next;
 	}
 
-	return ht;
-}
-
-void add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss) {
-	uint16_t hash;
-	SSHASHTABLE* ht = NULL;
-
-	ss->entries_count += 1;
-	ss->pathmem_total += ssentry->header.pathmem;
-
-	// put this entry to ss->ht_by_hash
-	// using the first two bytes of the filehash
-	// it is faster than: uint16_hash();
-	hash = (* (uint16_t*) ssentry->header.content.filehash);
-	ht = find_hashtable(hash, ss->ht_by_hash);
-
-	if (ht == NULL) {
-		// it is the first entry with this hash
-		ssentry->next_by_hash = NULL;
-
-		// create a new hashtable for it
-		ht = malloc(sizeof(SSHASHTABLE));
-		ht->hash = hash;
-		ht->entries = ssentry;
-
-		// insert this hashtable at the beginning of the list
-		ht->next = ss->ht_by_hash;
-		ss->ht_by_hash = ht;
-	} else {
-		// insert this entry at the beginning of the found hashtable
-		ssentry->next_by_hash = ht->entries;
-		ht->entries = ssentry;
-	}
-
-	// put this entry to ss->ht_by_path
-	hash = uint16_hash(SSENTRY_PATH(ssentry), ssentry->header.pathmem - 1);
-	ht = find_hashtable(hash, ss->ht_by_path);
-
-	if (ht == NULL) {
-		// it is the first entry with this hash
-		ssentry->next_by_path = NULL;
-
-		// create a new hashtable for it
-		ht = malloc(sizeof(SSHASHTABLE));
-		ht->hash = hash;
-		ht->entries = ssentry;
-
-		// insert this hashtable at the beginning of the list
-		ht->next = ss->ht_by_path;
-		ss->ht_by_path = ht;
-	} else {
-		// insert this entry at the beginning of the found hashtable
-		ssentry->next_by_path = ht->entries;
-		ht->entries = ssentry;
-	}
-}
-
-SSENTRY* search_by_path(char* path, SNAPSHOT* ss) {
-	uint16_t hash;
-	SSHASHTABLE* ht = NULL;
-	SSENTRY* ssentry = NULL;
-
-	hash = uint16_hash(path, strlen(path));
-	ht = find_hashtable(hash, ss->ht_by_path);
-	if (ht == NULL) {
-		return NULL;
-	} else {
-		ssentry = ht->entries;
-		while (ssentry != NULL) {
-			if (strncmp(path, SSENTRY_PATH(ssentry), PATH_MAX) == 0) {
-				break;
-			}
-			ssentry = ssentry->next_by_path;
-		}
-		return ssentry;
-	}
-}
-
-SSENTRY* search_by_filehash(unsigned char* filehash, SNAPSHOT* ss) {
-	uint16_t hash;
-	SSHASHTABLE* ht = NULL;
-	SSENTRY* ssentry = NULL;
-
-	hash = (* (uint16_t*) filehash);
-	ht = find_hashtable(hash, ss->ht_by_hash);
-	if (ht == NULL) {
-		return NULL;
-	} else {
-		ssentry = ht->entries;
-		while (ssentry != NULL) {
-			if (memcmp(filehash, ssentry->header.content.filehash, FILEHASH_LENGTH) == 0) {
-				break;
-			}
-			ssentry = ssentry->next_by_hash;
-		}
-		return ssentry;
-	}
+	return ssentry;
 }
 
 void process_entry(char* path, char* name, SNAPSHOT* ss) {
-	int processed = 0;
 	struct stat entry_info;
 	SSENTRY* ssentry = NULL;
 	size_t pathmem = 0;
@@ -132,33 +51,26 @@ void process_entry(char* path, char* name, SNAPSHOT* ss) {
 	strncat(path_ptr, "/", 2);
 	strncat(path_ptr, name, nl + 1);
 
-	ssentry->header.content.filesize = 0;
-	memset(ssentry->header.content.filehash, 0, FILEHASH_LENGTH);
-
 	if (lstat(path_ptr, &entry_info)) {
-		printf("Cannot get info about %s: %s\n", path_ptr, strerror(errno));
+		PERR("Cannot get info about %s: %s\n", path_ptr, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
+
+	ssentry->header.content.size = entry_info.st_size;
+	ssentry->header.content.mtime = entry_info.st_mtime;
 
 	if (S_ISDIR(entry_info.st_mode)) {
 		ssentry->header.status |= SSENTRY_STATUS_DIR;
 		process_dir(path_ptr, ss);
-		processed = 1;
 	} else if (S_ISREG(entry_info.st_mode)) {
 		ssentry->header.status &= ~SSENTRY_STATUS_DIR;
-		ssentry->header.content.filesize = entry_info.st_size;
-		if (entry_info.st_size > 0) {
-			hash_file(path_ptr, entry_info.st_size, ssentry->header.content.filehash);
-		}
-		processed = 1;
+	} else {
+		PLOG("Skipping irregular file: %s\n", path_ptr);
+		free(ssentry);
+		return;
 	}
 
-	if (processed) {
-		add_to_snapshot(ssentry, ss);
-	} else {
-		DEBUG_LOG("Skipping irregular file: %s\n", path_ptr);
-		free(ssentry);
-	}
+	add_to_snapshot(ssentry, ss);
 }
 
 void process_dir(char* path, SNAPSHOT* ss) {
@@ -166,10 +78,10 @@ void process_dir(char* path, SNAPSHOT* ss) {
 	struct dirent entry;
 	struct dirent* entry_ptr = NULL;
 
-	DEBUG_LOG("Processing dir: %s\n", path);
+	PLOG("Processing dir: %s\n", path);
 	dir = opendir(path);
 	if (dir == NULL) {
-		printf("Cannot open dir %s: %s\n", path, strerror(errno));
+		PERR("Cannot open dir %s: %s\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -179,8 +91,8 @@ void process_dir(char* path, SNAPSHOT* ss) {
 			break;
 		}
 
-		if ((strncmp(entry.d_name, ".", PATH_MAX) == 0) || 
-			(strncmp(entry.d_name, "..", PATH_MAX) == 0)) {
+		if ((strncmp(entry.d_name, ".", 2) == 0) || 
+			(strncmp(entry.d_name, "..", 3) == 0)) {
 			continue;
 		}
 
@@ -188,7 +100,7 @@ void process_dir(char* path, SNAPSHOT* ss) {
 	}
 
 	if (closedir(dir) < 0) {
-		printf("Cannot close dir %s: %s\n", path, strerror(errno));
+		PERR("Cannot close dir %s: %s\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 }
@@ -197,10 +109,8 @@ SNAPSHOT* create_snapshot(char* path) {
 	SNAPSHOT* ss;
 
 	ss = malloc(sizeof(SNAPSHOT));
-	ss->ht_by_hash = NULL;
-	ss->ht_by_path = NULL;
-	ss->entries_count = 0;
-	ss->pathmem_total = 0;
+	// assuming NULL == 0
+	memset(ss->ht, 0, sizeof(void*) * HASH_MAX);
 
 	process_dir(path, ss);
 
@@ -208,28 +118,17 @@ SNAPSHOT* create_snapshot(char* path) {
 }
 
 void destroy_snapshot(SNAPSHOT* ss) {
-	SSHASHTABLE* ht = NULL;
+	hash_t i;
 	SSENTRY* ssentry = NULL;
 	void* mustdie = NULL;
 
-	ht = ss->ht_by_hash;
-	while (ht != NULL) {
-		ssentry = ht->entries;
+	for (i = 0; i < HASH_MAX; i++) {
+		ssentry = ss->ht[i];
 		while (ssentry != NULL) {
 			mustdie = ssentry;
-			ssentry = ssentry->next_by_hash;
+			ssentry = ssentry->next;
 			free(mustdie);
 		}
-		mustdie = ht;
-		ht = ht->next;
-		free(mustdie);
-	}
-
-	ht = ss->ht_by_path;
-	while (ht != NULL) {
-		mustdie = ht;
-		ht = ht->next;
-		free(mustdie);
 	}
 
 	free(ss);

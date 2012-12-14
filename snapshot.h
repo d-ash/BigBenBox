@@ -13,17 +13,16 @@ typedef uint16_t	hash_t;
 #define HASH_MAX	UINT16_MAX
 
 typedef struct s_ssentry_content {
-	uint32_t mtime;
-	uint64_t size;
+	time_t mtime;
+	off_t size;
 } SSENTRY_CONTENT;
 
 #define SSENTRY_STATUS_DIR	0x01
 
 typedef struct s_ssentry_header {
 	uint8_t status;
-	uint8_t reserved;	// for future use
 	SSENTRY_CONTENT content;
-	uint64_t pathmem;	// strlen(path) + 1
+	size_t pathmem;		// strlen(path) + 1
 } SSENTRY_HEADER;
 
 typedef struct s_ssentry {

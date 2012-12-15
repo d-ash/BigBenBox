@@ -24,7 +24,6 @@
  */
 
 #define PACKFILE_MAGIC			0x8D
-#define PACKFILE_LITTLE_END		0x01
 #define PACKFILE_HEADER_SIZE	16
 
 // WARNING: do not read/write the struct,
@@ -45,7 +44,10 @@ typedef struct s_pack_hash_header {
 	size_t size;			// memory size used by the following list of entries
 } PACK_HASH_HEADER;
 
-int save_snapshot(snapshot_t ss, char* path);
-snapshot_t load_snapshot(char* path);
+int save_snapshot(char* path, SNAPSHOT* ss);
+int load_snapshot(char* path, SNAPSHOT* ss);
+
+int pack_snapshot(FILE* f, SNAPSHOT* ss);
+int unpack_snapshot(FILE* f, SNAPSHOT* ss);
 
 #endif	// _PACK_H

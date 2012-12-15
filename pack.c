@@ -1,79 +1,19 @@
 #include <sys/stat.h>
 #include "pack.h"
 
-int pack_snapshot(snapshot_t ss, FILE* f) {
-	hash_t i;
-	SSENTRY* ssentry = NULL;
-	PACK_HASH_HEADER h;
+void construct_pfh(unsigned char* pfh /* PACKFILE_HEADER_SIZE */) {
+	pfh[0] = PACKFILE_MAGIC;
+	pfh[1] = (is_little_endian() ? 1 : 0) | sizeof(size_t);
 
-	for (i = 0; i < HASH_MAX; i++) {
-		if (ss[i].first == NULL) {
-			// do not store hash with no entries
-			continue;
-		}
-
-		h.hash = i;
-		h.size = ss[i].size;
-		fwrite(&h, sizeof(PACK_HASH_HEADER), 1, f);
-
-		ssentry = ss[i].first;
-		do {
-			fwrite(ssentry, sizeof(SSENTRY) + ssentry->pathmem, 1, f);
-			ssentry = ssentry->next;
-		} while (ssentry != NULL);
-	}
+	*(uint16_t*)(pfh + 2) = htons(PLATFORM);
+	*(uint16_t*)(pfh + 4) = htons(VERSION);
+	memset(pfh + 6, 0, 10);
 }
 
-snapshot_t unpack_snapshot(unsigned char* data, off_t len) {
-	unsigned char* ptr;
-	snapshot_t ss = NULL;
-	PACK_HASH_HEADER* h = NULL;
-	SSENTRY* ssentry = NULL;
-
-	if (data[0] != PACKFILE_MAGIC) {
-		PERR("Incorrect PACKFILE_MAGIC.\n");
-		return NULL;
-	}
-
-// TODO check header values
-// TODO check length (reading)
-// TODO check hash_header.size
-
-	ptr = data + PACKFILE_HEADER_SIZE;
-
-	ss = create_snapshot();
-
-	// iterating over the hash list
-	do {
-		h = (PACK_HASH_HEADER*) ptr;
-		ptr += sizeof(PACK_HASH_HEADER);
-
-		// allocating memory for all entries with this hash
-		ss[h->hash].first = malloc(h->size);
-		ss[h->hash].size = h->size;
-
-		memcpy(ss[h->hash].first, ptr, h->size);
-		ptr += h->size;
-		// now 'ptr' points to the next PACK_HASH_HEADER
-
-		// go through all entries, the last one must have ssentry->next == NULL
-		ssentry = ss[h->hash].first;
-		while (ssentry->next != NULL) {
-			PERR("ssentry = %0X\n", ssentry);
-			// set correct values for SSENTRY.next
-			// all restored pointers are incorrect,
-			// but we are searching for NULL value!
-			ssentry->next = (unsigned char*) ssentry + sizeof(SSENTRY) + ssentry->pathmem;
-			ssentry = ssentry->next;
-		}
-	} while (ptr - data < len);
-
-	return ss;
-}
-
-int save_snapshot(snapshot_t ss, char* path) {
+int save_snapshot(char* path, SNAPSHOT* ss) {
 	FILE* f;
 	unsigned char pfh[PACKFILE_HEADER_SIZE];
+	int res = 0;
 
 	f = fopen(path, "w");
 	if (f == NULL) {
@@ -81,64 +21,156 @@ int save_snapshot(snapshot_t ss, char* path) {
 		return 0;
 	}
 
-	pfh[0] = PACKFILE_MAGIC;
-	pfh[1] = is_little_endian() ? PACKFILE_LITTLE_END : 0;
-	pfh[1] |= sizeof(size_t);
+	construct_pfh(pfh);
 
-	*(uint16_t*)(pfh + 2) = htons(PLATFORM);
-	*(uint16_t*)(pfh + 4) = htons(VERSION);
-	memset(pfh + 6, 0, 10);
-
-	fwrite(&pfh, sizeof(pfh), 1, f);
-	
-	pack_snapshot(ss, f);
-	// TODO check errors
+	if (fwrite(pfh, sizeof(pfh), 1, f) == 1) {
+		res = pack_snapshot(f, ss);
+	} else {
+		PERR("Cannot write a header to the snapshot file %s: %s\n", path, strerror(errno));
+	}
 
 	if (fclose(f) != 0) {
 		PERR("Cannot save a snapshot to %s: %s\n", path, strerror(errno));
 		return 0;
 	}
 
+	if (!res) {
+		unlink(path);
+	}
+
+	return res;
+}
+
+int load_snapshot(char* path, SNAPSHOT* ss) {
+	FILE* f = NULL;
+	unsigned char pfh[PACKFILE_HEADER_SIZE];
+	unsigned char pfh_control[PACKFILE_HEADER_SIZE];
+	int res = 0;
+
+	if (ss == NULL) {
+		PERR("NULL value in %s()\n", __FUNCTION__);
+		return 0;
+	}
+
+	init_snapshot(ss);
+	ss->restored = 1;
+
+	f = fopen(path, "r");
+	if (f == NULL) {
+		PERR("Cannot open %s: %s\n", path, strerror(errno));
+		destroy_snapshot(ss);
+		return 0;
+	}
+
+	if (fread(pfh, sizeof(pfh), 1, f) < 1) {
+		PERR("Cannot read from %s: %s\n", path, strerror(errno));
+		destroy_snapshot(ss);
+		return 0;
+	}
+
+	construct_pfh(pfh_control);
+
+	// We can correctly read files only created with this same program on this machine.
+	// TODO VERSION can differ!
+	if (memcmp(pfh, pfh_control, sizeof(pfh)) == 0) {
+		res = unpack_snapshot(f, ss);
+	} else {
+		PERR("Header of the snapshot file %s is incorrect.\n", path);
+	}
+
+	if (fclose(f) != 0) {
+		PERR("Cannot close %s: %s\n", path, strerror(errno));
+		destroy_snapshot(ss);
+		return 0;
+	}
+
+	if (!res) {
+		destroy_snapshot(ss);
+		return 0;
+	}
+
 	return 1;
 }
 
-snapshot_t load_snapshot(char* path) {
-	int fd;
-	char* file_buffer;
-	snapshot_t ss = NULL;
-	struct stat st;
+int pack_snapshot(FILE* f, SNAPSHOT* ss) {
+	hash_t i;
+	SSENTRY* ssentry = NULL;
+	SSHASH_HEADER* cur_hh = NULL;
+	PACK_HASH_HEADER h;
 
-	// TODO mmap is not portable! Replace with fread/seek...
+	for (i = 0; i < HASH_MAX; i++) {
+		cur_hh = & ss->ht[i];
 
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		PERR("Cannot read a snapshot from %s: %s\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		if (cur_hh->first == NULL) {
+			// Do not store hashes with no entries, it's packing anyway.
+			continue;
+		}
+
+		h.hash = i;
+		h.size = cur_hh->size;
+
+		if (fwrite(&h, sizeof(PACK_HASH_HEADER), 1, f) < 1) {
+			return 0;
+		}
+
+		ssentry = cur_hh->first;
+		do {
+			if (fwrite(ssentry, sizeof(SSENTRY) + ssentry->pathmem, 1, f) < 1) {
+				return 0;
+			}
+			ssentry = ssentry->next;
+		} while (ssentry != NULL);
 	}
 
-	if (fstat(fd, &st) != 0) {
-		PERR("Cannot fstat() file %s: %s\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+	return 1;
+}
+
+int unpack_snapshot(FILE* f, SNAPSHOT* ss) {
+	PACK_HASH_HEADER h;
+	SSENTRY* ssentry = NULL;
+	SSHASH_HEADER* cur_hh = NULL;
+	unsigned char* max_next = NULL;
+
+	// iterating over the hash list
+	while (fread(&h, sizeof(h), 1, f) == 1) {
+
+		// allocating memory for all entries with this hash
+		cur_hh = & ss->ht[h.hash];
+		cur_hh->size = h.size;
+		cur_hh->first = malloc(h.size);
+
+		if (cur_hh->first == NULL) {
+			PERR("Cannot allocate memory for a entries list: %s\n", strerror(errno));
+			return 0;
+		}
+
+		// The highest possible pointer value (counting not empty string).
+		max_next = (unsigned char*) cur_hh->first + h.size - sizeof(SSENTRY) - 2;
+
+		if (fread(cur_hh->first, h.size, 1, f) < 1) {
+			PERR("Cannot read from a snapshot file: %s\n", strerror(errno));
+			return 0;
+		}
+
+		ssentry = cur_hh->first;
+		while (ssentry->next != NULL) {
+			// Set correct values for SSENTRY.next, all restored pointers are incorrect,
+			// but we are searching for NULL value!
+			ssentry->next = (unsigned char*) ssentry + sizeof(SSENTRY) + ssentry->pathmem;
+
+			if ((unsigned char*) ssentry->next > max_next) {
+				PERR("Snapshot file is corrupted!\n");
+				return 0;
+			}
+
+			ssentry = ssentry->next;
+		}
 	}
 
-    file_buffer = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (file_buffer == MAP_FAILED) {
-		PERR("Cannot mmap() file %s (%lld bytes): %s\n", path, (long long) st.st_size, strerror(errno));
-		exit(EXIT_FAILURE);
+	if (!feof(f)) {
+		PERR("Snapshot file is inconsistent (size of the file)\n");
+		return 0;
 	}
 
-	ss = unpack_snapshot(file_buffer, st.st_size);
-	// TODO check errors
-
-	if (munmap(file_buffer, st.st_size) < 0) {
-		PERR("Cannot munmap() file %s (%lld bytes): %s\n", path, (long long) st.st_size, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	if (close(fd) < 0) {
-		PERR("Cannot close file %s: %s\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	return ss;
+	return 1;
 }

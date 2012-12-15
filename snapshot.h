@@ -23,7 +23,6 @@ typedef struct s_ssentry {
 	uint8_t status;
 	SSENTRY_CONTENT content;
 	size_t pathmem;		// strlen(path) + 1
-
 	void* next;			// link to the next SSENTRY
 } SSENTRY;
 // WARNING: 'path' is stored here, just after SSENTRY.
@@ -32,18 +31,22 @@ typedef struct s_ssentry {
 
 typedef struct s_sshash_header {
 	SSENTRY* first;
-	size_t	size;	// total memory used by all entries of this hash value (with paths)
+	size_t	size;		// total memory used by all entries of this hash value (with paths)
 } SSHASH_HEADER;
 
-typedef SSHASH_HEADER* snapshot_t;	// hashtable
+typedef struct s_snapshot {
+	int restored;		// 0: dynamically generated, 1: restored from file
+	SSHASH_HEADER* ht;	// hashtable
+} SNAPSHOT;
 
-snapshot_t create_snapshot();
-void destroy_snapshot(snapshot_t ss);
+int init_snapshot(SNAPSHOT* ss);
+int destroy_snapshot(SNAPSHOT* ss);
 
-snapshot_t generate_snapshot(char* path);
-SSENTRY* search(char* path, snapshot_t ss);
+int take_snapshot(char* path, SNAPSHOT* ss);
+SSENTRY* search(char* path, SNAPSHOT* ss);
 
-void process_dir(char* path, snapshot_t ss);
-void process_entry(char* path, char* name, snapshot_t ss);
+int process_dir(char* path, SNAPSHOT* ss);
+int process_entry(char* path, char* name, SNAPSHOT* ss);
+int add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss);
 
 #endif	// _SNAPSHOT_H

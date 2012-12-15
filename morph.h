@@ -1,6 +1,7 @@
 #ifndef _MORPH_H
 #define _MORPH_H
 
+/*
 #include "snapshot.h"
 
 #define ACTION_CREATE	0x01
@@ -26,5 +27,6 @@ SSPATCH* morph(snapshot_t A, snapshot_t B);
 snapshot_t patch(snapshot_t A, SSPATCH* P);
 
 int is_equal(snapshot_t A, snapshot_t B);
+*/
 
 #endif	// _MORPH_H

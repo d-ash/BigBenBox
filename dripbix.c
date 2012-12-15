@@ -10,17 +10,18 @@
 // TODO UTF?
 
 int main(int argc, char* argv[]) {
-	snapshot_t ss = NULL;
-	snapshot_t ss2 = NULL;
+	SNAPSHOT ss;
+	SNAPSHOT ss2;
 	SSENTRY* ssentry = NULL;
 
-	//ss = generate_snapshot("/home/d-ash/2IOMEGA/");
-	ss = generate_snapshot("/home/d-ash/distr");
-	//ss = generate_snapshot("/home/d-ash/distr/keepassx-0.4.3");
+	//"/home/d-ash/distr/keepassx-0.4.3");
 
+	take_snapshot("/home/d-ash/distr", &ss);
+	//take_snapshot("/home/d-ash/2IOMEGA/", &ss);
+	// TODO return something!
 
 	printf("\nSearching...");
-	ssentry = search("/home/d-ash/distr/keepassx-0.4.3.tar.gz", ss);
+	ssentry = search("/home/d-ash/distr/keepassx-0.4.3.tar.gz", &ss);
 	if (ssentry == NULL) {
 		printf("Not found\n");
 	} else {
@@ -28,7 +29,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	printf("\nSearching...");
-	ssentry = search("/home/d-ash/distr/keepassx-0.4.3/share/keepassx/i18n/qt_tr.qm", ss);
+	ssentry = search("/home/d-ash/distr/keepassx-0.4.3/share/keepassx/i18n/qt_tr.qm", &ss);
 	if (ssentry == NULL) {
 		printf("Not found\n");
 	} else {
@@ -36,19 +37,13 @@ int main(int argc, char* argv[]) {
 	}
 
 	printf("\nPacking...");
-	printf("%d\n", save_snapshot(ss, "./_packfile"));
+	printf("%d\n", save_snapshot("./_packfile", &ss));
 
 	printf("\nUnpacking...");
-	ss2 = load_snapshot("./_packfile");
-	printf("%d\n", ss2);
+	printf("%d\n", load_snapshot("./_packfile", &ss2));
 
-	/*
-	printf("\nPacking_2...");
-	printf("%d\n", save_snapshot(ss2, "./_packfile_2"));
-	*/
-
-	destroy_snapshot(ss2);
-	destroy_snapshot(ss);
+	destroy_snapshot(&ss2);
+	destroy_snapshot(&ss);
 
 	return 0;
 }

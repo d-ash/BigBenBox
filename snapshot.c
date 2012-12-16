@@ -91,8 +91,7 @@ SSENTRY* search(char* path, SNAPSHOT* ss) {
 
 int process_dir(char* path, SNAPSHOT* ss) {
 	DIR* dir = NULL;
-	struct dirent entry;
-	struct dirent* entry_ptr = NULL;
+	struct dirent* entry = NULL;
 	int res = 1;
 
 	PLOG("Processing dir: %s\n", path);
@@ -103,17 +102,20 @@ int process_dir(char* path, SNAPSHOT* ss) {
 	}
 
 	while (1) {
-		readdir_r(dir, &entry, &entry_ptr);
-		if (entry_ptr == NULL) {
+		// Windows port dirent.h does not have readdir_r().
+		// BTW we don't need it here.
+		entry = readdir(dir);
+		if (entry == NULL) {
+			// an error or the end of the directory
 			break;
 		}
 
-		if ((strncmp(entry.d_name, ".", 2) == 0) || 
-			(strncmp(entry.d_name, "..", 3) == 0)) {
+		if ((strncmp(entry->d_name, ".", 2) == 0) || 
+			(strncmp(entry->d_name, "..", 3) == 0)) {
 			continue;
 		}
 
-		if (!process_entry(path, entry.d_name, ss)) {
+		if (!process_entry(path, entry->d_name, ss)) {
 			res = 0;
 			break;
 		}
@@ -155,7 +157,7 @@ int process_entry(char* path, char* name, SNAPSHOT* ss) {
 	strncat(path_ptr, "/", 2);
 	strncat(path_ptr, name, nl + 1);
 
-	if (lstat(path_ptr, &entry_info)) {
+	if (stat(path_ptr, &entry_info)) {
 		PERR("Cannot get info about %s: %s\n", path_ptr, strerror(errno));
 		free(ssentry);
 		return 0;

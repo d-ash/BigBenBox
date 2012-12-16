@@ -1,4 +1,9 @@
 #include <sys/stat.h>
+
+#ifdef PLATFORM_WINDOWS
+#include <winsock2.h>
+#endif // PLATFORM_WINDOWS
+
 #include "pack.h"
 
 void construct_pfh(unsigned char* pfh /* PACKFILE_HEADER_SIZE */) {
@@ -15,7 +20,7 @@ int save_snapshot(char* path, SNAPSHOT* ss) {
 	unsigned char pfh[PACKFILE_HEADER_SIZE];
 	int res = 0;
 
-	f = fopen(path, "w");
+	f = fopen(path, "wb");
 	if (f == NULL) {
 		PERR("Cannot write a snapshot to %s: %s\n", path, strerror(errno));
 		return 0;
@@ -55,7 +60,7 @@ int load_snapshot(char* path, SNAPSHOT* ss) {
 	init_snapshot(ss);
 	ss->restored = 1;
 
-	f = fopen(path, "r");
+	f = fopen(path, "rb");
 	if (f == NULL) {
 		PERR("Cannot open %s: %s\n", path, strerror(errno));
 		destroy_snapshot(ss);

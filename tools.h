@@ -3,14 +3,26 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <dirent.h>
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <sys/types.h>
 
+#ifdef PLATFORM_WINDOWS
+#include "dirent.h"
+#else
+#include <dirent.h>
+#endif // PLATFORM_WINDOWS
+
+#ifdef PLATFORM_LINUX
 #define PLATFORM	0x0001
+#endif // PLATFORM_LINUX
+
+#ifdef PLATFORM_WINDOWS
+#define PLATFORM	0x1000
+#endif // PLATFORM_WINDOWS
+
 #define VERSION		0x0001
 
 #ifdef DEBUG

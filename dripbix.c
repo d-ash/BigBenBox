@@ -14,11 +14,11 @@ int main(int argc, char* argv[]) {
 	SNAPSHOT ss2;
 	SSENTRY* ssentry = NULL;
 
-	//"/home/d-ash/distr/keepassx-0.4.3");
+	take_snapshot("C:/Windows", &ss);
+	//take_snapshot("G:/English", &ss);
 
-	take_snapshot("/home/d-ash/distr", &ss);
+	//take_snapshot("/home/d-ash/distr", &ss);
 	//take_snapshot("/home/d-ash/2IOMEGA/", &ss);
-	// TODO return something!
 
 	printf("\nSearching...");
 	ssentry = search("/home/d-ash/distr/keepassx-0.4.3.tar.gz", &ss);

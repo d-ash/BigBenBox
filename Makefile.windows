@@ -3,11 +3,12 @@ dripbix: dripbix.c \
 	pack.c pack.h \
 	morph.c morph.h \
 	tools.c tools.h
-	gcc -o dripbix dripbix.c snapshot.c pack.c morph.c tools.c #-DDEBUG 
+	cl /nologo /c dripbix.c snapshot.c pack.c morph.c tools.c /D PLATFORM_WINDOWS
+	link /nologo /out:dripbix.exe *.obj ws2_32.lib
 
 test: test.c minunit.h \
 	tools.c tools.h
-	gcc test.c tools.c -o test
+	cl test.c tools.c
 
 watcher: watcher.c
-	gcc watcher.c -o watcher
+	cl watcher.c

@@ -4,7 +4,7 @@ dripbix: dripbix.c \
 	morph.c morph.h \
 	tools.c tools.h
 	cl /nologo /c dripbix.c snapshot.c pack.c morph.c tools.c /D PLATFORM_WINDOWS
-	link /nologo /out:dripbix.exe *.obj ws2_32.lib
+	link /nologo /out:dripbix.exe *.obj
 
 test: test.c minunit.h \
 	tools.c tools.h

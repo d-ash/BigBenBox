@@ -1,18 +1,11 @@
 #include <sys/stat.h>
-
-#ifdef PLATFORM_WINDOWS
-#include <winsock2.h>
-#endif // PLATFORM_WINDOWS
-
 #include "pack.h"
 
 void construct_pfh(unsigned char* pfh /* PACKFILE_HEADER_SIZE */) {
 	pfh[0] = PACKFILE_MAGIC;
 	pfh[1] = (is_little_endian() ? 1 : 0) | sizeof(size_t);
-
-	*(uint16_t*)(pfh + 2) = htons(PLATFORM);
-	*(uint16_t*)(pfh + 4) = htons(VERSION);
-	memset(pfh + 6, 0, 10);
+	pfh[2] = PLATFORM_ID;
+	pfh[3] = PACKFILE_STRUCT_VER;
 }
 
 int save_snapshot(char* path, SNAPSHOT* ss) {

@@ -24,20 +24,18 @@
  */
 
 #define PACKFILE_MAGIC			0x8D
-#define PACKFILE_HEADER_SIZE	16
+#define PACKFILE_STRUCT_VER		0x01
+#define PACKFILE_HEADER_SIZE	4
 
-// WARNING: do not read/write the struct,
-// and do not use sizeof(PACKFILE_HEADER).
-// There is memory packing and it is not portable!
-typedef struct s_packfile_header {
+// WARNING: do not read/write the struct.
+// Memory packing takes place!
+// This struct is here only for information purposes.
+struct s_packfile_header {
 	uint8_t magic;
 	uint8_t runtime;		// endianess | sizeof(size_t)
-	uint16_t platform;
-	uint16_t version;
-	uint32_t reserved1;
-	uint32_t reserved2;
-	uint16_t reserved3;
-} PACKFILE_HEADER;
+	uint8_t platform;
+	uint8_t pf_st_ver;		// version of a packfile structure
+};
 
 typedef struct s_pack_hash_header {
 	hash_t hash;

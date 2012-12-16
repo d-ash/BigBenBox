@@ -16,14 +16,14 @@
 #endif // PLATFORM_WINDOWS
 
 #ifdef PLATFORM_LINUX
-#define PLATFORM	0x0001
+#define PLATFORM_ID		0x01
 #endif // PLATFORM_LINUX
 
 #ifdef PLATFORM_WINDOWS
-#define PLATFORM	0x1000
+#define PLATFORM_ID		0x80
 #endif // PLATFORM_WINDOWS
 
-#define VERSION		0x0001
+#define VERSION			0x0001
 
 #ifdef DEBUG
 #define PLOG(...)	do { fprintf(stderr, __VA_ARGS__); } while (0);

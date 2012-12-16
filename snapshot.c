@@ -12,6 +12,8 @@ int init_snapshot(SNAPSHOT* ss) {
 
 	// assuming NULL == 0
 	memset(ss->ht, 0, sizeof(SSHASH_HEADER) * HASH_MAX);
+
+	return 1;
 }
 
 // does not free SNAPSHOT itself
@@ -43,6 +45,8 @@ int destroy_snapshot(SNAPSHOT* ss) {
 
 	free(ss->ht);
 	ss->ht = NULL;
+
+	return 1;
 }
 
 int take_snapshot(char* path, SNAPSHOT* ss) {

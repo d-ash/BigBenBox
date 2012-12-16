@@ -8,7 +8,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <stdint.h>
-#include <sys/mman.h>
 #include <sys/types.h>
 
 #define PLATFORM	0x0001

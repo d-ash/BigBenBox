@@ -1,11 +1,12 @@
 SRC = snapshot.c pack.c tools.c
 CC_FLAGS = -DPLATFORM_LINUX #-DDEBUG
+LIBS = -lssl
 
 dripbix: dripbix.c $(SRC)
-	gcc $(CC_FLAGS) -o dripbix dripbix.c $(SRC)
+	gcc $(CC_FLAGS) -o dripbix dripbix.c $(SRC) $(LIBS)
 
 test: test.c minunit.h $(SRC)
-	gcc $(CC_FLAGS) -o test test.c $(SRC)
+	gcc $(CC_FLAGS) -o test test.c $(SRC) $(LIBS)
 
 watcher: watcher.c
 	gcc watcher.c -o watcher

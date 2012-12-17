@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <openssl/sha.h>
+
 #ifdef PLATFORM_WINDOWS
 #include "dirent.h"
 #else
@@ -35,8 +37,8 @@
 
 #define PERR(...)	do { fprintf(stderr, "ERROR: "); fprintf(stderr, __VA_ARGS__); } while (0);
 
-//void hash_file(char* path, off_t size, unsigned char* result);
 uint16_t uint16_hash(void* buf, int len);
-void print_hex(void* md, int len);
+void print_hex(void* b, int len);
+int sha256_file(char* path, unsigned char hash[SHA256_DIGEST_LENGTH]);
 
 #endif	// _TOOLS_H

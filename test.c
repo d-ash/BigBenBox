@@ -19,6 +19,19 @@ static char* test_strncmp() {
 	return 0;
 }
 
+static char* test_sha256() {
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+	unsigned char ctrl[SHA256_DIGEST_LENGTH] =
+		{0xcc, 0xfa, 0xf6, 0xdb, 0xae, 0x74, 0x8e, 0xa5,
+		0x4e, 0x16, 0x32, 0x2b, 0xcd, 0x04, 0xeb, 0x13,
+		0x75, 0x08, 0x3e, 0x65, 0x11, 0x28, 0xae, 0x0c,
+		0xe0, 0x7d, 0xdb, 0x6d, 0xce, 0x4f, 0x6e, 0xeb};
+
+	MU_ASSERT("Cannot calc SHA256 on a file", sha256_file("tmp0/sha.hash", hash) != 0);
+	MU_ASSERT("SHA256 do not match", memcmp(hash, ctrl, SHA256_DIGEST_LENGTH) == 0);
+	return 0;
+}
+
 static char* test_ssentry_size() {
 	//printf("sizeof(SSENTRY): %u\n", sizeof(SSENTRY));
 	MU_ASSERT("sizeof(SSENTRY) is not appropriate for manual path aligment.", (sizeof(SSENTRY) % WORD_SIZE) == 0);
@@ -53,6 +66,7 @@ static char* test_snapshot_save_load() {
 static char* all_tests() {
 	mu_run_test(test_uint16_hash);
 	mu_run_test(test_strncmp);
+	mu_run_test(test_sha256);
 	mu_run_test(test_ssentry_size);
 	mu_run_test(test_snapshot_save_load);
 	return 0;

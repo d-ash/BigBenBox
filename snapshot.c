@@ -8,6 +8,7 @@ int init_snapshot(SNAPSHOT* ss) {
 	}
 
 	ss->restored = 0;		// by default it's generated
+	ss->tf_path = NULL;
 	ss->ht = malloc(sizeof(SSHASH_HEADER) * HASH_MAX);
 
 	// assuming NULL == 0
@@ -46,6 +47,10 @@ int destroy_snapshot(SNAPSHOT* ss) {
 	free(ss->ht);
 	ss->ht = NULL;
 
+	if (ss->tf_path != NULL) {
+		free(ss->tf_path);
+	}
+
 	return 1;
 }
 
@@ -70,6 +75,8 @@ int take_snapshot(char* path, SNAPSHOT* ss) {
 		destroy_snapshot(ss);
 		return 0;
 	}
+
+	ss->tf_path = strdup(path);
 
 	return 1;
 }

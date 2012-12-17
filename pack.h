@@ -27,15 +27,23 @@
 #define PACKFILE_STRUCT_VER		0x01
 #define PACKFILE_HEADER_SIZE	4
 
-// WARNING: do not read/write the struct.
-// Memory packing takes place!
-// This struct is here only for information purposes.
-struct s_packfile_header {
-	uint8_t magic;
-	uint8_t runtime;		// endianess | WORD_SIZE
-	uint8_t platform;
-	uint8_t pf_st_ver;		// version of a packfile structure
-};
+/**
+ *	WARNING: do not read/write the struct, it will not be cross-platform.
+ *	Memory packing takes place!
+ *
+ *		struct s_packfile_header {
+ *			uint8_t magic;
+ *			uint8_t runtime;		// endianess | WORD_SIZE
+ *			uint8_t platform;
+ *			uint8_t pf_st_ver;		// version of a packfile structure
+ *		};
+ */
+
+// In the following struct we use platform dependant types!
+typedef struct s_packfile_header_ext {
+	size_t tf_pathmem;			// strlen(tf_path) + 1
+} PACKFILE_HEADER_EXT;
+// tf_path where this snapshot was taken from
 
 typedef struct s_pack_hash_header {
 	hash_t hash;

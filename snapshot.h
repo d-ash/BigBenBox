@@ -38,6 +38,7 @@ typedef struct s_sshash_header {
 
 typedef struct s_snapshot {
 	int restored;				// 0: dynamically generated, 1: restored from file
+	char* tf_path;				// path where this snapshot was taken from
 	SSHASH_HEADER* ht;			// hashtable
 } SNAPSHOT;
 

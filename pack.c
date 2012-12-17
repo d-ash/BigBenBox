@@ -11,6 +11,7 @@ void construct_pfh(unsigned char* pfh /* PACKFILE_HEADER_SIZE */) {
 int save_snapshot(char* path, SNAPSHOT* ss) {
 	FILE* f;
 	unsigned char pfh[PACKFILE_HEADER_SIZE];
+	PACKFILE_HEADER_EXT pfh_ext;
 	int res = 0;
 
 	f = fopen(path, "wb");
@@ -20,12 +21,23 @@ int save_snapshot(char* path, SNAPSHOT* ss) {
 	}
 
 	construct_pfh(pfh);
-
-	if (fwrite(pfh, sizeof(pfh), 1, f) == 1) {
-		res = pack_snapshot(f, ss);
-	} else {
+	if (fwrite(pfh, sizeof(pfh), 1, f) < 1) {
 		PERR("Cannot write a header to the snapshot file %s: %s\n", path, strerror(errno));
+		return 0;
 	}
+
+	pfh_ext.tf_pathmem = strlen(ss->tf_path) + 1;
+	if (fwrite(&pfh_ext, sizeof(pfh_ext), 1, f) < 1) {
+		PERR("Cannot write an extended header to the snapshot file %s: %s\n", path, strerror(errno));
+		return 0;
+	}
+
+	if (fwrite(ss->tf_path, pfh_ext.tf_pathmem, 1, f) < 1) {
+		PERR("Cannot write tf_path to the snapshot file %s: %s\n", path, strerror(errno));
+		return 0;
+	}
+
+	res = pack_snapshot(f, ss);
 
 	if (fclose(f) != 0) {
 		PERR("Cannot save a snapshot to %s: %s\n", path, strerror(errno));
@@ -43,6 +55,7 @@ int load_snapshot(char* path, SNAPSHOT* ss) {
 	FILE* f = NULL;
 	unsigned char pfh[PACKFILE_HEADER_SIZE];
 	unsigned char pfh_control[PACKFILE_HEADER_SIZE];
+	PACKFILE_HEADER_EXT pfh_ext;
 	int res = 0;
 
 	if (ss == NULL) {
@@ -69,11 +82,33 @@ int load_snapshot(char* path, SNAPSHOT* ss) {
 	construct_pfh(pfh_control);
 
 	// We can correctly read files only created with this same program on this machine.
-	if (memcmp(pfh, pfh_control, sizeof(pfh)) == 0) {
-		res = unpack_snapshot(f, ss);
-	} else {
+	if (memcmp(pfh, pfh_control, sizeof(pfh)) != 0) {
 		PERR("Header of the snapshot file %s is incorrect.\n", path);
+		destroy_snapshot(ss);
+		return 0;
 	}
+
+	// Reading extended header. Platform dependent types are already in use!
+	if (fread(&pfh_ext, sizeof(pfh_ext), 1, f) < 1) {
+		PERR("Cannot read an extended header from a snapshot file: %s\n", strerror(errno));
+		destroy_snapshot(ss);
+		return 0;
+	}
+
+	ss->tf_path = malloc(pfh_ext.tf_pathmem);
+	if (ss->tf_path == NULL) {
+		PERR("Cannot allocate memory: %s\n", strerror(errno));
+		destroy_snapshot(ss);
+		return 0;
+	}
+
+	if (fread(ss->tf_path, pfh_ext.tf_pathmem, 1, f) < 1) {
+		PERR("Cannot read tf_path from a snapshot file: %s\n", strerror(errno));
+		destroy_snapshot(ss);
+		return 0;
+	}
+
+	res = unpack_snapshot(f, ss);
 
 	if (fclose(f) != 0) {
 		PERR("Cannot close %s: %s\n", path, strerror(errno));
@@ -83,10 +118,9 @@ int load_snapshot(char* path, SNAPSHOT* ss) {
 
 	if (!res) {
 		destroy_snapshot(ss);
-		return 0;
 	}
 
-	return 1;
+	return res;
 }
 
 int pack_snapshot(FILE* f, SNAPSHOT* ss) {

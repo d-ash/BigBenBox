@@ -133,7 +133,6 @@ int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss) {
 	struct stat entry_info;
 	SSENTRY* ssentry = NULL;
 	size_t pathmem = 0;
-	char* path_ptr = NULL;
 	char* path_full = NULL;		// path with a root dir of this processing
 	size_t pl = 0;
 	size_t nl = 0;
@@ -143,7 +142,7 @@ int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss) {
 
 	// allocating memory for SSENTRY + path, pathmem will be aligned to WORD_SIZE
 	// in order to get properly aligned memory after load_snapshot()
-	pathmem = (pl - skip + nl + 2 + WORD_SIZE) & ~(WORD_SIZE - 1);
+	pathmem = (pl - skip + nl + 1 + WORD_SIZE) & ~(WORD_SIZE - 1);
 	ssentry = malloc(sizeof(SSENTRY) + pathmem);
 
 	if (ssentry == NULL) {
@@ -151,18 +150,15 @@ int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss) {
 		return 0;
 	}
 
+	path_full = malloc(pathmem + skip + 1);
+	strncpy(path_full, path, pl + 1);
+	strncat(path_full, "/", 2);
+	strncat(path_full, name, nl + 1);
+
 	ssentry->status = 0;
 	ssentry->custom = 0;
 	ssentry->pathmem = pathmem;
-
-	path_ptr = SSENTRY_PATH(ssentry);
-	strncpy(path_ptr, path + skip, pl - skip + 1);
-	strncat(path_ptr, "/", 2);
-	strncat(path_ptr, name, nl + 1);
-
-	path_full = malloc(pathmem + skip);
-	memcpy(path_full, path, skip);
-	strncpy(path_full + skip, path_ptr, pathmem);
+	strncpy(SSENTRY_PATH(ssentry), path_full + skip + 1, pathmem);
 
 	if (stat(path_full, &entry_info)) {
 		PERR("Cannot get info about %s: %s\n", path_full, strerror(errno));

@@ -41,7 +41,7 @@ static char* test_snapshot_save_load() {
 	load_snapshot("_test_packfile", &ss2);
 	MU_ASSERT("Restored snapshot differs from original", find_changes(&ss, &ss2) == 0);
 
-	unlink("_test_packfile");
+	//unlink("_test_packfile");
 	destroy_snapshot(&ss2);
 	destroy_snapshot(&ss);
 

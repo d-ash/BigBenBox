@@ -43,10 +43,10 @@ static char* test_snapshot_save_load() {
 	SNAPSHOT ss2;
 
 #ifdef PLATFORM_WINDOWS
-	take_snapshot("G:/English", &ss);
+	take_snapshot("G:\\English\\", &ss);
 	//take_snapshot("C:/Windows", &ss);
 #else
-	take_snapshot("/home/d-ash/distr", &ss);
+	take_snapshot("/home/d-ash/distr/", &ss);
 	//take_snapshot("/home/d-ash/2IOMEGA/", &ss);
 #endif // PLATFORM_WINDOWS
 

@@ -50,6 +50,8 @@ int destroy_snapshot(SNAPSHOT* ss) {
 }
 
 int take_snapshot(char* path, SNAPSHOT* ss) {
+	int len = 0;
+
 	if (ss == NULL) {
 		PERR("NULL value in %s()\n", __FUNCTION__);
 		return 0;
@@ -57,7 +59,14 @@ int take_snapshot(char* path, SNAPSHOT* ss) {
 
 	init_snapshot(ss);
 
-	if (!process_dir(path, strlen(path), ss)) {
+	len = strlen(path);
+	// trim slash at the end if necessary
+	if (len > 1 && (path[len] == '/' || path[len] == '\\')) {
+		len--;
+		path[len] = 0;
+	}
+
+	if (!process_dir(path, len, ss)) {
 		destroy_snapshot(ss);
 		return 0;
 	}

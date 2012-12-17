@@ -57,7 +57,7 @@ int take_snapshot(char* path, SNAPSHOT* ss) {
 
 	init_snapshot(ss);
 
-	if (!process_dir(path, ss)) {
+	if (!process_dir(path, strlen(path), ss)) {
 		destroy_snapshot(ss);
 		return 0;
 	}
@@ -89,7 +89,7 @@ SSENTRY* search(char* path, SNAPSHOT* ss) {
 	return ssentry;
 }
 
-int process_dir(char* path, SNAPSHOT* ss) {
+int process_dir(char* path, size_t skip, SNAPSHOT* ss) {
 	DIR* dir = NULL;
 	struct dirent* entry = NULL;
 	int res = 1;
@@ -115,7 +115,7 @@ int process_dir(char* path, SNAPSHOT* ss) {
 			continue;
 		}
 
-		if (!process_entry(path, entry->d_name, ss)) {
+		if (!process_entry(path, skip, entry->d_name, ss)) {
 			res = 0;
 			break;
 		}
@@ -129,11 +129,12 @@ int process_dir(char* path, SNAPSHOT* ss) {
 	return res;
 }
 
-int process_entry(char* path, char* name, SNAPSHOT* ss) {
+int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss) {
 	struct stat entry_info;
 	SSENTRY* ssentry = NULL;
 	size_t pathmem = 0;
 	char* path_ptr = NULL;
+	char* path_full = NULL;		// path with a root dir of this processing
 	size_t pl = 0;
 	size_t nl = 0;
 
@@ -142,7 +143,7 @@ int process_entry(char* path, char* name, SNAPSHOT* ss) {
 
 	// allocating memory for SSENTRY + path, pathmem will be aligned to WORD_SIZE
 	// in order to get properly aligned memory after load_snapshot()
-	pathmem = (pl + nl + 2 + WORD_SIZE) & ~(WORD_SIZE - 1);
+	pathmem = (pl - skip + nl + 2 + WORD_SIZE) & ~(WORD_SIZE - 1);
 	ssentry = malloc(sizeof(SSENTRY) + pathmem);
 
 	if (ssentry == NULL) {
@@ -151,16 +152,22 @@ int process_entry(char* path, char* name, SNAPSHOT* ss) {
 	}
 
 	ssentry->status = 0;
+	ssentry->custom = 0;
 	ssentry->pathmem = pathmem;
 
 	path_ptr = SSENTRY_PATH(ssentry);
-	strncpy(path_ptr, path, pl + 1);
+	strncpy(path_ptr, path + skip, pl - skip + 1);
 	strncat(path_ptr, "/", 2);
 	strncat(path_ptr, name, nl + 1);
 
-	if (stat(path_ptr, &entry_info)) {
-		PERR("Cannot get info about %s: %s\n", path_ptr, strerror(errno));
+	path_full = malloc(pathmem + skip);
+	memcpy(path_full, path, skip);
+	strncpy(path_full + skip, path_ptr, pathmem);
+
+	if (stat(path_full, &entry_info)) {
+		PERR("Cannot get info about %s: %s\n", path_full, strerror(errno));
 		free(ssentry);
+		free(path_full);
 		return 0;
 	}
 
@@ -169,15 +176,17 @@ int process_entry(char* path, char* name, SNAPSHOT* ss) {
 
 	if (S_ISDIR(entry_info.st_mode)) {
 		ssentry->status |= SSENTRY_STATUS_DIR;
-		process_dir(path_ptr, ss);
+		process_dir(path_full, skip, ss);
 	} else if (S_ISREG(entry_info.st_mode)) {
 		ssentry->status &= ~SSENTRY_STATUS_DIR;
 	} else {
-		PLOG("Skipping irregular file: %s\n", path_ptr);
+		PLOG("Skipping irregular file: %s\n", path_full);
 		free(ssentry);
+		free(path_full);
 		return 1;		// it is a successful operation
 	}
 
+	free(path_full);
 	return add_to_snapshot(ssentry, ss);
 }
 
@@ -197,4 +206,69 @@ int add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss) {
 	ss->ht[hash].size += sizeof(SSENTRY) + ssentry->pathmem;
 
 	return 1;
+}
+
+int find_changes(SNAPSHOT* ss0, SNAPSHOT* ss1) {
+	hash_t i;
+	SSENTRY* ssentry = NULL;
+	SSENTRY* found = NULL;
+	char* path = NULL;
+	int differs = 0;
+
+	if (ss0 == NULL || ss0->ht == NULL || ss1 == NULL || ss1->ht == NULL) {
+		PERR("NULL value in %s()\n", __FUNCTION__);
+		return 0;	// TODO what we need return?
+	}
+
+	for (i = 0; i < HASH_MAX; i++) {
+		ssentry = ss1->ht[i].first;
+
+		while (ssentry != NULL) {
+			path = SSENTRY_PATH(ssentry);
+			found = search(path, ss0);
+
+			if (found == NULL) {
+				if (differs == 0) {
+					differs = 1;
+				}
+				printf("CHANGE_2: %s\n", path);
+			} else {
+				found->custom = 1;		// not to be checked at the loop over ss0
+				if (found->status != ssentry->status
+						|| found->content.mtime != ssentry->content.mtime
+						|| found->content.size != ssentry->content.size) {
+					if (differs == 0) {
+						differs = 1;
+					}
+					printf("CHANGE_1: %s\n", path);
+				}
+			}
+
+			ssentry = ssentry->next;
+		}
+	}
+
+	for (i = 0; i < HASH_MAX; i++) {
+		ssentry = ss0->ht[i].first;
+
+		while (ssentry != NULL) {
+			if (ssentry->custom == 0) {
+				path = SSENTRY_PATH(ssentry);
+				found = search(path, ss1);
+
+				if (found == NULL) {
+					if (differs == 0) {
+						differs = 1;
+					}
+					printf("CHANGE_3: %s\n", path);
+				}
+			} else {
+				ssentry->custom = 0;	// resetting to a default value
+			}
+
+			ssentry = ssentry->next;
+		}
+	}
+
+	return differs;
 }

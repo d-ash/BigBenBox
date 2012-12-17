@@ -1,13 +1,11 @@
-dripbix: dripbix.c \
-	snapshot.c snapshot.h \
-	pack.c pack.h \
-	morph.c morph.h \
-	tools.c tools.h
-	gcc -o dripbix dripbix.c snapshot.c pack.c morph.c tools.c -DPLATFORM_LINUX #-DDEBUG 
+SRC = snapshot.c pack.c tools.c
+CC_FLAGS = -DPLATFORM_LINUX #-DDEBUG
 
-test: test.c minunit.h \
-	tools.c tools.h
-	gcc test.c tools.c -o test
+dripbix: dripbix.c $(SRC)
+	gcc $(CC_FLAGS) -o dripbix dripbix.c $(SRC)
+
+test: test.c minunit.h $(SRC)
+	gcc $(CC_FLAGS) -o test test.c $(SRC)
 
 watcher: watcher.c
 	gcc watcher.c -o watcher

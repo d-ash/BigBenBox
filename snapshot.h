@@ -21,6 +21,7 @@ typedef struct s_ssentry_content {
 
 typedef struct s_ssentry {
 	uint8_t status;
+	uint8_t custom;				// can be used by used code, at the end it has to be reset to 0
 	SSENTRY_CONTENT content;
 	size_t pathmem;				// strlen(path) + 1 + additional bytes for memory alignment
 	void* next;					// link to the next SSENTRY
@@ -46,8 +47,10 @@ int destroy_snapshot(SNAPSHOT* ss);
 int take_snapshot(char* path, SNAPSHOT* ss);
 SSENTRY* search(char* path, SNAPSHOT* ss);
 
-int process_dir(char* path, SNAPSHOT* ss);
-int process_entry(char* path, char* name, SNAPSHOT* ss);
+int process_dir(char* path, size_t skip, SNAPSHOT* ss);
+int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss);
 int add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss);
+
+int find_changes(SNAPSHOT* ss0, SNAPSHOT* ss1);
 
 #endif	// _SNAPSHOT_H

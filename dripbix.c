@@ -10,18 +10,13 @@
 // TODO UTF?
 
 int main(int argc, char* argv[]) {
-	SNAPSHOT ss;
-	SNAPSHOT ss2;
-	SSENTRY* ssentry = NULL;
+	SNAPSHOT ss0;
+	SNAPSHOT ss1;
 
-#ifdef PLATFORM_WINDOWS
-	//take_snapshot("C:/Windows", &ss);
-	take_snapshot("G:/English", &ss);
-#else
-	take_snapshot("/home/d-ash/distr", &ss);
-	//take_snapshot("/home/d-ash/2IOMEGA/", &ss);
-#endif // PLATFORM_WINDOWS
+	take_snapshot("tmp0", &ss0);
+	take_snapshot("tmp1", &ss1);
 
+	/*
 	printf("\nSearching...");
 	ssentry = search("/home/d-ash/distr/keepassx-0.4.3.tar.gz", &ss);
 	if (ssentry == NULL) {
@@ -37,15 +32,13 @@ int main(int argc, char* argv[]) {
 	} else {
 		printf("Found: %0x\t%s\n", ssentry, SSENTRY_PATH(ssentry));
 	}
+	*/
 
-	printf("\nPacking...");
-	printf("%d\n", save_snapshot("./_packfile", &ss));
+	printf("Getting changes...\n");
+	printf("%d\n", find_changes(&ss0, &ss1));
 
-	printf("\nUnpacking...");
-	printf("%d\n", load_snapshot("./_packfile", &ss2));
-
-	destroy_snapshot(&ss2);
-	destroy_snapshot(&ss);
+	destroy_snapshot(&ss1);
+	destroy_snapshot(&ss0);
 
 	return 0;
 }

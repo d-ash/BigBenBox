@@ -25,6 +25,8 @@
 
 #define VERSION			0x0001
 
+#define WORD_SIZE		sizeof(size_t)
+
 #ifdef DEBUG
 #define PLOG(...)	do { fprintf(stderr, __VA_ARGS__); } while (0);
 #else

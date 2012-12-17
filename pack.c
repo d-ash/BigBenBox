@@ -3,7 +3,7 @@
 
 void construct_pfh(unsigned char* pfh /* PACKFILE_HEADER_SIZE */) {
 	pfh[0] = PACKFILE_MAGIC;
-	pfh[1] = (is_little_endian() ? 1 : 0) | sizeof(size_t);
+	pfh[1] = (is_little_endian() ? 1 : 0) | WORD_SIZE;
 	pfh[2] = PLATFORM_ID;
 	pfh[3] = PACKFILE_STRUCT_VER;
 }
@@ -69,7 +69,6 @@ int load_snapshot(char* path, SNAPSHOT* ss) {
 	construct_pfh(pfh_control);
 
 	// We can correctly read files only created with this same program on this machine.
-	// TODO VERSION can differ!
 	if (memcmp(pfh, pfh_control, sizeof(pfh)) == 0) {
 		res = unpack_snapshot(f, ss);
 	} else {
@@ -107,7 +106,7 @@ int pack_snapshot(FILE* f, SNAPSHOT* ss) {
 		h.hash = i;
 		h.size = cur_hh->size;
 
-		if (fwrite(&h, sizeof(PACK_HASH_HEADER), 1, f) < 1) {
+		if (fwrite(&h, sizeof(h), 1, f) < 1) {
 			return 0;
 		}
 
@@ -150,10 +149,10 @@ int unpack_snapshot(FILE* f, SNAPSHOT* ss) {
 			return 0;
 		}
 
+		// Set correct values for SSENTRY.next, all restored pointers are incorrect,
+		// but we are searching for NULL value!
 		ssentry = cur_hh->first;
 		while (ssentry->next != NULL) {
-			// Set correct values for SSENTRY.next, all restored pointers are incorrect,
-			// but we are searching for NULL value!
 			ssentry->next = (unsigned char*) ssentry + sizeof(SSENTRY) + ssentry->pathmem;
 
 			if ((unsigned char*) ssentry->next > max_next) {

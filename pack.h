@@ -32,7 +32,7 @@
 // This struct is here only for information purposes.
 struct s_packfile_header {
 	uint8_t magic;
-	uint8_t runtime;		// endianess | sizeof(size_t)
+	uint8_t runtime;		// endianess | WORD_SIZE
 	uint8_t platform;
 	uint8_t pf_st_ver;		// version of a packfile structure
 };

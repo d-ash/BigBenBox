@@ -22,21 +22,22 @@ typedef struct s_ssentry_content {
 typedef struct s_ssentry {
 	uint8_t status;
 	SSENTRY_CONTENT content;
-	size_t pathmem;		// strlen(path) + 1
-	void* next;			// link to the next SSENTRY
+	size_t pathmem;				// strlen(path) + 1 + additional bytes for memory alignment
+	void* next;					// link to the next SSENTRY
 } SSENTRY;
 // WARNING: 'path' is stored here, just after SSENTRY.
+// sizeof(SSENTRY) must be multiple of WORD_SIZE
 
 #define SSENTRY_PATH(s)	((char*) s + sizeof(SSENTRY))
 
 typedef struct s_sshash_header {
 	SSENTRY* first;
-	size_t	size;		// total memory used by all entries of this hash value (with paths)
+	size_t	size;				// total memory used by all entries of this hash value (with paths)
 } SSHASH_HEADER;
 
 typedef struct s_snapshot {
-	int restored;		// 0: dynamically generated, 1: restored from file
-	SSHASH_HEADER* ht;	// hashtable
+	int restored;				// 0: dynamically generated, 1: restored from file
+	SSHASH_HEADER* ht;			// hashtable
 } SNAPSHOT;
 
 int init_snapshot(SNAPSHOT* ss);

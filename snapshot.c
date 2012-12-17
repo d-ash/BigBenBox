@@ -140,8 +140,9 @@ int process_entry(char* path, char* name, SNAPSHOT* ss) {
 	pl = strlen(path);
 	nl = strlen(name);
 
-	// allocating memory for SSENTRY + path
-	pathmem = pl + nl + 2;
+	// allocating memory for SSENTRY + path, pathmem will be aligned to WORD_SIZE
+	// in order to get properly aligned memory after load_snapshot()
+	pathmem = (pl + nl + 2 + WORD_SIZE) & ~(WORD_SIZE - 1);
 	ssentry = malloc(sizeof(SSENTRY) + pathmem);
 
 	if (ssentry == NULL) {
@@ -188,7 +189,7 @@ int add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss) {
 		return 0;
 	}
 
-	hash = uint16_hash(SSENTRY_PATH(ssentry), ssentry->pathmem - 1);
+	hash = uint16_hash(SSENTRY_PATH(ssentry), strlen(SSENTRY_PATH(ssentry)));
 
 	// push to the beginning of the list
 	ssentry->next = ss->ht[hash].first;

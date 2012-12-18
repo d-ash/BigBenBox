@@ -33,30 +33,34 @@ static char* test_sha256() {
 }
 
 static char* test_ssentry_size() {
-	//printf("sizeof(SSENTRY): %u\n", sizeof(SSENTRY));
+	printf("sizeof(SSENTRY): %u\n", sizeof(SSENTRY));
 	MU_ASSERT("sizeof(SSENTRY) is not appropriate for manual path aligment.", (sizeof(SSENTRY) % WORD_SIZE) == 0);
 	return 0;
 }
 
 static char* test_snapshot_save_load() {
-	SNAPSHOT ss;
+	SNAPSHOT ss1;
 	SNAPSHOT ss2;
 
 #ifdef PLATFORM_WINDOWS
-	take_snapshot("G:\\English\\", &ss);
-	//take_snapshot("C:/Windows", &ss);
+	take_snapshot("G:\\English\\", &ss1);
+	//take_snapshot("C:/Windows", &ss1);
 #else
-	take_snapshot("/home/d-ash/distr/", &ss);
-	//take_snapshot("/home/d-ash/2IOMEGA/", &ss);
+	take_snapshot("/home/d-ash/distr/", &ss1);
+	//take_snapshot("/home/d-ash/2IOMEGA/", &ss1);
 #endif // PLATFORM_WINDOWS
 
-	save_snapshot("_test_packfile", &ss);
+	save_snapshot("_test_packfile", &ss1);
 	load_snapshot("_test_packfile", &ss2);
-	MU_ASSERT("Restored snapshot differs from original", find_changes(&ss, &ss2) == 0);
+
+	printf("ss1 was taken from %s\n", ss1.tf_path);
+	printf("ss2 was taken from %s\n", ss2.tf_path);
+	MU_ASSERT("Different values of tf_path", strcmp(ss1.tf_path, ss2.tf_path) == 0);
+	MU_ASSERT("Restored snapshot differs from original", find_changes(&ss1, &ss2) == 0);
 
 	//unlink("_test_packfile");
 	destroy_snapshot(&ss2);
-	destroy_snapshot(&ss);
+	destroy_snapshot(&ss1);
 
 	return 0;
 }

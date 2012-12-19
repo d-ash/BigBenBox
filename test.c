@@ -53,8 +53,6 @@ static char* test_snapshot_save_load() {
 	save_snapshot("_test_packfile", &ss1);
 	load_snapshot("_test_packfile", &ss2);
 
-	printf("ss1 was taken from %s\n", ss1.tf_path);
-	printf("ss2 was taken from %s\n", ss2.tf_path);
 	MU_ASSERT("Different values of tf_path", strcmp(ss1.tf_path, ss2.tf_path) == 0);
 	MU_ASSERT("Restored snapshot differs from original", find_changes(&ss1, &ss2) == 0);
 

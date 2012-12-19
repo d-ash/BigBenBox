@@ -2,18 +2,29 @@
 #include "tools.h"
 
 // SDBM hashing algorithm
-uint16_t uint16_hash(void* buf, int len) {
-	uint16_t hash = 0;
-	uint16_t word;
+uint32_t uint32_hash(void* buf, int len) {
+	uint32_t hash = 0;
 
 	while (--len >= 0) {
-		word = (uint16_t) ((unsigned char*) buf)[len];
-		hash = word + (hash << 6) + (hash << 16) - hash;
+		hash = (uint32_t) ((unsigned char*) buf)[len] + (hash << 6) + (hash << 16) - hash;
 	}
 
 	return hash;
 }
 
+// SDBM hashing algorithm
+// the result of this is equivalent to (uint32_hash(buf, len) & 0x0000FFFF) 
+uint16_t uint16_hash(void* buf, int len) {
+	uint16_t hash = 0;
+
+	while (--len >= 0) {
+		hash = (uint16_t) ((unsigned char*) buf)[len] + (hash << 6) - hash;
+	}
+
+	return hash;
+}
+
+// network order (big-endian)
 void print_hex(void* b, int len) {
     int i;
 

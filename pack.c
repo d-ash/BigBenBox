@@ -1,7 +1,7 @@
 #include <sys/stat.h>
 #include "pack.h"
 
-void construct_pfh(unsigned char* pfh /* PACKFILE_HEADER_SIZE */) {
+void construct_pfh(unsigned char pfh[PACKFILE_HEADER_SIZE]) {
 	pfh[0] = PACKFILE_MAGIC;
 	pfh[1] = (is_little_endian() ? 1 : 0) | WORD_SIZE;
 	pfh[2] = PLATFORM_ID;

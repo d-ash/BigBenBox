@@ -28,7 +28,7 @@
 #define PACKFILE_HEADER_SIZE	4
 
 /**
- *	WARNING: do not read/write the struct, it will not be cross-platform.
+ *	WARNING: do not read/write C-structs, it will be not cross-platform.
  *	Memory packing takes place!
  *
  *		struct s_packfile_header {
@@ -50,6 +50,8 @@ typedef struct s_pack_hash_header {
 	hash_t hash;
 	size_t size;			// memory size used by the following list of entries
 } PACK_HASH_HEADER;
+
+void construct_pfh(unsigned char pfh[PACKFILE_HEADER_SIZE]);
 
 int save_snapshot(char* path, SNAPSHOT* ss);
 int load_snapshot(char* path, SNAPSHOT* ss);

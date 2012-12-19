@@ -27,7 +27,7 @@ uint16_t uint16_hash(void* buf, size_t len) {
 }
 
 // Streaming version of SDBM-32
-// Accepts and returns hash value through parameters.
+// Accepts and returns hash value via parameters.
 void update_checksum(void* buf, size_t len, checksum_t* checksum) {
 	uint32_t hash;
 	size_t i;

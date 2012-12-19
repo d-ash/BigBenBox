@@ -37,9 +37,12 @@
 
 #define PERR(...)	do { fprintf(stderr, "ERROR: "); fprintf(stderr, __VA_ARGS__); } while (0);
 
-uint32_t uint32_hash(void* buf, int len);
-uint16_t uint16_hash(void* buf, int len);
-void print_hex(void* b, int len);
+typedef uint32_t checksum_t;
+
+uint32_t uint32_hash(void* buf, size_t len);
+uint16_t uint16_hash(void* buf, size_t len);
+void update_checksum(void* buf, size_t len, checksum_t* checksum);
+void print_hex(void* b, size_t len);
 int sha256_file(char* path, unsigned char hash[SHA256_DIGEST_LENGTH]);
 
 #endif	// _TOOLS_H

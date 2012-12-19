@@ -41,6 +41,7 @@
 
 // In the following struct we use platform dependant types!
 typedef struct s_packfile_header_ext {
+	hash_t hash_count;			// count of written hashes
 	size_t tf_pathmem;			// strlen(tf_path) + 1
 } PACKFILE_HEADER_EXT;
 // tf_path where this snapshot was taken from
@@ -53,7 +54,7 @@ typedef struct s_pack_hash_header {
 int save_snapshot(char* path, SNAPSHOT* ss);
 int load_snapshot(char* path, SNAPSHOT* ss);
 
-int pack_snapshot(FILE* f, SNAPSHOT* ss);
-int unpack_snapshot(FILE* f, SNAPSHOT* ss);
+int pack_snapshot(FILE* f, SNAPSHOT* ss, checksum_t* checksum_p);
+int unpack_snapshot(FILE* f, SNAPSHOT* ss, checksum_t* checksum_p);
 
 #endif	// _PACK_H

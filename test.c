@@ -7,8 +7,28 @@
 
 int tests_run = 0;
 
-static char* test_uint16_hash() {
-	MU_ASSERT("uint16_hash() failed", uint16_hash("abcde", 5) == 0x1d63);
+static char* test_uint16_32_hashes() {
+	uint32_t x;
+	uint16_t y;
+
+	x = uint32_hash("abcde", 5);
+	y = uint16_hash("abcde", 5);
+
+	MU_ASSERT("uint32_hash() failed", x == 0xbd500063);
+	MU_ASSERT("uint16_hash() failed", y == 0x0063);
+	return 0;
+}
+
+static char* test_checksum() {
+	char s[17] = "hnd872kz09_2=s9r";
+	checksum_t x = 0;
+	checksum_t y = 0;
+
+	update_checksum(s, 16, &x);
+	update_checksum(s, 8, &y);
+	update_checksum(s + 8, 8, &y);
+
+	MU_ASSERT("Checksum algorithm failed", x == y);
 	return 0;
 }
 
@@ -66,7 +86,8 @@ static char* test_snapshot_save_load() {
 // ================================================
 
 static char* all_tests() {
-	mu_run_test(test_uint16_hash);
+	mu_run_test(test_uint16_32_hashes);
+	mu_run_test(test_checksum);
 	mu_run_test(test_strncmp);
 	mu_run_test(test_sha256);
 	mu_run_test(test_ssentry_size);
@@ -82,7 +103,7 @@ int main(int argc, char* argv[]) {
 	if (result == 0) {
 		printf("\nALL TESTS PASSED\n");
 	} else {
-		printf("\nFAILED: %s\n", result);
+		printf("\nTEST FAILED: %s\n", result);
 	}
 	printf("Tests run: %d\n", tests_run);
 

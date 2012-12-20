@@ -1,3 +1,15 @@
+/**
+ * Snapshot can be restored or generated manually.
+ * Restored snapshot are a special case when memory for entries
+ * is allocated in one huge chunk (at SNAPSHOT.ht->first).
+ * So destroying must be kept according to the flag SNAPSHOT.restored.
+ * And adding to this kind of snapshots is prohibited.
+ *
+ * In the future this can be reimplemented, so that every entry would have a separate flag.
+ * This will allow to manipulate with restored snapshots as with normal.
+ * And it will be possible to compact a memory usage by sequential saving & loading of snapshot.
+ */
+
 #ifndef _SNAPSHOT_H
 #define _SNAPSHOT_H
 

@@ -1,14 +1,14 @@
-dripbix: dripbix.c \
-	snapshot.c snapshot.h \
-	pack.c pack.h \
-	morph.c morph.h \
-	tools.c tools.h
-	cl /nologo /c dripbix.c snapshot.c pack.c morph.c tools.c /D PLATFORM_WINDOWS
-	link /nologo /out:dripbix.exe *.obj
+SRC = snapshot.c pack.c tools.c
+CC_FLAGS = /nologo /D PLATFORM_WINDOWS #/D DEBUG
+LK_FLAGS = /nologo
+LIBS = -lssl
 
-test: test.c minunit.h \
-	tools.c tools.h
-	cl test.c tools.c
+dripbix: dripbix.c $(SRC)
+	cl $(CC_FLAGS) /c dripbix.c $(SRC)
+	link $(LK_FLAGS) /out:dripbix.exe *.obj $(LIBS)
+
+test: test.c minunit.h $(SRC)
+	cl $(CC_FLAGS) test.c $(SRC) $(LIBS)
 
 watcher: watcher.c
 	cl watcher.c

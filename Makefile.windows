@@ -4,13 +4,20 @@ LK_FLAGS = /nologo
 LIBS = ws2_32.lib OpenSSL-Win32\lib\libeay32.lib
 
 dripbix: dripbix.c $(SRC)
+	del test.obj
 	cl $(CC_FLAGS) /c dripbix.c $(SRC)
 	link $(LK_FLAGS) /out:dripbix.exe *.obj $(LIBS)
 	copy /Y dripbix.exe bin\windows
 
 test: test.c minunit.h $(SRC)
+	del dripbix.obj
 	cl $(CC_FLAGS) test.c $(SRC) $(LIBS)
 	copy /Y test.exe bin\windows
 
 watcher: watcher.c
 	cl watcher.c
+
+clean:
+	del *.exe
+	del *.obj
+	del bin\windows\*.exe

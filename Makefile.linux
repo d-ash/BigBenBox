@@ -10,3 +10,7 @@ test: test.c minunit.h $(SRC)
 
 watcher: watcher.c
 	gcc watcher.c -o watcher
+
+clean:
+	rm dripbix
+	rm test

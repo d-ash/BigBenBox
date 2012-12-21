@@ -78,6 +78,7 @@ int sha256_file(char* path, unsigned char hash[SHA256_DIGEST_LENGTH]) {
 	}
 
     while (was_read = fread(buf, 1, len, f)) {
+	printf("READ: %u\n", was_read);
         SHA256_Update(&sha, buf, was_read);
     }
 

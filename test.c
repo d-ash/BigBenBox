@@ -48,9 +48,6 @@ static char* test_sha256() {
 		0xe0, 0x7d, 0xdb, 0x6d, 0xce, 0x4f, 0x6e, 0xeb};
 	
 	MU_ASSERT("Cannot calc SHA256 on a file", sha256_file("tmp0/sha.hash", hash) != 0);
-	printf("\n");
-	print_hex(hash, SHA256_DIGEST_LENGTH);
-	printf("\n");
 	MU_ASSERT("SHA256 do not match", memcmp(hash, ctrl, SHA256_DIGEST_LENGTH) == 0);
 	return 0;
 }

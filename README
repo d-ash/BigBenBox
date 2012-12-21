@@ -4,3 +4,4 @@ TODO:
 Searching:
 1. Zero-step, go up to the first splitting found.
 2. The second changing of direction is not allowed.
+3. Lockfiles for: head, lastid, stones/.../ch*

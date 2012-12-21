@@ -1,18 +1,29 @@
-SRC = snapshot.c pack.c tools.c
+CLIENT_OUTNAME = bbb.exe
+SERVER_OUTNAME = bbbd.exe
+TEST_OUTNAME = test.exe
+
+CLIENT_SRC = snapshot.c pack.c tools.c
+SERVER_SRC = snapshot.c pack.c tools.c
 CC_FLAGS = /nologo /D PLATFORM_WINDOWS /I OpenSSL-Win32\include #/D DEBUG
 LK_FLAGS = /nologo
 LIBS = ws2_32.lib OpenSSL-Win32\lib\libeay32.lib
 
-dripbix: dripbix.c $(SRC)
-	del test.obj
-	cl $(CC_FLAGS) /c dripbix.c $(SRC)
-	link $(LK_FLAGS) /out:dripbix.exe *.obj $(LIBS)
-	copy /Y dripbix.exe bin\windows
+client: bbb.c $(CLIENT_SRC)
+	del *.obj
+	cl $(CC_FLAGS) /c bbb.c $(CLIENT_SRC)
+	link $(LK_FLAGS) /out:$(CLIENT_OUTNAME) *.obj $(LIBS)
+	copy /Y $(CLIENT_OUTNAME) bin\windows
 
-test: test.c minunit.h $(SRC)
-	del dripbix.obj
-	cl $(CC_FLAGS) test.c $(SRC) $(LIBS)
-	copy /Y test.exe bin\windows
+server: bbb.c $(SERVER_SRC)
+	del *.obj
+	cl $(CC_FLAGS) /c bbb.c $(SERVER_SRC)
+	link $(LK_FLAGS) /out:$(SERVER_OUTNAME) *.obj $(LIBS)
+	copy /Y $(SERVER_OUTNAME) bin\windows
+
+test: test.c minunit.h $(CLIENT_SRC)
+	del *.obj
+	cl $(CC_FLAGS) test.c $(CLIENT_SRC) $(LIBS)
+	copy /Y $(TEST_OUTNAME) bin\windows
 
 watcher: watcher.c
 	cl watcher.c

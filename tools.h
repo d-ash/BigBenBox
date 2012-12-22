@@ -21,6 +21,10 @@
 #define PLATFORM_ID		0x01
 #endif // PLATFORM_LINUX
 
+#ifdef PLATFORM_OSX
+#define PLATFORM_ID		0x20
+#endif // PLATFORM_OSX
+
 #ifdef PLATFORM_WINDOWS
 #define PLATFORM_ID		0x80
 #endif // PLATFORM_WINDOWS

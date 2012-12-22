@@ -1,0 +1,28 @@
+# TODO: Include OpenSSL library with the distribution.
+# Apple with discontinue native OpenSSL.
+
+CLIENT_OUTNAME = bbb
+SERVER_OUTNAME = bbbd
+TEST_OUTNAME = test
+
+CLIENT_SRC = snapshot.c pack.c tools.c
+SERVER_SRC = snapshot.c pack.c tools.c
+CC_FLAGS = -DPLATFORM_OSX #-DDEBUG
+LIBS = -lssl -lcrypto
+
+client: bbb.c $(CLIENT_SRC)
+	gcc $(CC_FLAGS) -o $(CLIENT_OUTNAME) bbb.c $(CLIENT_SRC) $(LIBS)
+
+server: bbb.c $(SERVER_SRC)
+	gcc $(CC_FLAGS) -o $(SERVER_OUTNAME) bbb.c $(SERVER_SRC) $(LIBS)
+
+test: test.c minunit.h $(CLIENT_SRC)
+	gcc $(CC_FLAGS) -o $(TEST_OUTNAME) test.c $(CLIENT_SRC) $(LIBS)
+
+watcher: watcher.c
+	gcc watcher.c -o watcher
+
+clean:
+	rm $(SERVER_OUTNAME)
+	rm $(CLIENT_OUTNAME)
+	rm $(TEST_OUTNAME)

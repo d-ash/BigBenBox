@@ -53,7 +53,8 @@ static char* test_sha256() {
 }
 
 static char* test_ssentry_size() {
-	printf("sizeof(SSENTRY): %u\n", sizeof(SSENTRY));
+	printf("sizeof(size_t): %lu\n", sizeof(size_t));
+	printf("sizeof(SSENTRY): %lu\n", sizeof(SSENTRY));
 	MU_ASSERT("sizeof(SSENTRY) is not appropriate for manual path aligment.", (sizeof(SSENTRY) % WORD_SIZE) == 0);
 	return 0;
 }
@@ -65,10 +66,15 @@ static char* test_snapshot_save_load() {
 #ifdef PLATFORM_WINDOWS
 	take_snapshot("G:\\English\\", &ss1);
 	//take_snapshot("C:/Windows", &ss1);
-#else
+#endif
+#ifdef PLATFORM_LINUX
 	take_snapshot("/home/d-ash/distr/", &ss1);
 	//take_snapshot("/home/d-ash/2IOMEGA/", &ss1);
-#endif // PLATFORM_WINDOWS
+#endif
+#ifdef PLATFORM_OSX
+	take_snapshot("/Users/User/Projects/bbb", &ss1);
+	//take_snapshot("/home/d-ash/2IOMEGA/", &ss1);
+#endif
 
 	save_snapshot("_test_packfile", &ss1);
 	load_snapshot("_test_packfile", &ss2);

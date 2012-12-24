@@ -68,7 +68,7 @@ static char* test_snapshot_save_load() {
 	//take_snapshot("C:/Windows", &ss1);
 #endif
 #ifdef PLATFORM_LINUX
-	take_snapshot("/home/d-ash/distr/", &ss1);
+	take_snapshot("/home/d-ash/Dropbox", &ss1);
 	//take_snapshot("/home/d-ash/2IOMEGA/", &ss1);
 #endif
 #ifdef PLATFORM_OSX

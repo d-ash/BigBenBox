@@ -5,7 +5,7 @@ TEST_OUTNAME = test
 CLIENT_SRC = snapshot.c pack.c tools.c
 SERVER_SRC = snapshot.c pack.c tools.c
 CC_FLAGS = -DPLATFORM_LINUX #-DDEBUG
-LIBS = -lssl
+LIBS = -lssl -lcrypto
 
 client: bbb.c $(CLIENT_SRC)
 	gcc $(CC_FLAGS) -o $(CLIENT_OUTNAME) bbb.c $(CLIENT_SRC) $(LIBS)

@@ -2,6 +2,7 @@ BigBenBox (bbb)
 
 TODO:
 1. Universal Makefile (look at git makefile)
+2. Instead of zlib use liblzma (http://tukaani.org/xz/)
 
 Searching:
 1. Zero-step, go up to the first splitting found.

@@ -1,8 +1,16 @@
 BigBenBox (bbb)
 
+Files are complex!
+https://www.dropbox.com/help/145/en
++ file permissions.
+
+config (exclude like .gitignore)
+
 TODO:
+0. How to treat directories, trees?
 1. Universal Makefile (look at git makefile)
 2. Instead of zlib use liblzma (http://tukaani.org/xz/)
+3. Warn a user when mtime of the file is later than now.
 
 Searching:
 1. Zero-step, go up to the first splitting found.

@@ -1,0 +1,3 @@
+PLATFORM=linux
+C_COMPILER=gcc
+C_LINKER=link

@@ -5,6 +5,12 @@ https://www.dropbox.com/help/145/en
 + file permissions.
 
 config (exclude like .gitignore)
+access permissions (LDAP auth)
+web-access
+file encryption (on server and on clients)
+banding and customization
+backups
+hooks (events), API
 
 TODO:
 0. How to treat directories, trees?

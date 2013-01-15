@@ -1,6 +1,12 @@
 #include <sys/stat.h>
 #include "snapshot.h"
 
+#ifdef PLATFORM_WINDOWS
+  #include "dirent.h"
+#else
+  #include <dirent.h>
+#endif
+
 int init_snapshot(SNAPSHOT* ss) {
 	if (ss == NULL) {
 		PERR("NULL value in %s()\n", __FUNCTION__);

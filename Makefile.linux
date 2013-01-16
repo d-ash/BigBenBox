@@ -1,25 +1,25 @@
-CLIENT_OUTNAME = bbb
-SERVER_OUTNAME = bbbd
-TEST_OUTNAME = test
+DEBUG = 0
 
-CLIENT_SRC = snapshot.c pack.c tools.c
-SERVER_SRC = snapshot.c pack.c tools.c
-CC_FLAGS = -DPLATFORM_LINUX #-DDEBUG
-LIBS = -lssl -lcrypto
+EXECUTABLE = bbb
+SOURCES = bbb.c snapshot.c pack.c tools.c
+OBJECTS = $(SOURCES:.c=.o)
 
-client: bbb.c $(CLIENT_SRC)
-	gcc $(CC_FLAGS) -o $(CLIENT_OUTNAME) bbb.c $(CLIENT_SRC) $(LIBS)
+COMPILER = gcc -c
+LINKER = gcc
 
-server: bbb.c $(SERVER_SRC)
-	gcc $(CC_FLAGS) -o $(SERVER_OUTNAME) bbb.c $(SERVER_SRC) $(LIBS)
+COMPILER_FLAGS = -DPLATFORM_LINUX
+ifeq ($(DEBUG), 1)
+	COMPILER_FLAGS += -DDEBUG
+endif
+LINKER_FLAGS = -lssl -lcrypto
 
-test: test.c minunit.h $(CLIENT_SRC)
-	gcc $(CC_FLAGS) -o $(TEST_OUTNAME) test.c $(CLIENT_SRC) $(LIBS)
+all: $(SOURCES) $(EXECUTABLE)
 
-watcher: watcher.c
-	gcc watcher.c -o watcher
+$(EXECUTABLE): $(OBJECTS)
+	$(LINKER) $(LINKER_FLAGS) $(OBJECTS) -o $@
+
+%.o: %.c
+	$(COMPILER) $(COMPILER_FLAGS) $< -o $@
 
 clean:
-	rm $(SERVER_OUTNAME)
-	rm $(CLIENT_OUTNAME)
-	rm $(TEST_OUTNAME)
+	rm $(EXECUTABLE) $(OBJECTS)

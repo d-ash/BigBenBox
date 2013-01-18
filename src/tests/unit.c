@@ -1,9 +1,6 @@
 #include <stdio.h>
 
 #include "unit.h"
-#include "tools.h"
-#include "snapshot.h"
-#include "pack.h"
 
 #define DATA_DIR	"../../../data"
 
@@ -13,22 +10,22 @@ static char* test_uint16_32_hashes() {
 	uint32_t	x;
 	uint16_t	y;
 
-	x = uint32_hash( "abcde", 5 );
-	y = uint16_hash( "abcde", 5 );
+	x = bbbHashBuf_uint32( "abcde", 5 );
+	y = bbbHashBuf_uint16( "abcde", 5 );
 
-	MU_ASSERT( "uint32_hash() failed", x == 0xbd500063 );
-	MU_ASSERT( "uint16_hash() failed", y == 0x0063 );
+	MU_ASSERT( "bbbHashBuf_uint32() failed", x == 0xbd500063 );
+	MU_ASSERT( "bbbHashBuf_uint16() failed", y == 0x0063 );
 	return 0;
 }
 
 static char* test_checksum() {
 	const char	s[ 17 ] = "hnd872kz09_2=s9r";
-	checksum_t	x = 0;
-	checksum_t	y = 0;
+	bbbChecksum_t	x = 0;
+	bbbChecksum_t	y = 0;
 
-	update_checksum( s, 16, &x );
-	update_checksum( s, 8, &y );
-	update_checksum( s + 8, 8, &y );
+	bbbUpdateChecksum( s, 16, &x );
+	bbbUpdateChecksum( s, 8, &y );
+	bbbUpdateChecksum( s + 8, 8, &y );
 
 	MU_ASSERT( "Checksum algorithm failed", x == y );
 	return 0;
@@ -50,7 +47,7 @@ static char* test_sha256() {
 		0xe0, 0x7d, 0xdb, 0x6d, 0xce, 0x4f, 0x6e, 0xeb
 	};
 	
-	MU_ASSERT( "Cannot calc SHA256 on a file", sha256_file( DATA_DIR "/tmp0/sha.hash", hash ) != 0 );
+	MU_ASSERT( "Cannot calc SHA256 on a file", bbbHashFile_sha256( DATA_DIR "/tmp0/sha.hash", hash ) != 0 );
 	MU_ASSERT( "SHA256 do not match", memcmp( hash, ctrl, SHA256_DIGEST_LENGTH ) == 0 );
 	return 0;
 }
@@ -59,7 +56,7 @@ static char* test_ssentry_size() {
 	printf( "sizeof(size_t): %lu\n", sizeof( size_t ) );
 	printf( "sizeof(SSENTRY): %lu\n", sizeof( SSENTRY ) );
 
-	MU_ASSERT( "sizeof(SSENTRY) is not appropriate for manual path aligment.", ( sizeof( SSENTRY ) % WORD_SIZE ) == 0 );
+	MU_ASSERT( "sizeof(SSENTRY) is not appropriate for manual path aligment.", ( sizeof( SSENTRY ) % BBB_WORD_SIZE ) == 0 );
 	return 0;
 }
 
@@ -67,15 +64,15 @@ static char* test_snapshot_save_load() {
 	SNAPSHOT	ss1;
 	SNAPSHOT	ss2;
 
-#ifdef PLATFORM_WINDOWS
+#ifdef BBB_PLATFORM_WINDOWS
 	take_snapshot( "G:\\English\\", &ss1 );
 	//take_snapshot( "C:/Windows", &ss1 );
 #endif
-#ifdef PLATFORM_LINUX
+#ifdef BBB_PLATFORM_LINUX
 	take_snapshot( "/home/d-ash/Dropbox", &ss1 );
 	//take_snapshot( "/home/d-ash/2IOMEGA/", &ss1 );
 #endif
-#ifdef PLATFORM_OSX
+#ifdef BBB_PLATFORM_OSX
 	take_snapshot( "/Users/User/Projects/bbb", &ss1 );
 	//take_snapshot( "/home/d-ash/2IOMEGA/", &ss1 );
 #endif

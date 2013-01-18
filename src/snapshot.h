@@ -19,7 +19,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include "tools.h"
+#include "global.h"
+#include "hash.h"
 
 typedef uint16_t	hash_t;
 #define HASH_MAX	UINT16_MAX

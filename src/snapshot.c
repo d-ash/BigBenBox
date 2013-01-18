@@ -1,15 +1,10 @@
 #include <sys/stat.h>
-#include "snapshot.h"
 
-#ifdef PLATFORM_WINDOWS
-  #include "dirent.h"
-#else
-  #include <dirent.h>
-#endif
+#include "snapshot.h"
 
 int init_snapshot(SNAPSHOT* ss) {
 	if (ss == NULL) {
-		PERR("NULL value in %s()\n", __FUNCTION__);
+		BBB_PERR("NULL value in %s()\n", __FUNCTION__);
 		return 0;
 	}
 
@@ -30,7 +25,7 @@ int destroy_snapshot(SNAPSHOT* ss) {
 	void* mustdie = NULL;
 
 	if (ss == NULL || ss->ht == NULL) {
-		PERR("NULL value in %s()\n", __FUNCTION__);
+		BBB_PERR("NULL value in %s()\n", __FUNCTION__);
 		return 0;
 	}
 
@@ -64,7 +59,7 @@ int take_snapshot(char* path, SNAPSHOT* ss) {
 	int len = 0;
 
 	if (ss == NULL) {
-		PERR("NULL value in %s()\n", __FUNCTION__);
+		BBB_PERR("NULL value in %s()\n", __FUNCTION__);
 		return 0;
 	}
 
@@ -93,12 +88,12 @@ SSENTRY* search(char* path, SNAPSHOT* ss) {
 	size_t pathlen;
 
 	if (ss == NULL || ss->ht == NULL) {
-		PERR("NULL value in %s()\n", __FUNCTION__);
+		BBB_PERR("NULL value in %s()\n", __FUNCTION__);
 		return NULL;
 	}
 
 	pathlen = strlen(path);
-	hash = uint16_hash(path, pathlen);
+	hash = bbbHashBuf_uint16(path, pathlen);
 
 	ssentry = ss->ht[hash].first;
 	while (ssentry != NULL) {
@@ -116,10 +111,10 @@ int process_dir(char* path, size_t skip, SNAPSHOT* ss) {
 	struct dirent* entry = NULL;
 	int res = 1;
 
-	PLOG("Processing dir: %s\n", path);
+	BBB_PLOG("Processing dir: %s\n", path);
 	dir = opendir(path);
 	if (dir == NULL) {
-		PERR("Cannot open dir %s: %s\n", path, strerror(errno));
+		BBB_PERR("Cannot open dir %s: %s\n", path, strerror(errno));
 		return 0;
 	}
 
@@ -144,7 +139,7 @@ int process_dir(char* path, size_t skip, SNAPSHOT* ss) {
 	}
 
 	if (closedir(dir) < 0) {
-		PERR("Cannot close dir %s: %s\n", path, strerror(errno));
+		BBB_PERR("Cannot close dir %s: %s\n", path, strerror(errno));
 		return 0;
 	}
 
@@ -162,13 +157,13 @@ int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss) {
 	pl = strlen(path);
 	nl = strlen(name);
 
-	// allocating memory for SSENTRY + path, pathmem will be aligned to WORD_SIZE
+	// allocating memory for SSENTRY + path, pathmem will be aligned to BBB_WORD_SIZE
 	// in order to get properly aligned memory after load_snapshot()
-	pathmem = (pl - skip + nl + 1 + WORD_SIZE) & ~(WORD_SIZE - 1);
+	pathmem = (pl - skip + nl + 1 + BBB_WORD_SIZE) & ~(BBB_WORD_SIZE - 1);
 	ssentry = malloc(sizeof(SSENTRY) + pathmem);
 
 	if (ssentry == NULL) {
-		PERR("Cannot allocate memory for an entry: %s\n", strerror(errno));
+		BBB_PERR("Cannot allocate memory for an entry: %s\n", strerror(errno));
 		return 0;
 	}
 
@@ -183,7 +178,7 @@ int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss) {
 	strncpy(SSENTRY_PATH(ssentry), path_full + skip + 1, pathmem);
 
 	if (stat(path_full, &entry_info)) {
-		PERR("Cannot get info about %s: %s\n", path_full, strerror(errno));
+		BBB_PERR("Cannot get info about %s: %s\n", path_full, strerror(errno));
 		free(ssentry);
 		free(path_full);
 		return 0;
@@ -198,7 +193,7 @@ int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss) {
 	} else if (S_ISREG(entry_info.st_mode)) {
 		ssentry->status &= ~SSENTRY_STATUS_DIR;
 	} else {
-		PLOG("Skipping irregular file: %s\n", path_full);
+		BBB_PLOG("Skipping irregular file: %s\n", path_full);
 		free(ssentry);
 		free(path_full);
 		return 1;		// it is a successful operation
@@ -212,11 +207,11 @@ int add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss) {
 	hash_t hash;
 
 	if (ss->restored) {
-		PERR("Adding entries to a restored snapshot is denied.");
+		BBB_PERR("Adding entries to a restored snapshot is denied.");
 		return 0;
 	}
 
-	hash = uint16_hash(SSENTRY_PATH(ssentry), strlen(SSENTRY_PATH(ssentry)));
+	hash = bbbHashBuf_uint16(SSENTRY_PATH(ssentry), strlen(SSENTRY_PATH(ssentry)));
 
 	// push to the beginning of the list
 	ssentry->next = ss->ht[hash].first;
@@ -234,7 +229,7 @@ int find_changes(SNAPSHOT* ss0, SNAPSHOT* ss1) {
 	int differs = 0;
 
 	if (ss0 == NULL || ss0->ht == NULL || ss1 == NULL || ss1->ht == NULL) {
-		PERR("NULL value in %s()\n", __FUNCTION__);
+		BBB_PERR("NULL value in %s()\n", __FUNCTION__);
 		return 0;	// TODO what we need return?
 	}
 

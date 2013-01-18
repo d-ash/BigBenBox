@@ -3,4 +3,8 @@
 
 #include "minunit.h"
 
+#include "hash.h"
+#include "snapshot.h"
+#include "pack.h"
+
 #endif

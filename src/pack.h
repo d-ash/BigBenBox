@@ -56,7 +56,7 @@ void construct_pfh(unsigned char pfh[PACKFILE_HEADER_SIZE]);
 int save_snapshot(char* path, SNAPSHOT* ss);
 int load_snapshot(char* path, SNAPSHOT* ss);
 
-int pack_snapshot(FILE* f, SNAPSHOT* ss, checksum_t* checksum_p);
-int unpack_snapshot(FILE* f, SNAPSHOT* ss, checksum_t* checksum_p);
+int pack_snapshot(FILE* f, SNAPSHOT* ss, bbbChecksum_t* checksum_p);
+int unpack_snapshot(FILE* f, SNAPSHOT* ss, bbbChecksum_t* checksum_p);
 
 #endif

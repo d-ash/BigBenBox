@@ -1,5 +1,3 @@
-BigBenBox (bbb)
-
 Files are complex!
 https://www.dropbox.com/help/145/en
 + file permissions.

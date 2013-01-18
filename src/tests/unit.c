@@ -4,7 +4,7 @@
 
 #define DATA_DIR	"../../../data"
 
-int		tests_run = 0;
+int		_tests_run = 0;
 
 static char* test_uint16_32_hashes() {
 	uint32_t	x;
@@ -19,7 +19,7 @@ static char* test_uint16_32_hashes() {
 }
 
 static char* test_checksum() {
-	const char	s[ 17 ] = "hnd872kz09_2=s9r";
+	const char		s[ 17 ] = "hnd872kz09_2=s9r";
 	bbbChecksum_t	x = 0;
 	bbbChecksum_t	y = 0;
 

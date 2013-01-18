@@ -1,5 +1,5 @@
-#ifndef _GLOBAL_DEF
-#define _GLOBAL_DEF
+#ifndef _BBB_GLOBAL_H
+#define _BBB_GLOBAL_H
 
 #define VERSION				0x0001
 #define WORD_SIZE			sizeof( size_t )
@@ -23,11 +23,11 @@
 // ===========================================
 
 #ifdef DEBUG
-  #define PLOG( ... )	do { fprintf( stderr, __VA_ARGS__ ); } while ( 0 );
+  #define PLOG( ... )		do { fprintf( stderr, __VA_ARGS__ ); } while ( 0 );
 #else
-  #define PLOG( ... )	do {} while ( 0 );
+  #define PLOG( ... )		do {} while ( 0 );
 #endif
 
-#define PERR( ... )	do { fprintf( stderr, "ERROR: " ); fprintf( stderr, __VA_ARGS__ ); } while ( 0 );
+#define PERR( ... )			do { fprintf( stderr, "ERROR: " ); fprintf( stderr, __VA_ARGS__ ); } while ( 0 );
 
-#endif // _GLOBAL_DEF
+#endif

@@ -4,9 +4,8 @@
 #ifndef _BBB_TESTS_MINUNIT_H
 #define _BBB_TESTS_MINUNIT_H
 
-#define MU_ASSERT(message, test)	do { if (!(test)) return message; } while (0)
-#define mu_run_test(test)			do { char* message = test(); tests_run++; \
-										if (message) return message; } while (0)
-extern int	_tests_run;
+#define BBB_MU_ASSERT(message, test)	do { if ( !( test ) ) return message; } while ( 0 )
+#define BBB_MU_RUN_TEST(test)			do { char* message = test(); _testsRun++; \
+											if ( message ) return message; } while ( 0 )
 
 #endif

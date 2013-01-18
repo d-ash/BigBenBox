@@ -3,9 +3,9 @@
 
 #include "global.h"
 
-int			bbbIsLittleEndian();
+int			BbbIsLittleEndian();
 
 			// Prints in a network order (big-endian)
-void		bbbPrintHex( const void* const b, const size_t len );
+void		BbbPrintHex( const void* const b, const size_t len );
 
 #endif

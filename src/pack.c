@@ -1,174 +1,176 @@
-#include <sys/stat.h>
-
 #include "pack.h"
 
-void construct_pfh(unsigned char pfh[PACKFILE_HEADER_SIZE]) {
-	pfh[0] = PACKFILE_MAGIC;
-	pfh[1] = (bbbIsLittleEndian() ? 1 : 0) | BBB_WORD_SIZE;
-	pfh[2] = BBB_PLATFORM_ID;
-	pfh[3] = PACKFILE_STRUCT_VER;
-}
+static void		_ConstructPfHeader( unsigned char pfh[ BBB_PF_HEADER_SIZE ] );
+static int		_PackSnapshot( FILE* f, const bbbSnapshot_t* const ss, bbbChecksum_t* checksum_p );
+static int		_UnpackSnapshot( FILE* f, bbbSnapshot_t* const ss, bbbChecksum_t* checksum_p );
 
-int save_snapshot(char* path, bbbSnapshot_t* ss) {
+int BbbSaveSnapshot( const char* const path, const bbbSnapshot_t* const ss ) {
 	FILE* f;
-	unsigned char pfh[PACKFILE_HEADER_SIZE];
-	PACKFILE_HEADER_EXT pfh_ext;
+	unsigned char pfh[ BBB_PF_HEADER_SIZE ];
+	bbbPfHeaderExt_t pfh_ext;
 	int res = 0;
 	bbbChecksum_t checksum = 0;
 
-	f = fopen(path, "wb");
-	if (f == NULL) {
-		BBB_PERR("Cannot write a snapshot to %s: %s\n", path, strerror(errno));
+	f = fopen( path, "wb" );
+	if ( f == NULL ) {
+		BBB_PERR( "Cannot write a snapshot to %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
 
-	construct_pfh(pfh);
-	if (fwrite(pfh, sizeof(pfh), 1, f) < 1) {
-		BBB_PERR("Cannot write a header to the snapshot file %s: %s\n", path, strerror(errno));
+	_ConstructPfHeader( pfh );
+	if ( fwrite( pfh, sizeof( pfh ), 1, f ) < 1 ) {
+		BBB_PERR( "Cannot write a header to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
-	bbbUpdateChecksum(pfh, sizeof(pfh), &checksum);
+	BbbUpdateChecksum( pfh, sizeof( pfh ), &checksum );
 
-	pfh_ext.tf_pathmem = strlen(ss->tf_path) + 1;
-	if (fwrite(&pfh_ext, sizeof(pfh_ext), 1, f) < 1) {
-		BBB_PERR("Cannot write an extended header to the snapshot file %s: %s\n", path, strerror(errno));
+	pfh_ext.tf_pathmem = strlen( ss->tf_path ) + 1;
+	if ( fwrite( &pfh_ext, sizeof( pfh_ext ), 1, f ) < 1 ) {
+		BBB_PERR( "Cannot write an extended header to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
-	bbbUpdateChecksum(&pfh_ext, sizeof(pfh_ext), &checksum);
+	BbbUpdateChecksum( &pfh_ext, sizeof( pfh_ext ), &checksum );
 
-	if (fwrite(ss->tf_path, pfh_ext.tf_pathmem, 1, f) < 1) {
-		BBB_PERR("Cannot write tf_path to the snapshot file %s: %s\n", path, strerror(errno));
+	if ( fwrite( ss->tf_path, pfh_ext.tf_pathmem, 1, f ) < 1 ) {
+		BBB_PERR( "Cannot write tf_path to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
-	bbbUpdateChecksum(ss->tf_path, pfh_ext.tf_pathmem, &checksum);
+	BbbUpdateChecksum( ss->tf_path, pfh_ext.tf_pathmem, &checksum );
 
-	res = pack_snapshot(f, ss, &checksum);
+	res = _PackSnapshot( f, ss, &checksum );
 
 	// checksum is saved in a network order
-	checksum = htonl(checksum);
-	if (fwrite(&checksum, sizeof(checksum), 1, f) < 1) {
-		BBB_PERR("Cannot write a checksum to the snapshot file %s: %s\n", path, strerror(errno));
+	checksum = htonl( checksum );
+	if ( fwrite( &checksum, sizeof( checksum ), 1, f ) < 1 ) {
+		BBB_PERR( "Cannot write a checksum to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
 
-	if (fclose(f) != 0) {
-		BBB_PERR("Cannot save a snapshot to %s: %s\n", path, strerror(errno));
+	if ( fclose( f ) != 0 ) {
+		BBB_PERR( "Cannot save a snapshot to %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
 
-	if (!res) {
-		unlink(path);
+	if ( !res ) {
+		unlink( path );
 	}
 
 	return res;
 }
 
-int load_snapshot(char* path, bbbSnapshot_t* ss) {
+int BbbLoadSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 	FILE* f = NULL;
-	unsigned char pfh[PACKFILE_HEADER_SIZE];
-	unsigned char pfh_control[PACKFILE_HEADER_SIZE];
-	PACKFILE_HEADER_EXT pfh_ext;
+	unsigned char pfh[ BBB_PF_HEADER_SIZE ];
+	unsigned char pfh_control[ BBB_PF_HEADER_SIZE ];
+	bbbPfHeaderExt_t pfh_ext;
 	int res = 0;
 	bbbChecksum_t checksum = 0;
 	bbbChecksum_t checksum_read = 0;
 
-	if (ss == NULL) {
-		BBB_PERR("NULL value in %s()\n", __FUNCTION__);
+	if ( ss == NULL ) {
+		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
 		return 0;
 	}
 
-	bbbInitSnapshot(ss);
+	BbbInitSnapshot( ss );
 	ss->restored = 1;
 
-	f = fopen(path, "rb");
-	if (f == NULL) {
-		BBB_PERR("Cannot open %s: %s\n", path, strerror(errno));
-		bbbDestroySnapshot(ss);
+	f = fopen( path, "rb" );
+	if ( f == NULL ) {
+		BBB_PERR( "Cannot open %s: %s\n", path, strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
 
-	if (fread(pfh, sizeof(pfh), 1, f) < 1) {
-		BBB_PERR("Cannot read from %s: %s\n", path, strerror(errno));
-		bbbDestroySnapshot(ss);
+	if ( fread( pfh, sizeof( pfh ), 1, f ) < 1 ) {
+		BBB_PERR( "Cannot read from %s: %s\n", path, strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
-	bbbUpdateChecksum(pfh, sizeof(pfh), &checksum);
+	BbbUpdateChecksum( pfh, sizeof( pfh ), &checksum );
 
-	construct_pfh(pfh_control);
-	if (memcmp(pfh, pfh_control, sizeof(pfh)) != 0) {
-		BBB_PERR("Header of the snapshot file %s is incorrect.\n", path);
-		bbbDestroySnapshot(ss);
+	_ConstructPfHeader( pfh_control );
+	if ( memcmp( pfh, pfh_control, sizeof( pfh ) ) != 0 ) {
+		BBB_PERR( "Header of the snapshot file %s is incorrect.\n", path );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
 
 	// Reading extended header. Platform dependent types are already in use!
 	// We can correctly read files only created with this same program on this machine.
-	if (fread(&pfh_ext, sizeof(pfh_ext), 1, f) < 1) {
-		BBB_PERR("Cannot read an extended header from a snapshot file: %s\n", strerror(errno));
-		bbbDestroySnapshot(ss);
+	if ( fread( &pfh_ext, sizeof( pfh_ext ), 1, f ) < 1 ) {
+		BBB_PERR( "Cannot read an extended header from a snapshot file: %s\n", strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
-	bbbUpdateChecksum(&pfh_ext, sizeof(pfh_ext), &checksum);
+	BbbUpdateChecksum( &pfh_ext, sizeof( pfh_ext ), &checksum );
 
-	ss->tf_path = malloc(pfh_ext.tf_pathmem);
-	if (ss->tf_path == NULL) {
-		BBB_PERR("Cannot allocate memory: %s\n", strerror(errno));
-		bbbDestroySnapshot(ss);
+	ss->tf_path = malloc( pfh_ext.tf_pathmem );
+	if ( ss->tf_path == NULL ) {
+		BBB_PERR( "Cannot allocate memory: %s\n", strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
 
-	if (fread(ss->tf_path, pfh_ext.tf_pathmem, 1, f) < 1) {
-		BBB_PERR("Cannot read tf_path from a snapshot file: %s\n", strerror(errno));
-		bbbDestroySnapshot(ss);
+	if ( fread( ss->tf_path, pfh_ext.tf_pathmem, 1, f ) < 1 ) {
+		BBB_PERR( "Cannot read tf_path from a snapshot file: %s\n", strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
-	bbbUpdateChecksum(ss->tf_path, pfh_ext.tf_pathmem, &checksum);
+	BbbUpdateChecksum( ss->tf_path, pfh_ext.tf_pathmem, &checksum );
 
-	res = unpack_snapshot(f, ss, &checksum);
+	res = _UnpackSnapshot( f, ss, &checksum );
 
 	// checksum will be overread by the previous fread()
-	if (fseek(f, 0 - sizeof(checksum_read), SEEK_END) != 0) {
-		BBB_PERR("Cannot fseek() to a checksum of the file %s: %s\n", path, strerror(errno));
-		bbbDestroySnapshot(ss);
+	if ( fseek( f, 0 - sizeof( checksum_read ), SEEK_END ) != 0 ) {
+		BBB_PERR( "Cannot fseek() to a checksum of the file %s: %s\n", path, strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
 
-	if (fread(&checksum_read, sizeof(checksum_read), 1, f) < 1) {
-		BBB_PERR("Cannot read a checksum from the snapshot file %s: %s\n", path, strerror(errno));
-		bbbDestroySnapshot(ss);
+	if ( fread( &checksum_read, sizeof( checksum_read ), 1, f ) < 1 ) {
+		BBB_PERR( "Cannot read a checksum from the snapshot file %s: %s\n", path, strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
 
 	// it was stored in a network order
-	if (htonl(checksum) != checksum_read) {
-		BBB_PERR("The snapshot file %s is corrupted (checksum failed): %s\n", path, strerror(errno));
-		bbbDestroySnapshot(ss);
+	if ( htonl( checksum ) != checksum_read ) {
+		BBB_PERR( "The snapshot file %s is corrupted (checksum failed): %s\n", path, strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
 
-	if (fclose(f) != 0) {
-		BBB_PERR("Cannot close %s: %s\n", path, strerror(errno));
-		bbbDestroySnapshot(ss);
+	if ( fclose( f ) != 0 ) {
+		BBB_PERR( "Cannot close %s: %s\n", path, strerror( errno ) );
+		BbbDestroySnapshot( ss );
 		return 0;
 	}
 
-	if (!res) {
-		bbbDestroySnapshot(ss);
+	if ( !res ) {
+		BbbDestroySnapshot( ss );
 	}
 
 	return res;
 }
 
-int pack_snapshot(FILE* f, bbbSnapshot_t* ss, bbbChecksum_t* checksum_p) {
+static void _ConstructPfHeader( unsigned char pfh[ BBB_PF_HEADER_SIZE ] ) {
+	pfh[ 0 ] = BBB_PF_MAGIC;
+	pfh[ 1 ] = ( BbbIsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
+	pfh[ 2 ] = BBB_PLATFORM_ID;
+	pfh[ 3 ] = BBB_PF_STRUCT_VER;
+}
+
+static int _PackSnapshot( FILE* f, const bbbSnapshot_t* const ss, bbbChecksum_t* checksum_p ) {
 	bbbSsHash_t i;
 	bbbSsEntry_t* ssentry = NULL;
 	bbbSsHashHeader_t* cur_hh = NULL;
-	PACK_HASH_HEADER h;
+	bbbPfHashHeader_t h;
 
-	for (i = 0; i < BBB_SS_HASH_MAX; i++) {
-		cur_hh = & ss->ht[i];
+	for ( i = 0; i < BBB_SS_HASH_MAX; i++ ) {
+		cur_hh = & ss->ht[ i ];
 
-		if (cur_hh->first == NULL) {
+		if ( cur_hh->first == NULL ) {
 			// Do not store hashes with no entries, it's packing anyway.
 			continue;
 		}
@@ -176,62 +178,62 @@ int pack_snapshot(FILE* f, bbbSnapshot_t* ss, bbbChecksum_t* checksum_p) {
 		h.hash = i;
 		h.size = cur_hh->size;
 
-		if (fwrite(&h, sizeof(h), 1, f) < 1) {
+		if ( fwrite( &h, sizeof( h ), 1, f ) < 1 ) {
 			return 0;
 		}
-		bbbUpdateChecksum(&h, sizeof(h), checksum_p);
+		BbbUpdateChecksum( &h, sizeof( h ), checksum_p );
 
 		ssentry = cur_hh->first;
 		do {
-			if (fwrite(ssentry, sizeof(bbbSsEntry_t) + ssentry->pathmem, 1, f) < 1) {
+			if ( fwrite( ssentry, sizeof( bbbSsEntry_t ) + ssentry->pathmem, 1, f ) < 1 ) {
 				return 0;
 			}
-			bbbUpdateChecksum(ssentry, sizeof(bbbSsEntry_t) + ssentry->pathmem, checksum_p);
+			BbbUpdateChecksum( ssentry, sizeof( bbbSsEntry_t ) + ssentry->pathmem, checksum_p );
 
 			ssentry = ssentry->next;
-		} while (ssentry != NULL);
+		} while ( ssentry != NULL );
 	}
 
 	return 1;
 }
 
-int unpack_snapshot(FILE* f, bbbSnapshot_t* ss, bbbChecksum_t* checksum_p) {
-	PACK_HASH_HEADER h;
+static int _UnpackSnapshot( FILE* f, bbbSnapshot_t* const ss, bbbChecksum_t* checksum_p ) {
+	bbbPfHashHeader_t h;
 	bbbSsEntry_t* ssentry = NULL;
 	bbbSsHashHeader_t* cur_hh = NULL;
 	unsigned char* max_next = NULL;
 
 	// iterating over the hash list
-	while (fread(&h, sizeof(h), 1, f) == 1) {
-		bbbUpdateChecksum(&h, sizeof(h), checksum_p);
+	while ( fread( &h, sizeof( h ), 1, f ) == 1 ) {
+		BbbUpdateChecksum( &h, sizeof( h ), checksum_p );
 
 		// allocating memory for all entries with this hash
-		cur_hh = & ss->ht[h.hash];
+		cur_hh = & ss->ht[ h.hash ];
 		cur_hh->size = h.size;
-		cur_hh->first = malloc(h.size);
+		cur_hh->first = malloc( h.size );
 
-		if (cur_hh->first == NULL) {
-			BBB_PERR("Cannot allocate memory for a entries list: %s\n", strerror(errno));
+		if ( cur_hh->first == NULL ) {
+			BBB_PERR( "Cannot allocate memory for a entries list: %s\n", strerror( errno ) );
 			return 0;
 		}
 
 		// The highest possible pointer value (counting not empty string).
-		max_next = (unsigned char*) cur_hh->first + h.size - sizeof(bbbSsEntry_t) - 2;
+		max_next = ( unsigned char* ) cur_hh->first + h.size - sizeof( bbbSsEntry_t ) - 2;
 
-		if (fread(cur_hh->first, h.size, 1, f) < 1) {
-			BBB_PERR("Cannot read from a snapshot file: %s\n", strerror(errno));
+		if ( fread( cur_hh->first, h.size, 1, f ) < 1 ) {
+			BBB_PERR( "Cannot read from a snapshot file: %s\n", strerror( errno ) );
 			return 0;
 		}
-		bbbUpdateChecksum(cur_hh->first, h.size, checksum_p);
+		BbbUpdateChecksum( cur_hh->first, h.size, checksum_p );
 
 		// Set correct values for bbbSsEntry_t.next, all restored pointers are incorrect,
-		// but we are bbbSearchSnapshoting for NULL value!
+		// but we are searching for NULL value!
 		ssentry = cur_hh->first;
-		while (ssentry->next != NULL) {
-			ssentry->next = (unsigned char*) ssentry + sizeof(bbbSsEntry_t) + ssentry->pathmem;
+		while ( ssentry->next != NULL ) {
+			ssentry->next = ( unsigned char* ) ssentry + sizeof( bbbSsEntry_t ) + ssentry->pathmem;
 
-			if ((unsigned char*) ssentry->next > max_next) {
-				BBB_PERR("Snapshot file is corrupted!\n");
+			if ( ( unsigned char* ) ssentry->next > max_next ) {
+				BBB_PERR( "Snapshot file is corrupted!\n" );
 				return 0;
 			}
 
@@ -239,8 +241,8 @@ int unpack_snapshot(FILE* f, bbbSnapshot_t* ss, bbbChecksum_t* checksum_p) {
 		}
 	}
 
-	if (!feof(f)) {
-		BBB_PERR("Cannot read from a snapshot file: %s\n", strerror(errno));
+	if ( !feof( f ) ) {
+		BBB_PERR( "Cannot read from a snapshot file: %s\n", strerror( errno ) );
 		return 0;
 	}
 

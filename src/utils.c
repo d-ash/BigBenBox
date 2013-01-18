@@ -1,12 +1,12 @@
 #include "utils.h"
 
-int bbbIsLittleEndian() {
+int BbbIsLittleEndian() {
 	static const int	i = 1;
 
 	return ( * ( char* ) &i == 1 );
 }
 
-void bbbPrintHex( const void* const b, const size_t len ) {
+void BbbPrintHex( const void* const b, const size_t len ) {
     size_t		i;
 
     for ( i = 0; i < len; i++ ) {

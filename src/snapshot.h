@@ -1,13 +1,13 @@
 /**
- * Snapshot can be one of two types: restored or generated manually.
- * Restored snapshot are a special case when memory for entries
- * is allocated in one huge chunk (at bbbSnapshot_t.ht->first).
- * So destroying must be kept according to the flag bbbSnapshot_t.restored.
- * And adding to this kind of snapshots is prohibited.
+ *  Snapshot can be one of two types: restored or generated manually.
+ *  Restored snapshot are a special case when memory for entries
+ *  is allocated in one huge chunk (at bbbSnapshot_t.ht->first).
+ *  So destroying must be kept according to the flag bbbSnapshot_t.restored.
+ *  And adding to this kind of snapshots is prohibited.
  *
- * In the future this can be reimplemented, so that every entry would have a separate flag.
- * This will allow to manipulate with restored snapshots as with normal.
- * And it will be possible to compact a memory usage by sequential saving & loading of snapshot.
+ *  In the future this can be reimplemented, so that every entry would have a separate flag.
+ *  This will allow to manipulate with restored snapshots as with normal.
+ *  And it will be possible to compact a memory usage by sequential saving & loading of snapshot.
  */
 
 #ifndef _BBB_SNAPSHOT_H
@@ -55,15 +55,15 @@ typedef struct bbbSnapshot_s {
 // ================= Exported functions =================
 
 				// does not allocate memory for bbbSnapshot_t
-int				bbbInitSnapshot( bbbSnapshot_t* const ss );
+int				BbbInitSnapshot( bbbSnapshot_t* const ss );
 
 				// does not free bbbSnapshot_t itself
-int				bbbDestroySnapshot( bbbSnapshot_t* const ss );
+int				BbbDestroySnapshot( bbbSnapshot_t* const ss );
 
-int				bbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss );
+int				BbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss );
 
-bbbSsEntry_t*	bbbSearchSnapshot( const char* const path, const bbbSnapshot_t* const ss );
+bbbSsEntry_t*	BbbSearchSnapshot( const char* const path, const bbbSnapshot_t* const ss );
 
-int				bbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const ss1 );
+int				BbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const ss1 );
 
 #endif

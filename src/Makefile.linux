@@ -40,9 +40,12 @@ LINKER_FLAGS = -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
 
 # ==============================================
 
-.PHONY: directories library client tests run runtests
+.PHONY: delimiter directories library client tests run runtests
 
-all: directories library client tests
+all: delimiter directories library client tests
+
+delimiter:
+	@echo "================================="
 
 directories:
 	$(MKDIR_P) $(BUILD_DIR)
@@ -70,12 +73,12 @@ $(TST_FILENAME): $(TST_SOURCES)
 clean:
 	$(RMRF) $(BUILD_DIR)
 
-run:
+run: delimiter
 	@cd $(BUILD_DIR); \
 		./$(EXE_NAME); \
 		cd - > /dev/null
 
-runtest:
+runtest: delimiter
 	@cd $(TESTS_DIR); \
 		./$(TST_NAME); \
 		cd - > /dev/null

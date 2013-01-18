@@ -35,6 +35,16 @@ Pad any content inside curly, squared or round brackets with spaces.
 		}
 
 
+Pointers
+--------
+
+Attach asterisks to the left, like this:
+
+		int* ptr;
+		const int* const y;
+		void func( char* s, object_t* obj);
+
+
 Alignment
 ---------
 
@@ -131,6 +141,14 @@ Place `const` each time if this variable or an argument will not be modified.
 
 Do not use: `int const * ptr;`
 
+
+Order
+-----
+
+Sequence of functions in the `.c` file should be equivalent to the order of corresponding `.h` file.
+
+Place `static` variables and prototypes of `static` functions at the begining of the `.c` file.
+Implementations of them should be placed at the bottom of the file.
 
 Library
 -------

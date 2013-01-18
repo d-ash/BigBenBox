@@ -6,7 +6,7 @@ static int	_ProcessDir( const char* const path, const size_t skip, bbbSnapshot_t
 static int	_ProcessEntry( const char* const path, const size_t skip, const char* const name, bbbSnapshot_t* const ss );
 static int	_AddToSnapshot( bbbSsEntry_t* const ssentry, bbbSnapshot_t* const ss );
 
-int bbbInitSnapshot( bbbSnapshot_t* const ss ) {
+int BbbInitSnapshot( bbbSnapshot_t* const ss ) {
 	if ( ss == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
 		return 0;
@@ -22,7 +22,7 @@ int bbbInitSnapshot( bbbSnapshot_t* const ss ) {
 	return 1;
 }
 
-int bbbDestroySnapshot( bbbSnapshot_t* const ss ) {
+int BbbDestroySnapshot( bbbSnapshot_t* const ss ) {
 	bbbSsHash_t		i;
 	bbbSsEntry_t*	ssentry = NULL;
 	void*			mustdie = NULL;
@@ -58,7 +58,7 @@ int bbbDestroySnapshot( bbbSnapshot_t* const ss ) {
 	return 1;
 }
 
-int bbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
+int BbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 	int		len = 0;
 	char*	p;
 
@@ -67,7 +67,7 @@ int bbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 		return 0;
 	}
 
-	bbbInitSnapshot( ss );
+	BbbInitSnapshot( ss );
 
 	p = strdup( path );
 	len = strlen( p );
@@ -79,7 +79,7 @@ int bbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 	}
 
 	if ( !_ProcessDir( p, len, ss ) ) {
-		bbbDestroySnapshot( ss );
+		BbbDestroySnapshot( ss );
 		free( p );
 		return 0;
 	}
@@ -89,7 +89,7 @@ int bbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 	return 1;
 }
 
-bbbSsEntry_t* bbbSearchSnapshot( const char* const path, const bbbSnapshot_t* const ss ) {
+bbbSsEntry_t* BbbSearchSnapshot( const char* const path, const bbbSnapshot_t* const ss ) {
 	bbbSsHash_t		hash;
 	bbbSsEntry_t*	ssentry = NULL;
 	size_t			pathlen;
@@ -100,7 +100,7 @@ bbbSsEntry_t* bbbSearchSnapshot( const char* const path, const bbbSnapshot_t* co
 	}
 
 	pathlen = strlen( path );
-	hash = bbbHashBuf_uint16( path, pathlen );
+	hash = BbbHashBuf_uint16( path, pathlen );
 
 	ssentry = ss->ht[ hash ].first;
 	while ( ssentry != NULL ) {
@@ -113,7 +113,7 @@ bbbSsEntry_t* bbbSearchSnapshot( const char* const path, const bbbSnapshot_t* co
 	return ssentry;
 }
 
-int bbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const ss1 ) {
+int BbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const ss1 ) {
 	bbbSsHash_t		i;
 	bbbSsEntry_t*	ssentry = NULL;
 	bbbSsEntry_t*	found = NULL;
@@ -130,7 +130,7 @@ int bbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const 
 
 		while ( ssentry != NULL ) {
 			path = BBB_SS_ENTRY_PATH( ssentry );
-			found = bbbSearchSnapshot( path, ss0 );
+			found = BbbSearchSnapshot( path, ss0 );
 
 			if ( found == NULL ) {
 				if ( differs == 0 ) {
@@ -159,7 +159,7 @@ int bbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const 
 		while ( ssentry != NULL ) {
 			if ( ssentry->custom == 0 ) {
 				path = BBB_SS_ENTRY_PATH( ssentry );
-				found = bbbSearchSnapshot( path, ss1 );
+				found = BbbSearchSnapshot( path, ss1 );
 
 				if ( found == NULL ) {
 					if ( differs == 0 ) {
@@ -285,7 +285,7 @@ static int _AddToSnapshot( bbbSsEntry_t* const ssentry, bbbSnapshot_t* const ss 
 		return 0;
 	}
 
-	hash = bbbHashBuf_uint16( BBB_SS_ENTRY_PATH( ssentry ), strlen( BBB_SS_ENTRY_PATH( ssentry ) ) );
+	hash = BbbHashBuf_uint16( BBB_SS_ENTRY_PATH( ssentry ), strlen( BBB_SS_ENTRY_PATH( ssentry ) ) );
 
 	// push to the beginning of the list
 	ssentry->next = ss->ht[ hash ].first;

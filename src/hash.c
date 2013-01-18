@@ -1,6 +1,6 @@
 #include "hash.h"
 
-uint32_t bbbHashBuf_uint32( const void* const buf, const size_t len ) {
+uint32_t BbbHashBuf_uint32( const void* const buf, const size_t len ) {
 	uint32_t	hash = 0;
 	size_t		i;
 
@@ -11,7 +11,7 @@ uint32_t bbbHashBuf_uint32( const void* const buf, const size_t len ) {
 	return hash;
 }
 
-uint16_t bbbHashBuf_uint16( const void* const buf, const size_t len ) {
+uint16_t BbbHashBuf_uint16( const void* const buf, const size_t len ) {
 	uint16_t	hash = 0;
 	size_t		i;
 
@@ -22,7 +22,7 @@ uint16_t bbbHashBuf_uint16( const void* const buf, const size_t len ) {
 	return hash;
 }
 
-void bbbUpdateChecksum( const void* const buf, const size_t len, bbbChecksum_t* checksum ) {
+void BbbUpdateChecksum( const void* const buf, const size_t len, bbbChecksum_t* checksum ) {
 	uint32_t	hash;
 	size_t		i;
 
@@ -35,7 +35,7 @@ void bbbUpdateChecksum( const void* const buf, const size_t len, bbbChecksum_t* 
 	( *checksum ) = hash;
 }
 
-int bbbHashFile_sha256( const char* const path, unsigned char hash[ SHA256_DIGEST_LENGTH ] ) {
+int BbbHashFile_sha256( const char* const path, unsigned char hash[ SHA256_DIGEST_LENGTH ] ) {
     FILE*				f;
     SHA256_CTX			sha;
 	char*				buf = NULL;

@@ -1,13 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/types.h>
-
 #include "hash.h"
 
-const uint32_t bbbHashBuf_uint32( const void* const buf, const size_t len ) {
+uint32_t bbbHashBuf_uint32( const void* const buf, const size_t len ) {
 	uint32_t	hash = 0;
 	size_t		i;
 
@@ -18,7 +11,7 @@ const uint32_t bbbHashBuf_uint32( const void* const buf, const size_t len ) {
 	return hash;
 }
 
-const uint16_t bbbHashBuf_uint16( const void* const buf, const size_t len ) {
+uint16_t bbbHashBuf_uint16( const void* const buf, const size_t len ) {
 	uint16_t	hash = 0;
 	size_t		i;
 
@@ -42,7 +35,7 @@ void bbbUpdateChecksum( const void* const buf, const size_t len, bbbChecksum_t* 
 	( *checksum ) = hash;
 }
 
-const int bbbHashFile_sha256( const char* const path, unsigned char hash[ SHA256_DIGEST_LENGTH ] ) {
+int bbbHashFile_sha256( const char* const path, unsigned char hash[ SHA256_DIGEST_LENGTH ] ) {
     FILE*				f;
     SHA256_CTX			sha;
 	char*				buf = NULL;

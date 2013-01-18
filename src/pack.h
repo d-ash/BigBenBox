@@ -7,7 +7,7 @@
  *	Structure of a packed snapshot after a file header:
  *
  *	[ list of hash values
- *		sizeof(hash_t)			hash value
+ *		sizeof(bbbSsHash_t)			hash value
  *		sizeof(size_t)			size of the following list of entries
  *
  *		[ list of entries
@@ -41,22 +41,22 @@
 
 // In the following struct we use platform dependant types!
 typedef struct s_packfile_header_ext {
-	hash_t hash_count;			// count of written hashes
+	bbbSsHash_t hash_count;			// count of written hashes
 	size_t tf_pathmem;			// strlen(tf_path) + 1
 } PACKFILE_HEADER_EXT;
 // tf_path where this snapshot was taken from
 
 typedef struct s_pack_hash_header {
-	hash_t hash;
+	bbbSsHash_t hash;
 	size_t size;			// memory size used by the following list of entries
 } PACK_HASH_HEADER;
 
 void construct_pfh(unsigned char pfh[PACKFILE_HEADER_SIZE]);
 
-int save_snapshot(char* path, SNAPSHOT* ss);
-int load_snapshot(char* path, SNAPSHOT* ss);
+int save_snapshot(char* path, bbbSnapshot_t* ss);
+int load_snapshot(char* path, bbbSnapshot_t* ss);
 
-int pack_snapshot(FILE* f, SNAPSHOT* ss, bbbChecksum_t* checksum_p);
-int unpack_snapshot(FILE* f, SNAPSHOT* ss, bbbChecksum_t* checksum_p);
+int pack_snapshot(FILE* f, bbbSnapshot_t* ss, bbbChecksum_t* checksum_p);
+int unpack_snapshot(FILE* f, bbbSnapshot_t* ss, bbbChecksum_t* checksum_p);
 
 #endif

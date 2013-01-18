@@ -53,39 +53,39 @@ static char* test_sha256() {
 }
 
 static char* test_ssentry_size() {
-	printf( "sizeof(size_t): %lu\n", sizeof( size_t ) );
-	printf( "sizeof(SSENTRY): %lu\n", sizeof( SSENTRY ) );
+	printf( "sizeof( size_t ): %lu\n", sizeof( size_t ) );
+	printf( "sizeof( bbbSsEntry_t ): %lu\n", sizeof( bbbSsEntry_t ) );
 
-	MU_ASSERT( "sizeof(SSENTRY) is not appropriate for manual path aligment.", ( sizeof( SSENTRY ) % BBB_WORD_SIZE ) == 0 );
+	MU_ASSERT( "sizeof( bbbSsEntry_t ) is not appropriate for manual path aligment.", ( sizeof( bbbSsEntry_t ) % BBB_WORD_SIZE ) == 0 );
 	return 0;
 }
 
 static char* test_snapshot_save_load() {
-	SNAPSHOT	ss1;
-	SNAPSHOT	ss2;
+	bbbSnapshot_t	ss1;
+	bbbSnapshot_t	ss2;
 
 #ifdef BBB_PLATFORM_WINDOWS
-	take_snapshot( "G:\\English\\", &ss1 );
-	//take_snapshot( "C:/Windows", &ss1 );
+	bbbTakeSnapshot( "G:\\English\\", &ss1 );
+	//bbbTakeSnapshot( "C:/Windows", &ss1 );
 #endif
 #ifdef BBB_PLATFORM_LINUX
-	take_snapshot( "/home/d-ash/Dropbox", &ss1 );
-	//take_snapshot( "/home/d-ash/2IOMEGA/", &ss1 );
+	bbbTakeSnapshot( "/home/d-ash/Dropbox", &ss1 );
+	//bbbTakeSnapshot( "/home/d-ash/2IOMEGA/", &ss1 );
 #endif
 #ifdef BBB_PLATFORM_OSX
-	take_snapshot( "/Users/User/Projects/bbb", &ss1 );
-	//take_snapshot( "/home/d-ash/2IOMEGA/", &ss1 );
+	bbbTakeSnapshot( "/Users/User/Projects/bbb", &ss1 );
+	//bbbTakeSnapshot( "/home/d-ash/2IOMEGA/", &ss1 );
 #endif
 
 	save_snapshot( "_test_packfile", &ss1 );
 	load_snapshot( "_test_packfile", &ss2 );
 
 	MU_ASSERT( "Different values of tf_path", strcmp( ss1.tf_path, ss2.tf_path ) == 0 );
-	MU_ASSERT( "Restored snapshot differs from original", find_changes( &ss1, &ss2 ) == 0 );
+	MU_ASSERT( "Restored snapshot differs from original", bbbDiffSnapshot( &ss1, &ss2 ) == 0 );
 
 	//unlink("_test_packfile");
-	destroy_snapshot( &ss2 );
-	destroy_snapshot( &ss1 );
+	bbbDestroySnapshot( &ss2 );
+	bbbDestroySnapshot( &ss1 );
 	return 0;
 }
 

@@ -4,6 +4,11 @@
 #define BBB_VERSION				0x0001
 #define BBB_WORD_SIZE			sizeof( size_t )
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+
 // ===========================================
 
 #undef BBB_PLATFORM_ID

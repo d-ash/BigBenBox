@@ -1,8 +1,8 @@
 /**
- * Snapshot can be restored or generated manually.
+ * Snapshot can be one of two types: restored or generated manually.
  * Restored snapshot are a special case when memory for entries
- * is allocated in one huge chunk (at SNAPSHOT.ht->first).
- * So destroying must be kept according to the flag SNAPSHOT.restored.
+ * is allocated in one huge chunk (at bbbSnapshot_t.ht->first).
+ * So destroying must be kept according to the flag bbbSnapshot_t.restored.
  * And adding to this kind of snapshots is prohibited.
  *
  * In the future this can be reimplemented, so that every entry would have a separate flag.
@@ -13,58 +13,57 @@
 #ifndef _BBB_SNAPSHOT_H
 #define _BBB_SNAPSHOT_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <errno.h>
-#include <string.h>
-
 #include "global.h"
 #include "hash.h"
 
-typedef uint16_t	hash_t;
-#define HASH_MAX	UINT16_MAX
+typedef uint16_t			bbbSsHash_t;
 
-typedef struct s_ssentry_content {
-	time_t mtime;
-	off_t size;
-} SSENTRY_CONTENT;
+#define BBB_SS_HASH_MAX		UINT16_MAX
 
-#define SSENTRY_STATUS_DIR	0x01
+typedef struct bbbSsEntryContent_s {
+	time_t	mtime;
+	off_t	size;
+} bbbSsEntryContent_t;
 
-typedef struct s_ssentry {
-	uint8_t status;
-	uint8_t custom;				// can be used by used code, at the end it has to be reset to 0
-	SSENTRY_CONTENT content;
-	size_t pathmem;				// strlen(path) + 1 + additional bytes for memory alignment
-	void* next;					// link to the next SSENTRY
-} SSENTRY;
-// WARNING: 'path' is stored here, just after SSENTRY.
-// sizeof(SSENTRY) must be multiple of WORD_SIZE
+typedef struct bbbSsEntry_s {
+	uint8_t				status;
+	uint8_t				custom;				// can be used by used code, at the end it has to be reset to 0
+	bbbSsEntryContent_t	content;
+	size_t				pathmem;			// strlen( path ) + 1 + additional bytes for memory alignment
+	void*				next;				// link to the next bbbSsEntry_t
+} bbbSsEntry_t;
 
-#define SSENTRY_PATH(s)	((char*) s + sizeof(SSENTRY))
+/**
+ * WARNING: 'path' is stored here, just after bbbSsEntry_t.
+ * sizeof( bbbSsEntry_t ) must be multiple of BBB_WORD_SIZE
+ */
 
-typedef struct s_sshash_header {
-	SSENTRY* first;
-	size_t	size;				// total memory used by all entries of this hash value (with paths)
-} SSHASH_HEADER;
+#define BBB_SS_ENTRY_PATH( s )		( ( char* ) s + sizeof( bbbSsEntry_t ) )
+#define BBB_SS_ENTRY_STATUS_DIR		0x01
 
-typedef struct s_snapshot {
-	int restored;				// 0: dynamically generated, 1: restored from file
-	char* tf_path;				// path where this snapshot was taken from
-	SSHASH_HEADER* ht;			// hashtable
-} SNAPSHOT;
+typedef struct bbbSsHashHeader_s {
+	bbbSsEntry_t*	first;
+	size_t			size;					// total memory used by all entries of this hash value (with paths)
+} bbbSsHashHeader_t;
 
-int init_snapshot(SNAPSHOT* ss);
-int destroy_snapshot(SNAPSHOT* ss);
+typedef struct bbbSnapshot_s {
+	int					restored;			// 0: dynamically generated, 1: restored from file
+	char*				tf_path;			// path where this snapshot was taken from
+	bbbSsHashHeader_t*	ht;					// hashtable
+} bbbSnapshot_t;
 
-int take_snapshot(char* path, SNAPSHOT* ss);
-SSENTRY* search(char* path, SNAPSHOT* ss);
+// ================= Exported functions =================
 
-int process_dir(char* path, size_t skip, SNAPSHOT* ss);
-int process_entry(char* path, size_t skip, char* name, SNAPSHOT* ss);
-int add_to_snapshot(SSENTRY* ssentry, SNAPSHOT* ss);
+				// does not allocate memory for bbbSnapshot_t
+int				bbbInitSnapshot( bbbSnapshot_t* const ss );
 
-int find_changes(SNAPSHOT* ss0, SNAPSHOT* ss1);
+				// does not free bbbSnapshot_t itself
+int				bbbDestroySnapshot( bbbSnapshot_t* const ss );
+
+int				bbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss );
+
+bbbSsEntry_t*	bbbSearchSnapshot( const char* const path, const bbbSnapshot_t* const ss );
+
+int				bbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const ss1 );
 
 #endif

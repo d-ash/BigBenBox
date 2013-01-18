@@ -1,8 +1,6 @@
-#include <stdio.h>
-
 #include "utils.h"
 
-const int bbbIsLittleEndian() {
+int bbbIsLittleEndian() {
 	static const int	i = 1;
 
 	return ( * ( char* ) &i == 1 );

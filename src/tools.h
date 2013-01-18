@@ -1,7 +1,7 @@
 #ifndef _BBB_TOOLS_H
 #define _BBB_TOOLS_H
 
-#include "global.def"
+#include "global.h"
 
 #include <stdlib.h>
 #include <stdio.h>

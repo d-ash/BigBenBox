@@ -8,21 +8,29 @@ else
 endif
 TESTS_DIR = $(BUILD_DIR)/tests
 
-LIB_NAME = bigbenbox
 LIB_SOURCES = snapshot.c pack.c tools.c
-EXE_NAME = bigbenbox
 EXE_SOURCES = client.c
+TST_SOURCES = tests/unit.c
+
+LIB_DEPENDS = $(LIB_SOURCES:.c=.h)
+EXE_DEPENDS = $(EXE_SOURCES:.c=.h)
+TST_DEPENDS = $(TST_SOURCES:.c=.h) tests/minunit.h
+
+LIB_NAME = bigbenbox
+EXE_NAME = bigbenbox
+TST_NAME = unit
 
 LIB_FILENAME = $(BUILD_DIR)/lib$(LIB_NAME).a
 LIB_OBJECTS = $(addprefix $(BUILD_DIR)/, $(LIB_SOURCES:.c=.o))
 EXE_FILENAME = $(BUILD_DIR)/$(EXE_NAME)
 EXE_OBJECTS = $(addprefix $(BUILD_DIR)/, $(EXE_SOURCES:.c=.o))
+TST_FILENAME = $(TESTS_DIR)/$(TST_NAME)
 
 COMPILER = gcc -c
 LINKER = gcc
 AR = ar -rv
 MKDIR_P = mkdir -p
-RM = rm -rf
+RMRF = rm -rf
 
 COMPILER_FLAGS = -I. -DPLATFORM_LINUX
 ifeq ($(DEBUG), 1)
@@ -32,28 +40,42 @@ LINKER_FLAGS = -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
 
 # ==============================================
 
-.PHONY: directories
+.PHONY: directories library client tests run runtests
 
-all: directories $(EXE_FILENAME) tests
+all: directories library client tests
 
 directories:
 	$(MKDIR_P) $(BUILD_DIR)
 	$(MKDIR_P) $(TESTS_DIR)
 
-$(EXE_FILENAME): $(LIB_FILENAME) $(EXE_OBJECTS)
-	$(LINKER) $(EXE_OBJECTS) $(LINKER_FLAGS) -o $@
+library: $(LIB_SOURCES) $(LIB_DEPENDS) $(LIB_FILENAME)
+
+client: $(EXE_SOURCES) $(EXE_DEPENDS) $(EXE_FILENAME)
+
+tests: $(TST_SOURCES) $(TST_DEPENDS) $(TST_FILENAME)
 
 $(LIB_FILENAME): $(LIB_OBJECTS)
 	$(AR) $(LIB_FILENAME) $(LIB_OBJECTS)
 
+$(EXE_FILENAME): $(LIB_FILENAME) $(EXE_OBJECTS)
+	$(LINKER) $(EXE_OBJECTS) $(LINKER_FLAGS) -o $@
+
 $(BUILD_DIR)/%.o: %.c %.h
 	$(COMPILER) $(COMPILER_FLAGS) $< -o $@
 
-tests: $(TESTS_DIR)/unit
-
-$(TESTS_DIR)/unit: tests/unit.c tests/minunit.h
-	$(COMPILER) $(COMPILER_FLAGS) $< -o $(TESTS_DIR)/unit.o
+$(TST_FILENAME): $(TST_SOURCES)
+	$(COMPILER) $(COMPILER_FLAGS) $(TST_SOURCES) -o $(TESTS_DIR)/unit.o
 	$(LINKER) $(TESTS_DIR)/unit.o $(LINKER_FLAGS) -o $@
 
 clean:
-	$(RM) $(BUILD_DIR)
+	$(RMRF) $(BUILD_DIR)
+
+run:
+	@cd $(BUILD_DIR); \
+		./$(EXE_NAME); \
+		cd - > /dev/null
+
+runtest:
+	@cd $(TESTS_DIR); \
+		./$(TST_NAME); \
+		cd - > /dev/null

@@ -1,9 +1,11 @@
 #include <stdio.h>
 
-#include "minunit.h"
+#include "unit.h"
 #include "tools.h"
 #include "snapshot.h"
 #include "pack.h"
+
+#define DATA_DIR	"../../../data"
 
 int		tests_run = 0;
 
@@ -48,7 +50,7 @@ static char* test_sha256() {
 		0xe0, 0x7d, 0xdb, 0x6d, 0xce, 0x4f, 0x6e, 0xeb
 	};
 	
-	MU_ASSERT( "Cannot calc SHA256 on a file", sha256_file( "tmp0/sha.hash", hash ) != 0 );
+	MU_ASSERT( "Cannot calc SHA256 on a file", sha256_file( DATA_DIR "/tmp0/sha.hash", hash ) != 0 );
 	MU_ASSERT( "SHA256 do not match", memcmp( hash, ctrl, SHA256_DIGEST_LENGTH ) == 0 );
 	return 0;
 }

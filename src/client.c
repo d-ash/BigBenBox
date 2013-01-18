@@ -6,6 +6,8 @@
 #include "snapshot.h"
 #include "pack.h"
 
+#define DATA_DIR	"../../data"
+
 // TODO treat DIRs and EMPTYs correctly
 // TODO UTF?
 
@@ -13,8 +15,8 @@ int main(int argc, char* argv[]) {
 	SNAPSHOT ss0;
 	SNAPSHOT ss1;
 
-	take_snapshot("tmp0", &ss0);
-	take_snapshot("tmp1", &ss1);
+	take_snapshot(DATA_DIR "/tmp0", &ss0);
+	take_snapshot(DATA_DIR "/tmp1", &ss1);
 
 	/*
 	printf("\nSearching...");

@@ -1,0 +1,59 @@
+RELEASE = 0
+DEBUG = 0
+
+ifdef $(RELEASE)
+  BUILD_DIR = ../build/release
+else
+  BUILD_DIR = ../build/dev
+endif
+TESTS_DIR = $(BUILD_DIR)/tests
+
+LIB_NAME = bigbenbox
+LIB_SOURCES = snapshot.c pack.c tools.c
+EXE_NAME = bigbenbox
+EXE_SOURCES = client.c
+
+LIB_FILENAME = $(BUILD_DIR)/lib$(LIB_NAME).a
+LIB_OBJECTS = $(addprefix $(BUILD_DIR)/, $(LIB_SOURCES:.c=.o))
+EXE_FILENAME = $(BUILD_DIR)/$(EXE_NAME)
+EXE_OBJECTS = $(addprefix $(BUILD_DIR)/, $(EXE_SOURCES:.c=.o))
+
+COMPILER = gcc -c
+LINKER = gcc
+AR = ar -rv
+MKDIR_P = mkdir -p
+RM = rm -rf
+
+COMPILER_FLAGS = -I. -DPLATFORM_LINUX
+ifeq ($(DEBUG), 1)
+	COMPILER_FLAGS += -DDEBUG
+endif
+LINKER_FLAGS = -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
+
+# ==============================================
+
+.PHONY: directories
+
+all: directories $(EXE_FILENAME) tests
+
+directories:
+	$(MKDIR_P) $(BUILD_DIR)
+	$(MKDIR_P) $(TESTS_DIR)
+
+$(EXE_FILENAME): $(LIB_FILENAME) $(EXE_OBJECTS)
+	$(LINKER) $(EXE_OBJECTS) $(LINKER_FLAGS) -o $@
+
+$(LIB_FILENAME): $(LIB_OBJECTS)
+	$(AR) $(LIB_FILENAME) $(LIB_OBJECTS)
+
+$(BUILD_DIR)/%.o: %.c %.h
+	$(COMPILER) $(COMPILER_FLAGS) $< -o $@
+
+tests: $(TESTS_DIR)/unit
+
+$(TESTS_DIR)/unit: tests/unit.c tests/minunit.h
+	$(COMPILER) $(COMPILER_FLAGS) $< -o $(TESTS_DIR)/unit.o
+	$(LINKER) $(TESTS_DIR)/unit.o $(LINKER_FLAGS) -o $@
+
+clean:
+	$(RM) $(BUILD_DIR)

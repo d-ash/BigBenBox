@@ -1,0 +1,4 @@
+PyYAML >=3.09
+argh >=0.8.1
+pathtools
+Brownie >=0.3

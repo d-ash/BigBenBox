@@ -1,5 +1,5 @@
 /**
- *	Structure of a packed snapshot after a file header:
+ *	Structure of a saved snapshot after a file header:
  *
  *	[ list of hash values
  *		sizeof( bbbSsHash_t )			hash value
@@ -7,7 +7,7 @@
  *
  *		[ list of entries
  *			sizeof( bbbSsEntry_t )		bbbSsEntry_t (bbbSsEntry_t.next has dummy value, we recognize NULL values only)
- *			bbbSsEntry_t.pathmem		path
+ *			bbbSsEntry_t.pathMem		path
  *
  *			...
  *		]
@@ -20,36 +20,35 @@
  *	WARNING: do not read/write C-structs, it will be not cross-platform.
  *	Memory packing takes place!
  *
- *		struct bbbPfHeader_s {
+ *		struct bbbSsFileHdr_s {
  *			uint8_t	magic;
  *			uint8_t	runtime;		// endianess | WORD_SIZE
  *			uint8_t	platform;
- *			uint8_t	pf_st_ver;		// version of a packfile structure
+ *			uint8_t	ssFileVersion;	// version of a file structure
  *		};
  */
 
-#ifndef _BBB_PACK_H
-#define _BBB_PACK_H
+#ifndef _BBB_SNAPSHOTFILE_H
+#define _BBB_SNAPSHOTFILE_H
 
 #include "snapshot.h"
 
-#define BBB_PF_MAGIC			0x8D
-#define BBB_PF_STRUCT_VER		0x01
-#define BBB_PF_HEADER_SIZE		4
+#define BBB_SS_FILE_MAGIC		0x8D
+#define BBB_SS_FILE_VERSION		0x01
+#define BBB_SS_FILE_HDR_SIZE	4
 
 // In the following struct we use platform dependant types!
-typedef struct bbbPfHeaderExt_s {
-	bbbSsHash_t		hash_count;		// count of written hashes
-	size_t			tf_pathmem;		// strlen( tf_path ) + 1
-} bbbPfHeaderExt_t;
+typedef struct bbbSsFileHdrExt_s {
+	size_t			takenFromMem;	// strlen( bbbSnapshot_t.takenFrom ) + 1
+} bbbSsFileHdrExt_t;
 /**
- * tf_path where this snapshot was taken from
+ * bbbSnapshot_t.takenFrom will be stored here, just after bbbSsFileHdrExt_t.
  */
 
-typedef struct bbbPfHashHeader_s {
+typedef struct bbbSsFileHashHdr_s {
 	bbbSsHash_t		hash;
 	size_t			size;			// memory size used by the following list of entries
-} bbbPfHashHeader_t;
+} bbbSsFileHashHdr_t;
 
 // =================== Exported functions ===================
 

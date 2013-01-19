@@ -1,5 +1,5 @@
-#ifndef _BBB_HASH_H
-#define _BBB_HASH_H
+#ifndef _BBB_UTILHASH_H
+#define _BBB_UTILHASH_H
 
 #include <stdint.h>
 #include <openssl/sha.h>
@@ -22,6 +22,6 @@ uint16_t	BbbHashBuf_uint16( const void* const buf, const size_t len );
 			// The initial value has to be 0.
 void		BbbUpdateChecksum( const void* const buf, const size_t len, bbbChecksum_t* checksum );
 
-int			BbbHashFile_sha256( const char* path, unsigned char hash[ SHA256_DIGEST_LENGTH ] );
+int			BbbHashFile_sha256( const char* path, byte_t hash[ SHA256_DIGEST_LENGTH ] );
 
 #endif

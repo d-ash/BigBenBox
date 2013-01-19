@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "util.h"
 
 int BbbIsLittleEndian() {
 	static const int	i = 1;
@@ -7,9 +7,9 @@ int BbbIsLittleEndian() {
 }
 
 void BbbPrintHex( const void* const b, const size_t len ) {
-    size_t		i;
+    size_t	i;
 
     for ( i = 0; i < len; i++ ) {
-		printf( "%02x", ( ( unsigned char* ) b )[ i ] );
+		printf( "%02x", ( ( byte_t* ) b )[ i ] );
     }
 }

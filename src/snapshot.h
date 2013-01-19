@@ -14,7 +14,7 @@
 #define _BBB_SNAPSHOT_H
 
 #include "global.h"
-#include "hash.h"
+#include "utilHash.h"
 
 typedef uint16_t			bbbSsHash_t;
 
@@ -27,10 +27,10 @@ typedef struct bbbSsEntryContent_s {
 
 typedef struct bbbSsEntry_s {
 	uint8_t				status;
-	uint8_t				custom;				// can be used by used code, at the end it has to be reset to 0
+	uint8_t				custom;			// can be used by used code, at the end it has to be reset to 0
 	bbbSsEntryContent_t	content;
-	size_t				pathmem;			// strlen( path ) + 1 + additional bytes for memory alignment
-	void*				next;				// link to the next bbbSsEntry_t
+	size_t				pathMem;		// strlen( path ) + 1 + additional bytes for memory alignment
+	void*				next;			// link to the next bbbSsEntry_t
 } bbbSsEntry_t;
 
 /**
@@ -41,15 +41,15 @@ typedef struct bbbSsEntry_s {
 #define BBB_SS_ENTRY_PATH( s )		( ( char* ) s + sizeof( bbbSsEntry_t ) )
 #define BBB_SS_ENTRY_STATUS_DIR		0x01
 
-typedef struct bbbSsHashHeader_s {
+typedef struct bbbSsHashHdr_s {
 	bbbSsEntry_t*	first;
-	size_t			size;					// total memory used by all entries of this hash value (with paths)
-} bbbSsHashHeader_t;
+	size_t			size;				// total memory used by all entries of this hash value (with paths)
+} bbbSsHashHdr_t;
 
 typedef struct bbbSnapshot_s {
-	int					restored;			// 0: dynamically generated, 1: restored from file
-	char*				tf_path;			// path where this snapshot was taken from
-	bbbSsHashHeader_t*	ht;					// hashtable
+	int				restored;			// 0: dynamically generated, 1: restored from file
+	char*			takenFrom;			// path where this snapshot was taken from
+	bbbSsHashHdr_t*	ht;					// hashtable
 } bbbSnapshot_t;
 
 // ================= Exported functions =================

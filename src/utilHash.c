@@ -1,11 +1,11 @@
-#include "hash.h"
+#include "utilHash.h"
 
 uint32_t BbbHashBuf_uint32( const void* const buf, const size_t len ) {
 	uint32_t	hash = 0;
 	size_t		i;
 
 	for ( i = 0; i < len; i++ ) {
-		hash = ( uint32_t ) ( ( unsigned char* ) buf )[ i ] + ( hash << 6 ) + ( hash << 16 ) - hash;
+		hash = ( uint32_t ) ( ( byte_t* ) buf )[ i ] + ( hash << 6 ) + ( hash << 16 ) - hash;
 	}
 
 	return hash;
@@ -16,7 +16,7 @@ uint16_t BbbHashBuf_uint16( const void* const buf, const size_t len ) {
 	size_t		i;
 
 	for ( i = 0; i < len; i++ ) {
-		hash = ( uint16_t ) ( ( unsigned char* ) buf )[ i ] + ( hash << 6 ) - hash;
+		hash = ( uint16_t ) ( ( byte_t* ) buf )[ i ] + ( hash << 6 ) - hash;
 	}
 
 	return hash;
@@ -29,18 +29,18 @@ void BbbUpdateChecksum( const void* const buf, const size_t len, bbbChecksum_t* 
 	hash = ( *checksum );
 
 	for ( i = 0; i < len; i++ ) {
-		hash = ( uint32_t ) ( ( unsigned char* ) buf )[ i ] + ( hash << 6 ) + ( hash << 16 ) - hash;
+		hash = ( uint32_t ) ( ( byte_t* ) buf )[ i ] + ( hash << 6 ) + ( hash << 16 ) - hash;
 	}
 
 	( *checksum ) = hash;
 }
 
-int BbbHashFile_sha256( const char* const path, unsigned char hash[ SHA256_DIGEST_LENGTH ] ) {
+int BbbHashFile_sha256( const char* const path, byte_t hash[ SHA256_DIGEST_LENGTH ] ) {
     FILE*				f;
     SHA256_CTX			sha;
 	char*				buf = NULL;
     static const size_t len = 32768;
-	size_t				was_read = 0;
+	size_t				wasRead = 0;
 	
 	f = fopen( path, "rb" );
     if ( f == NULL ) {
@@ -57,8 +57,8 @@ int BbbHashFile_sha256( const char* const path, unsigned char hash[ SHA256_DIGES
 		return 0;
 	}
 
-    while ( was_read = fread( buf, 1, len, f ) ) {
-        SHA256_Update( &sha, buf, was_read );
+    while ( wasRead = fread( buf, 1, len, f ) ) {
+        SHA256_Update( &sha, buf, wasRead );
     }
 
     SHA256_Final( hash, &sha );

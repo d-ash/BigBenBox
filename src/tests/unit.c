@@ -1,4 +1,5 @@
 #include "unit.h"
+#include "bigbenbox.h"
 
 #define DATA_DIR	"../../../data"
 
@@ -37,8 +38,8 @@ static char* _TestStrncmp() {
 }
 
 static char* _TestSha256() {
-	unsigned char			hash[ SHA256_DIGEST_LENGTH ];
-	const unsigned char		ctrl[ SHA256_DIGEST_LENGTH ] = {
+	byte_t			hash[ SHA256_DIGEST_LENGTH ];
+	const byte_t	ctrl[ SHA256_DIGEST_LENGTH ] = {
 		0xcc, 0xfa, 0xf6, 0xdb, 0xae, 0x74, 0x8e, 0xa5,
 		0x4e, 0x16, 0x32, 0x2b, 0xcd, 0x04, 0xeb, 0x13,
 		0x75, 0x08, 0x3e, 0x65, 0x11, 0x28, 0xae, 0x0c,
@@ -78,7 +79,7 @@ static char* _TestSsSaveLoad() {
 	BbbSaveSnapshot( "_test_packfile", &ss1 );
 	BbbLoadSnapshot( "_test_packfile", &ss2 );
 
-	BBB_MU_ASSERT( "Different values of tf_path", strcmp( ss1.tf_path, ss2.tf_path ) == 0 );
+	BBB_MU_ASSERT( "Different values of 'takenFrom'", strcmp( ss1.takenFrom, ss2.takenFrom ) == 0 );
 	BBB_MU_ASSERT( "Restored snapshot differs from original", BbbDiffSnapshot( &ss1, &ss2 ) == 0 );
 
 	//unlink("_test_packfile");

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
 
 // ===========================================
 
@@ -43,5 +44,9 @@
 #endif
 
 #define BBB_PERR( ... )			do { fprintf( stderr, "ERROR: " ); fprintf( stderr, __VA_ARGS__ ); } while ( 0 );
+
+// ===========================================
+
+typedef unsigned char	byte_t;
 
 #endif

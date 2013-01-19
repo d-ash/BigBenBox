@@ -1,7 +1,9 @@
-#ifndef _BBB_UTILS_H
-#define _BBB_UTILS_H
+#ifndef _BBB_UTIL_H
+#define _BBB_UTIL_H
 
 #include "global.h"
+
+// ================ Exported functions =============
 
 int			BbbIsLittleEndian();
 

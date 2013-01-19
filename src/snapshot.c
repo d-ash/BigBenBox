@@ -1,10 +1,8 @@
-#include <sys/stat.h>
-
 #include "snapshot.h"
 
 static int	_ProcessDir( const char* const path, const size_t skip, bbbSnapshot_t* const ss );
 static int	_ProcessEntry( const char* const path, const size_t skip, const char* const name, bbbSnapshot_t* const ss );
-static int	_AddToSnapshot( bbbSsEntry_t* const ssentry, bbbSnapshot_t* const ss );
+static int	_AddToSnapshot( bbbSsEntry_t* const entry, bbbSnapshot_t* const ss );
 
 int BbbInitSnapshot( bbbSnapshot_t* const ss ) {
 	if ( ss == NULL ) {
@@ -12,20 +10,20 @@ int BbbInitSnapshot( bbbSnapshot_t* const ss ) {
 		return 0;
 	}
 
-	ss->restored = 0;		// by default it's generated
-	ss->tf_path = NULL;
-	ss->ht = malloc( sizeof( bbbSsHashHeader_t ) * BBB_SS_HASH_MAX );
+	ss->restored = 0;		// by default a snapshot is generated
+	ss->takenFrom = NULL;
+	ss->ht = malloc( sizeof( bbbSsHashHdr_t ) * BBB_SS_HASH_MAX );
 
 	// assuming NULL == 0
-	memset( ss->ht, 0, sizeof( bbbSsHashHeader_t ) * BBB_SS_HASH_MAX );
+	memset( ss->ht, 0, sizeof( bbbSsHashHdr_t ) * BBB_SS_HASH_MAX );
 
 	return 1;
 }
 
 int BbbDestroySnapshot( bbbSnapshot_t* const ss ) {
 	bbbSsHash_t		i;
-	bbbSsEntry_t*	ssentry = NULL;
-	void*			mustdie = NULL;
+	bbbSsEntry_t*	entry = NULL;
+	void*			mustDie = NULL;
 
 	if ( ss == NULL || ss->ht == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
@@ -33,17 +31,17 @@ int BbbDestroySnapshot( bbbSnapshot_t* const ss ) {
 	}
 
 	for ( i = 0; i < BBB_SS_HASH_MAX; i++ ) {
-		ssentry = ss->ht[ i ].first;
+		entry = ss->ht[ i ].first;
 
 		if ( ss->restored ) {
-			if ( ssentry != NULL ) {
-				free( ssentry );		// all entries at once
+			if ( entry != NULL ) {
+				free( entry );		// all entries at once
 			}
 		} else {
-			while ( ssentry != NULL ) {
-				mustdie = ssentry;
-				ssentry = ssentry->next;
-				free( mustdie );
+			while ( entry != NULL ) {
+				mustDie = entry;
+				entry = entry->next;
+				free( mustDie );
 			}
 		}
 	}
@@ -51,8 +49,8 @@ int BbbDestroySnapshot( bbbSnapshot_t* const ss ) {
 	free( ss->ht );
 	ss->ht = NULL;
 
-	if ( ss->tf_path != NULL ) {
-		free( ss->tf_path );
+	if ( ss->takenFrom != NULL ) {
+		free( ss->takenFrom );
 	}
 
 	return 1;
@@ -84,38 +82,38 @@ int BbbTakeSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 		return 0;
 	}
 
-	ss->tf_path = p;
+	ss->takenFrom = p;
 
 	return 1;
 }
 
 bbbSsEntry_t* BbbSearchSnapshot( const char* const path, const bbbSnapshot_t* const ss ) {
 	bbbSsHash_t		hash;
-	bbbSsEntry_t*	ssentry = NULL;
-	size_t			pathlen;
+	bbbSsEntry_t*	entry = NULL;
+	size_t			pathLen;
 
 	if ( ss == NULL || ss->ht == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
 		return NULL;
 	}
 
-	pathlen = strlen( path );
-	hash = BbbHashBuf_uint16( path, pathlen );
+	pathLen = strlen( path );
+	hash = BbbHashBuf_uint16( path, pathLen );
 
-	ssentry = ss->ht[ hash ].first;
-	while ( ssentry != NULL ) {
-		if ( strncmp( path, BBB_SS_ENTRY_PATH( ssentry ), pathlen + 1 ) == 0 ) {
+	entry = ss->ht[ hash ].first;
+	while ( entry != NULL ) {
+		if ( strncmp( path, BBB_SS_ENTRY_PATH( entry ), pathLen + 1 ) == 0 ) {
 			break;
 		}
-		ssentry = ssentry->next;
+		entry = entry->next;
 	}
 
-	return ssentry;
+	return entry;
 }
 
 int BbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const ss1 ) {
 	bbbSsHash_t		i;
-	bbbSsEntry_t*	ssentry = NULL;
+	bbbSsEntry_t*	entry = NULL;
 	bbbSsEntry_t*	found = NULL;
 	char*			path = NULL;
 	int				differs = 0;
@@ -126,10 +124,10 @@ int BbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const 
 	}
 
 	for ( i = 0; i < BBB_SS_HASH_MAX; i++ ) {
-		ssentry = ss1->ht[ i ].first;
+		entry = ss1->ht[ i ].first;
 
-		while ( ssentry != NULL ) {
-			path = BBB_SS_ENTRY_PATH( ssentry );
+		while ( entry != NULL ) {
+			path = BBB_SS_ENTRY_PATH( entry );
 			found = BbbSearchSnapshot( path, ss0 );
 
 			if ( found == NULL ) {
@@ -139,9 +137,9 @@ int BbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const 
 				printf( "CHANGE_2: %s\n", path );
 			} else {
 				found->custom = 1;		// not to be checked at the loop over ss0
-				if ( found->status != ssentry->status
-						|| found->content.mtime != ssentry->content.mtime
-						|| found->content.size != ssentry->content.size ) {
+				if ( found->status != entry->status
+						|| found->content.mtime != entry->content.mtime
+						|| found->content.size != entry->content.size ) {
 					if ( differs == 0 ) {
 						differs = 1;
 					}
@@ -149,16 +147,16 @@ int BbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const 
 				}
 			}
 
-			ssentry = ssentry->next;
+			entry = entry->next;
 		}
 	}
 
 	for ( i = 0; i < BBB_SS_HASH_MAX; i++ ) {
-		ssentry = ss0->ht[ i ].first;
+		entry = ss0->ht[ i ].first;
 
-		while ( ssentry != NULL ) {
-			if ( ssentry->custom == 0 ) {
-				path = BBB_SS_ENTRY_PATH( ssentry );
+		while ( entry != NULL ) {
+			if ( entry->custom == 0 ) {
+				path = BBB_SS_ENTRY_PATH( entry );
 				found = BbbSearchSnapshot( path, ss1 );
 
 				if ( found == NULL ) {
@@ -168,10 +166,10 @@ int BbbDiffSnapshot( const bbbSnapshot_t* const ss0, const bbbSnapshot_t* const 
 					printf( "CHANGE_3: %s\n", path );
 				}
 			} else {
-				ssentry->custom = 0;	// resetting to a default value
+				entry->custom = 0;	// resetting to a default value
 			}
 
-			ssentry = ssentry->next;
+			entry = entry->next;
 		}
 	}
 
@@ -221,63 +219,63 @@ static int _ProcessDir( const char* const path, const size_t skip, bbbSnapshot_t
 }
 
 static int _ProcessEntry( const char* const path, const size_t skip, const char* const name, bbbSnapshot_t* const ss ) {
-	struct stat		entry_info;
-	bbbSsEntry_t*	ssentry = NULL;
-	size_t			pathmem = 0;
-	char*			path_full = NULL;		// path with a root dir of this processing
+	struct stat		entryInfo;
+	bbbSsEntry_t*	entry = NULL;
+	size_t			pathMem = 0;
+	char*			fullPath = NULL;		// path with a root dir of this processing
 	size_t			pl = 0;
 	size_t			nl = 0;
 
 	pl = strlen( path );
 	nl = strlen( name );
 
-	// allocating memory for bbbSsEntry_t + path, pathmem will be aligned to BBB_WORD_SIZE
+	// allocating memory for bbbSsEntry_t + path, pathMem will be aligned to BBB_WORD_SIZE
 	// in order to get properly aligned memory after load_snapshot()
-	pathmem = ( pl - skip + nl + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
-	ssentry = malloc( sizeof( bbbSsEntry_t ) + pathmem );
+	pathMem = ( pl - skip + nl + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
+	entry = malloc( sizeof( bbbSsEntry_t ) + pathMem );
 
-	if ( ssentry == NULL ) {
+	if ( entry == NULL ) {
 		BBB_PERR( "Cannot allocate memory for an entry: %s\n", strerror( errno ) );
 		return 0;
 	}
 
-	path_full = malloc( pathmem + skip + 1 );
-	strncpy( path_full, path, pl + 1 );
-	strncat( path_full, "/", 2 );
-	strncat( path_full, name, nl + 1 );
+	fullPath = malloc( pathMem + skip + 1 );
+	strncpy( fullPath, path, pl + 1 );
+	strncat( fullPath, "/", 2 );
+	strncat( fullPath, name, nl + 1 );
 
-	ssentry->status = 0;
-	ssentry->custom = 0;
-	ssentry->pathmem = pathmem;
-	strncpy( BBB_SS_ENTRY_PATH( ssentry ), path_full + skip + 1, pathmem );
+	entry->status = 0;
+	entry->custom = 0;
+	entry->pathMem = pathMem;
+	strncpy( BBB_SS_ENTRY_PATH( entry ), fullPath + skip + 1, pathMem );
 
-	if ( stat( path_full, &entry_info ) ) {
-		BBB_PERR( "Cannot get info about %s: %s\n", path_full, strerror( errno ) );
-		free( ssentry );
-		free( path_full );
+	if ( stat( fullPath, &entryInfo ) ) {
+		BBB_PERR( "Cannot get info about %s: %s\n", fullPath, strerror( errno ) );
+		free( entry );
+		free( fullPath );
 		return 0;
 	}
 
-	ssentry->content.size = entry_info.st_size;
-	ssentry->content.mtime = entry_info.st_mtime;
+	entry->content.size = entryInfo.st_size;
+	entry->content.mtime = entryInfo.st_mtime;
 
-	if ( S_ISDIR( entry_info.st_mode ) ) {
-		ssentry->status |= BBB_SS_ENTRY_STATUS_DIR;
-		_ProcessDir( path_full, skip, ss );
-	} else if ( S_ISREG( entry_info.st_mode ) ) {
-		ssentry->status &= ~BBB_SS_ENTRY_STATUS_DIR;
+	if ( S_ISDIR( entryInfo.st_mode ) ) {
+		entry->status |= BBB_SS_ENTRY_STATUS_DIR;
+		_ProcessDir( fullPath, skip, ss );
+	} else if ( S_ISREG( entryInfo.st_mode ) ) {
+		entry->status &= ~BBB_SS_ENTRY_STATUS_DIR;
 	} else {
-		BBB_PLOG( "Skipping irregular file: %s\n", path_full );
-		free( ssentry );
-		free( path_full );
+		BBB_PLOG( "Skipping irregular file: %s\n", fullPath );
+		free( entry );
+		free( fullPath );
 		return 1;		// it is a successful operation
 	}
 
-	free( path_full );
-	return _AddToSnapshot( ssentry, ss );
+	free( fullPath );
+	return _AddToSnapshot( entry, ss );
 }
 
-static int _AddToSnapshot( bbbSsEntry_t* const ssentry, bbbSnapshot_t* const ss ) {
+static int _AddToSnapshot( bbbSsEntry_t* const entry, bbbSnapshot_t* const ss ) {
 	bbbSsHash_t		hash;
 
 	if ( ss->restored ) {
@@ -285,12 +283,12 @@ static int _AddToSnapshot( bbbSsEntry_t* const ssentry, bbbSnapshot_t* const ss 
 		return 0;
 	}
 
-	hash = BbbHashBuf_uint16( BBB_SS_ENTRY_PATH( ssentry ), strlen( BBB_SS_ENTRY_PATH( ssentry ) ) );
+	hash = BbbHashBuf_uint16( BBB_SS_ENTRY_PATH( entry ), strlen( BBB_SS_ENTRY_PATH( entry ) ) );
 
 	// push to the beginning of the list
-	ssentry->next = ss->ht[ hash ].first;
-	ss->ht[ hash ].first = ssentry;
-	ss->ht[ hash ].size += sizeof( bbbSsEntry_t ) + ssentry->pathmem;
+	entry->next = ss->ht[ hash ].first;
+	ss->ht[ hash ].first = entry;
+	ss->ht[ hash ].size += sizeof( bbbSsEntry_t ) + entry->pathMem;
 
 	return 1;
 }

@@ -1,12 +1,14 @@
 #include "snapshotFile.h"
+#include "util.h"
+#include "utilHash.h"
 
-static void		_ConstructSsFileHdr( byte_t hdr[ BBB_SS_FILE_HDR_SIZE ] );
+static void		_ConstructSsFileHdr( bbbByte_t hdr[ BBB_SS_FILE_HDR_SIZE ] );
 static int		_PackSnapshot( FILE* const f, const bbbSnapshot_t* const ss, bbbChecksum_t* checksum_p );
 static int		_UnpackSnapshot( FILE* const f, bbbSnapshot_t* const ss, bbbChecksum_t* checksum_p );
 
 int BbbSaveSnapshot( const char* const path, const bbbSnapshot_t* const ss ) {
 	FILE*				f;
-	byte_t				hdr[ BBB_SS_FILE_HDR_SIZE ];
+	bbbByte_t			hdr[ BBB_SS_FILE_HDR_SIZE ];
 	bbbSsFileHdrExt_t	hdrExt;
 	int					res = 0;
 	bbbChecksum_t		checksum = 0;
@@ -22,20 +24,20 @@ int BbbSaveSnapshot( const char* const path, const bbbSnapshot_t* const ss ) {
 		BBB_PERR( "Cannot write a header to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
-	BbbUpdateChecksum( hdr, sizeof( hdr ), &checksum );
+	BbbUtilHashChecksum( hdr, sizeof( hdr ), &checksum );
 
 	hdrExt.takenFromMem = strlen( ss->takenFrom ) + 1;
 	if ( fwrite( &hdrExt, sizeof( hdrExt ), 1, f ) < 1 ) {
 		BBB_PERR( "Cannot write an extended header to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
-	BbbUpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
+	BbbUtilHashChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
 	if ( fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f ) < 1 ) {
 		BBB_PERR( "Cannot write 'takenFrom' to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
-	BbbUpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
+	BbbUtilHashChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
 
 	res = _PackSnapshot( f, ss, &checksum );
 
@@ -60,8 +62,8 @@ int BbbSaveSnapshot( const char* const path, const bbbSnapshot_t* const ss ) {
 
 int BbbLoadSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 	FILE*				f = NULL;
-	byte_t				hdr[ BBB_SS_FILE_HDR_SIZE ];
-	byte_t				hdrControl[ BBB_SS_FILE_HDR_SIZE ];
+	bbbByte_t			hdr[ BBB_SS_FILE_HDR_SIZE ];
+	bbbByte_t			hdrControl[ BBB_SS_FILE_HDR_SIZE ];
 	bbbSsFileHdrExt_t	hdrExt;
 	int					res = 0;
 	bbbChecksum_t		checksum = 0;
@@ -87,7 +89,7 @@ int BbbLoadSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 		BbbDestroySnapshot( ss );
 		return 0;
 	}
-	BbbUpdateChecksum( hdr, sizeof( hdr ), &checksum );
+	BbbUtilHashChecksum( hdr, sizeof( hdr ), &checksum );
 
 	_ConstructSsFileHdr( hdrControl );
 	if ( memcmp( hdr, hdrControl, sizeof( hdr ) ) != 0 ) {
@@ -103,7 +105,7 @@ int BbbLoadSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 		BbbDestroySnapshot( ss );
 		return 0;
 	}
-	BbbUpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
+	BbbUtilHashChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
 	ss->takenFrom = malloc( hdrExt.takenFromMem );
 	if ( ss->takenFrom == NULL ) {
@@ -117,7 +119,7 @@ int BbbLoadSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 		BbbDestroySnapshot( ss );
 		return 0;
 	}
-	BbbUpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
+	BbbUtilHashChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
 
 	res = _UnpackSnapshot( f, ss, &checksum );
 
@@ -154,9 +156,9 @@ int BbbLoadSnapshot( const char* const path, bbbSnapshot_t* const ss ) {
 	return res;
 }
 
-static void _ConstructSsFileHdr( byte_t hdr[ BBB_SS_FILE_HDR_SIZE ] ) {
+static void _ConstructSsFileHdr( bbbByte_t hdr[ BBB_SS_FILE_HDR_SIZE ] ) {
 	hdr[ 0 ] = BBB_SS_FILE_MAGIC;
-	hdr[ 1 ] = ( BbbIsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
+	hdr[ 1 ] = ( BbbUtilIsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
 	hdr[ 2 ] = BBB_PLATFORM_ID;
 	hdr[ 3 ] = BBB_SS_FILE_VERSION;
 }
@@ -181,14 +183,14 @@ static int _PackSnapshot( FILE* const f, const bbbSnapshot_t* const ss, bbbCheck
 		if ( fwrite( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) < 1 ) {
 			return 0;
 		}
-		BbbUpdateChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
+		BbbUtilHashChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
 
 		entry = hashHdr->first;
 		do {
 			if ( fwrite( entry, sizeof( bbbSsEntry_t ) + entry->pathMem, 1, f ) < 1 ) {
 				return 0;
 			}
-			BbbUpdateChecksum( entry, sizeof( bbbSsEntry_t ) + entry->pathMem, checksum_p );
+			BbbUtilHashChecksum( entry, sizeof( bbbSsEntry_t ) + entry->pathMem, checksum_p );
 
 			entry = entry->next;
 		} while ( entry != NULL );
@@ -201,11 +203,11 @@ static int _UnpackSnapshot( FILE* const f, bbbSnapshot_t* const ss, bbbChecksum_
 	bbbSsFileHashHdr_t	fileHashHdr;
 	bbbSsEntry_t*		entry = NULL;
 	bbbSsHashHdr_t*		hashHdr = NULL;
-	byte_t*				maxPtr = NULL;
+	bbbByte_t*			maxPtr = NULL;
 
 	// iterating over the hash list
 	while ( fread( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) == 1 ) {
-		BbbUpdateChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
+		BbbUtilHashChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
 
 		// allocating memory for all entries with this hash
 		hashHdr = & ss->ht[ fileHashHdr.hash ];
@@ -218,21 +220,21 @@ static int _UnpackSnapshot( FILE* const f, bbbSnapshot_t* const ss, bbbChecksum_
 		}
 
 		// The highest possible pointer value (counting not empty string).
-		maxPtr = ( byte_t* ) hashHdr->first + fileHashHdr.size - sizeof( bbbSsEntry_t ) - 2;
+		maxPtr = ( bbbByte_t* ) hashHdr->first + fileHashHdr.size - sizeof( bbbSsEntry_t ) - 2;
 
 		if ( fread( hashHdr->first, fileHashHdr.size, 1, f ) < 1 ) {
 			BBB_PERR( "Cannot read from a snapshot file: %s\n", strerror( errno ) );
 			return 0;
 		}
-		BbbUpdateChecksum( hashHdr->first, fileHashHdr.size, checksum_p );
+		BbbUtilHashChecksum( hashHdr->first, fileHashHdr.size, checksum_p );
 
 		// Set correct values for bbbSsEntry_t.next, all restored pointers are incorrect,
 		// but we are searching for NULL value!
 		entry = hashHdr->first;
 		while ( entry->next != NULL ) {
-			entry->next = ( byte_t* ) entry + sizeof( bbbSsEntry_t ) + entry->pathMem;
+			entry->next = ( bbbByte_t* ) entry + sizeof( bbbSsEntry_t ) + entry->pathMem;
 
-			if ( ( byte_t* ) entry->next > maxPtr ) {
+			if ( ( bbbByte_t* ) entry->next > maxPtr ) {
 				BBB_PERR( "Snapshot file is corrupted!\n" );
 				return 0;
 			}

@@ -14,7 +14,6 @@
 #define _BBB_SNAPSHOT_H
 
 #include "global.h"
-#include "utilHash.h"
 
 typedef uint16_t			bbbSsHash_t;
 
@@ -34,8 +33,8 @@ typedef struct bbbSsEntry_s {
 } bbbSsEntry_t;
 
 /**
- * WARNING: 'path' is stored here, just after bbbSsEntry_t.
- * sizeof( bbbSsEntry_t ) must be multiple of BBB_WORD_SIZE
+ *  WARNING: 'path' is stored here, just after bbbSsEntry_t.
+ *  sizeof( bbbSsEntry_t ) must be multiple of BBB_WORD_SIZE.
  */
 
 #define BBB_SS_ENTRY_PATH( s )		( ( char* ) s + sizeof( bbbSsEntry_t ) )

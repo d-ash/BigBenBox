@@ -1,10 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-
-#include "snapshot.h"
-#include "snapshotFile.h"
+#include "bigbenbox.h"
 
 #define DATA_DIR	"../../data"
 

@@ -1,4 +1,5 @@
 #include "snapshot.h"
+#include "utilHash.h"
 
 static int	_ProcessDir( const char* const path, const size_t skip, bbbSnapshot_t* const ss );
 static int	_ProcessEntry( const char* const path, const size_t skip, const char* const name, bbbSnapshot_t* const ss );
@@ -98,7 +99,7 @@ bbbSsEntry_t* BbbSearchSnapshot( const char* const path, const bbbSnapshot_t* co
 	}
 
 	pathLen = strlen( path );
-	hash = BbbHashBuf_uint16( path, pathLen );
+	hash = BbbUtilHashBuf_uint16( path, pathLen );
 
 	entry = ss->ht[ hash ].first;
 	while ( entry != NULL ) {
@@ -283,7 +284,7 @@ static int _AddToSnapshot( bbbSsEntry_t* const entry, bbbSnapshot_t* const ss ) 
 		return 0;
 	}
 
-	hash = BbbHashBuf_uint16( BBB_SS_ENTRY_PATH( entry ), strlen( BBB_SS_ENTRY_PATH( entry ) ) );
+	hash = BbbUtilHashBuf_uint16( BBB_SS_ENTRY_PATH( entry ), strlen( BBB_SS_ENTRY_PATH( entry ) ) );
 
 	// push to the beginning of the list
 	entry->next = ss->ht[ hash ].first;

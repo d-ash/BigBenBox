@@ -6,9 +6,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
+#include <inttypes.h>			// portable printf() identifiers
 #include <sys/stat.h>
+#include <netinet/in.h>
 
 // ===========================================
 
@@ -23,7 +27,7 @@
 #endif
 
 #ifndef BBB_PLATFORM_ID
-  #error Unknown BBB_PLATFORM
+  #error Cannot define BBB_PLATFORM_ID
 #endif
 
 // =============== Windows ===================
@@ -47,6 +51,6 @@
 
 // ===========================================
 
-typedef unsigned char	byte_t;
+typedef unsigned char			bbbByte_t;
 
 #endif

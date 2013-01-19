@@ -8,7 +8,7 @@ else
 endif
 TESTS_DIR = $(BUILD_DIR)/tests
 
-LIB_SOURCES = snapshot.c snapshotFile.c util.c utilHash.c
+LIB_SOURCES = snapshot.c snapshotFile.c util.c utilHash.c utilBIO.c
 EXE_SOURCES = client.c
 TST_SOURCES = tests/unit.c
 
@@ -32,11 +32,11 @@ AR = ar -rv
 MKDIR_P = mkdir -p
 RMRF = rm -rf
 
-COMPILER_FLAGS = -I. -DBBB_PLATFORM_LINUX
+COMPILER_FLAGS = -Wall -I. -DBBB_PLATFORM_LINUX
 ifeq ($(DEBUG), 1)
 	COMPILER_FLAGS += -DBBB_DEBUG
 endif
-LINKER_FLAGS = -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
+LINKER_FLAGS = -Wall -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
 
 # ==============================================
 

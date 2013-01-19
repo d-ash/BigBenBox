@@ -9,11 +9,11 @@ static char* _TestHashing() {
 	uint32_t	x;
 	uint16_t	y;
 
-	x = BbbHashBuf_uint32( "abcde", 5 );
-	y = BbbHashBuf_uint16( "abcde", 5 );
+	x = BbbUtilHashBuf_uint32( "abcde", 5 );
+	y = BbbUtilHashBuf_uint16( "abcde", 5 );
 
-	BBB_MU_ASSERT( "BbbHashBuf_uint32() failed", x == 0xbd500063 );
-	BBB_MU_ASSERT( "BbbHashBuf_uint16() failed", y == 0x0063 );
+	BBB_MU_ASSERT( "BbbUtilHashBuf_uint32() failed", x == 0xbd500063 );
+	BBB_MU_ASSERT( "BbbUtilHashBuf_uint16() failed", y == 0x0063 );
 	return 0;
 }
 
@@ -22,9 +22,9 @@ static char* _TestChecksum() {
 	bbbChecksum_t	x = 0;
 	bbbChecksum_t	y = 0;
 
-	BbbUpdateChecksum( s, 16, &x );
-	BbbUpdateChecksum( s, 8, &y );
-	BbbUpdateChecksum( s + 8, 8, &y );
+	BbbUtilHashChecksum( s, 16, &x );
+	BbbUtilHashChecksum( s, 8, &y );
+	BbbUtilHashChecksum( s + 8, 8, &y );
 
 	BBB_MU_ASSERT( "Checksum algorithm failed", x == y );
 	return 0;
@@ -38,22 +38,22 @@ static char* _TestStrncmp() {
 }
 
 static char* _TestSha256() {
-	byte_t			hash[ SHA256_DIGEST_LENGTH ];
-	const byte_t	ctrl[ SHA256_DIGEST_LENGTH ] = {
+	bbbByte_t		hash[ SHA256_DIGEST_LENGTH ];
+	const bbbByte_t	ctrl[ SHA256_DIGEST_LENGTH ] = {
 		0xcc, 0xfa, 0xf6, 0xdb, 0xae, 0x74, 0x8e, 0xa5,
 		0x4e, 0x16, 0x32, 0x2b, 0xcd, 0x04, 0xeb, 0x13,
 		0x75, 0x08, 0x3e, 0x65, 0x11, 0x28, 0xae, 0x0c,
 		0xe0, 0x7d, 0xdb, 0x6d, 0xce, 0x4f, 0x6e, 0xeb
 	};
 	
-	BBB_MU_ASSERT( "Cannot calc SHA256 on a file", BbbHashFile_sha256( DATA_DIR "/tmp0/sha.hash", hash ) != 0 );
+	BBB_MU_ASSERT( "Cannot calc SHA256 on a file", BbbUtilHashFile_sha256( DATA_DIR "/tmp0/sha.hash", hash ) != 0 );
 	BBB_MU_ASSERT( "SHA256 do not match", memcmp( hash, ctrl, SHA256_DIGEST_LENGTH ) == 0 );
 	return 0;
 }
 
 static char* _TestSsEntrySize() {
-	printf( "sizeof( size_t ): %lu\n", sizeof( size_t ) );
-	printf( "sizeof( bbbSsEntry_t ): %lu\n", sizeof( bbbSsEntry_t ) );
+	printf( "sizeof( size_t ): %" PRIuPTR "\n", sizeof( size_t ) );
+	printf( "sizeof( bbbSsEntry_t ): %" PRIuPTR "\n", sizeof( bbbSsEntry_t ) );
 
 	BBB_MU_ASSERT( "sizeof( bbbSsEntry_t ) is not appropriate for manual path alignment.", ( sizeof( bbbSsEntry_t ) % BBB_WORD_SIZE ) == 0 );
 	return 0;

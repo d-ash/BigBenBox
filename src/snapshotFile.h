@@ -28,8 +28,8 @@
  *		};
  */
 
-#ifndef _BBB_SNAPSHOTFILE_H
-#define _BBB_SNAPSHOTFILE_H
+#ifndef _BBB_SNAPSHOT_FILE_H
+#define _BBB_SNAPSHOT_FILE_H
 
 #include "snapshot.h"
 
@@ -39,7 +39,7 @@
 
 // In the following struct we use platform dependant types!
 typedef struct bbbSsFileHdrExt_s {
-	size_t			takenFromMem;	// strlen( bbbSnapshot_t.takenFrom ) + 1
+	size_t	takenFromMem;			// strlen( bbbSnapshot_t.takenFrom ) + 1
 } bbbSsFileHdrExt_t;
 /**
  * bbbSnapshot_t.takenFrom will be stored here, just after bbbSsFileHdrExt_t.

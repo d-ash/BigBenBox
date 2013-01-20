@@ -155,7 +155,7 @@ Namespaces
 ----------
 
 All exported definitions, functions and variables must be prefixed by a corresponding namespace.
-Namespaces are stacked after each other with `_` delimiter.
+Namespaces can be nested and their names are stacked after each other with `_` delimiter.
 Choose short names for namespaces, because they will be used all over the code.
 Use only lower characters, except preprocessor definitions (in that case use all caps).
 
@@ -167,4 +167,6 @@ Use only lower characters, except preprocessor definitions (in that case use all
 
 		typedef int	bbb_checksum_t;
 
-Each namespace should be stored in a separate couple of files (`.c` and `.h`).
+Each namespace should be stored in a separate couple of files (`ns1_ns2.c` and `ns1_ns2.h`).
+Libraries and project should have their own namespaces (root namespace).
+Root namespace is not obliged to be presented in filenames.

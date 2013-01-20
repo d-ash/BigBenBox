@@ -8,7 +8,7 @@ else
 endif
 TESTS_DIR = $(BUILD_DIR)/tests
 
-LIB_SOURCES = sshot.c sshot_file.c util.c util_hash.c util_hash.c
+LIB_SOURCES = sshot.c sshot_file.c util.c util_hash.c util_bio.c
 EXE_SOURCES = client.c
 TST_SOURCES = tests/unit.c
 

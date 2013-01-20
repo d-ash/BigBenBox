@@ -1,6 +1,7 @@
 #include "sshot_file.h"
 #include "util.h"
 #include "util_hash.h"
+#include "util_bio.h"
 
 static void		_ConstructFileHdr( bbb_byte_t hdr[ BBB_SSHOT_FILE_HDR_SIZE ] );
 static int		_Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
@@ -43,9 +44,7 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 
 	res = _Pack( f, ss, &checksum );
 
-	// checksum is saved in a network order
-	checksum = htonl( checksum );
-	if ( fwrite( &checksum, sizeof( checksum ), 1, f ) < 1 ) {
+	if ( bbb_util_bio_Write_uint32( checksum, f ) < 1 ) {
 		BBB_PERR( "Cannot write a checksum to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
@@ -68,8 +67,8 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 	bbb_byte_t				hdrControl[ BBB_SSHOT_FILE_HDR_SIZE ];
 	bbb_sshot_file_hdr2_t	hdrExt;
 	int						res = 0;
-	bbb_checksum_t		checksum = 0;
-	bbb_checksum_t		checksumRead = 0;
+	bbb_checksum_t			checksum = 0;
+	bbb_checksum_t			checksumRead = 0;
 
 	if ( ss == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
@@ -132,14 +131,13 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	if ( fread( &checksumRead, sizeof( checksumRead ), 1, f ) < 1 ) {
+	if ( bbb_util_bio_Read_uint32( &checksumRead, f ) < 1 ) {
 		BBB_PERR( "Cannot read a checksum from the snapshot file %s: %s\n", path, strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;
 	}
 
-	// it was stored in a network order
-	if ( htonl( checksum ) != checksumRead ) {
+	if ( checksum != checksumRead ) {
 		BBB_PERR( "The snapshot file %s is corrupted (checksum failed): %s\n", path, strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;
@@ -175,7 +173,7 @@ static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* ch
 		hashHdr = & ss->ht[ i ];
 
 		if ( hashHdr->first == NULL ) {
-			// Do not store hashes with no entries, it's packing anyway.
+			// Do not store hashes with no entries, it's packing.
 			continue;
 		}
 

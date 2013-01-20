@@ -6,15 +6,15 @@
 // TODO UTF?
 
 int main( int argc, char* argv[] ) {
-	bbbSnapshot_t	ss0;
-	bbbSnapshot_t	ss1;
+	bbb_sshot_t	ss0;
+	bbb_sshot_t	ss1;
 
-	BbbTakeSnapshot( DATA_DIR "/tmp0", &ss0 );
-	BbbTakeSnapshot( DATA_DIR "/tmp1", &ss1 );
+	bbb_sshot_Take( DATA_DIR "/tmp0", &ss0 );
+	bbb_sshot_Take( DATA_DIR "/tmp1", &ss1 );
 
 	/*
 	printf( "\nSearching..." );
-	ssentry = BbbSearchSnapshot( "/home/d-ash/distr/keepassx-0.4.3.tar.gz", &ss );
+	ssentry = bbb_sshot_Search( "/home/d-ash/distr/keepassx-0.4.3.tar.gz", &ss );
 	if ( ssentry == NULL ) {
 		printf( "Not found\n" );
 	} else {
@@ -22,7 +22,7 @@ int main( int argc, char* argv[] ) {
 	}
 
 	printf( "\nSearching..." );
-	ssentry = BbbSearchSnapshot( "/home/d-ash/distr/keepassx-0.4.3/share/keepassx/i18n/qt_tr.qm", &ss );
+	ssentry = bbb_sshot_Search( "/home/d-ash/distr/keepassx-0.4.3/share/keepassx/i18n/qt_tr.qm", &ss );
 	if ( ssentry == NULL ) {
 		printf( "Not found\n" );
 	} else {
@@ -31,10 +31,10 @@ int main( int argc, char* argv[] ) {
 	*/
 
 	printf( "Getting changes...\n" );
-	printf( "%d\n", BbbDiffSnapshot( &ss0, &ss1 ) );
+	printf( "%d\n", bbb_sshot_Diff( &ss0, &ss1 ) );
 
-	BbbDestroySnapshot( &ss1 );
-	BbbDestroySnapshot( &ss0 );
+	bbb_sshot_Destroy( &ss1 );
+	bbb_sshot_Destroy( &ss0 );
 
 	return 0;
 }

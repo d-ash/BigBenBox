@@ -51,6 +51,6 @@
 
 // ===========================================
 
-typedef unsigned char			bbbByte_t;
+typedef unsigned char			bbb_byte_t;
 
 #endif

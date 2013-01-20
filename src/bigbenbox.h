@@ -3,10 +3,10 @@
 
 #include "global.h"
 
-#include "snapshot.h"
-#include "snapshotFile.h"
+#include "sshot.h"
+#include "sshot_file.h"
 #include "util.h"
-#include "utilHash.h"
-#include "utilBIO.h"
+#include "util_hash.h"
+#include "util_bio.h"
 
 #endif

@@ -150,26 +150,21 @@ Sequence of functions in the `.c` file should be equivalent to the order of corr
 Place `static` variables and prototypes of `static` functions at the begining of the `.c` file.
 Implementations of them should be placed at the bottom of the file.
 
-Library
--------
 
-All public (exported) symbols and definitions must be prepended by a special prefix.
-In case of **BigBenBox** it is `bbb`, `Bbb` and `BBB_`.
+Namespaces
+----------
 
-		// use "BBB_" for preprocessor instructions
-		#define BBB_STATUS_BAR		"string"
-		#define BBB_MACRO_ONE()		( 3 + 5 )
+All exported definitions, functions and variables must be prefixed by a corresponding namespace.
+Namespaces are stacked after each other with `_` delimiter.
+Choose short names for namespaces, because they will be used all over the code.
+Use only lower characters, except preprocessor definitions (in that case use all caps).
 
-		// use "bbb" for variables
-		int		bbbOneHundredFiftySix = 156;
-		char	bbbExported = 0;
+		// `bbb`, `sshot` and `file` are namespaces
 
-		// use "Bbb" for functions
-		void	BbbGetValue( int x );
-		void	BbbSomeFunction();
+		#define BBB_SSHOT_MIN	1
 
+		void bbb_sshot_file_Load();
 
-Files
------
+		typedef int	bbb_checksum_t;
 
-> *TODO*
+Each namespace should be stored in a separate couple of files (`.c` and `.h`).

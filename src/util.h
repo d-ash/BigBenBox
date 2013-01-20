@@ -5,9 +5,9 @@
 
 // ================ Exported functions =============
 
-int			BbbUtilIsLittleEndian();
+int			bbb_util_IsLittleEndian();
 
 			// Prints in a network order (big-endian)
-void		BbbUtilPrintHex( const void* const b, const size_t len );
+void		bbb_util_PrintHex( const void* const b, const size_t len );
 
 #endif

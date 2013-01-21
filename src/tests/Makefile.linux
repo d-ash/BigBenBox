@@ -1,0 +1,39 @@
+include ../Makefile.linux_inc
+
+TESTS = $(shell $(PERL) all.pl)
+
+COMPILER_FLAGS += -I../
+LINKER_FLAGS += -L../$(BUILD_DIR)
+TESTS_DIR = ../$(BUILD_DIR)/tests
+
+TST_SOURCES = $(TESTS:=.c)
+TST_DEPENDS = $(TESTS:=.h)
+TST_EXECS = $(addprefix $(TESTS_DIR)/, $(TESTS:=.run))
+
+# ==============================================
+
+.PHONY: all delimiter directories build
+
+all: delimiter directories build
+	$(CP) all.pl $(TESTS_DIR)/
+
+delimiter:
+	@echo "================================="
+
+directories:
+	$(MKDIR_P) $(TESTS_DIR)
+
+build: $(TST_SOURCES) $(TST_DEPENDS) $(TST_EXECS)
+
+%.run: %.o ../$(LIB_FILENAME)
+	$(LINKER) $< $(LINKER_FLAGS) -o $@
+
+$(TESTS_DIR)/%.o: %.c %.h
+	$(COMPILER) $(COMPILER_FLAGS) $< -o $@
+
+clean:
+	$(RMRF) $(TESTS_DIR)
+
+run:
+	@cd $(TESTS_DIR); \
+		$(PERL) all.pl run;

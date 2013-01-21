@@ -7,5 +7,6 @@
 #define BBB_MU_ASSERT(message, test)	do { if ( !( test ) ) return message; } while ( 0 )
 #define BBB_MU_RUN_TEST(test)			do { char* message = test(); _testsRun++; \
 											if ( message ) return message; } while ( 0 )
+#define DATA_DIR	"../../../test_data"
 
 #endif

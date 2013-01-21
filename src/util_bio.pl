@@ -39,7 +39,7 @@ sub ReadBIO {
 				Perr "The record ( $1 ) is inside another one.";
 			} else {
 				$inRecord = 1;
-				push( @records, { "record" => $1, "fields" => [] } );
+				push( @records, { "recName" => $1, "fields" => [] } );
 			}
 		} elsif ( $_ =~ /^\t($SYMBOL)\s+($SYMBOL);$COMMENTS$/ ) {
 			# field definition
@@ -79,39 +79,49 @@ sub WriteH {
 	print $f "//   namespace: $namespace\n\n";
 	print $f "#ifndef $def\n";
 	print $f "#define $def\n\n";
+	print $f "#include \"global.h\"\n";
+	print $f "#include \"util_bio.h\"\n\n";
 
 	foreach ( @records ) {
 		my $rec = $_;
-		my $full = "${namespace}_" . $rec->{ "record" };
+		my $recName = $rec->{ "recName" };
+		my $recType = $rec->{ "recType" } = "${namespace}_${recName}_t";
 
+		$rec->{ "dynamic" } = 0;
 		print $f "typedef struct {\n";
 		foreach ( @{ $rec->{ "fields" } } ) {
-			my $fld = $_;
-
-			print $f "	" . $fld->{ "type" } . "		" . $fld->{ "name" } . ";\n";
+			if ( $_->{ "type" } eq "varbuf" ) {
+				$rec->{ "dynamic" } = 1;	# dynamic memory allocation for fields
+				print $f "	bbb_varbuf_t\t" . $_->{ "name" } . ";\n";
+			} elsif ( $_->{ "type" } eq "uint8" ) {
+				print $f "	" . $_->{ "type" } . "_t\t\t\t" . $_->{ "name" } . ";\n";
+			} else {
+				print $f "	" . $_->{ "type" } . "_t\t\t" . $_->{ "name" } . ";\n";
+			}
 		}
-		print $f "} ${full}_t;\n\n";
+		print $f "} ${recType};\n\n";
 
-		$rec->{ "full" } = $full;
 		$rec->{ "proto" } = {};
 
 		$rec->{ "proto" }{ "Read" }
-			= sprintf "size_t ${full}_Read( ${full}_t* const r, FILE* const f )";
+			= sprintf "size_t ${namespace}_Read_${recName}( ${recType}* const r, FILE* const f )";
 
 		$rec->{ "proto" }{ "ReadArray" }
-			= sprintf "size_t ${full}_ReadArray( ${full}_t* const a, size_t const n, FILE* const f )";
+			= sprintf "size_t ${namespace}_ReadArray_${recName}( ${recType}* const a, size_t const n, FILE* const f )";
 
 		$rec->{ "proto" }{ "Write" }
-			= sprintf "size_t ${full}_Write( const ${full}_t* const r, FILE* const f )";
+			= sprintf "size_t ${namespace}_Write_${recName}( const ${recType}* const r, FILE* const f )";
 
 		$rec->{ "proto" }{ "WriteArray" }
-			= sprintf "size_t ${full}_WriteArray( const ${full}_t* const a, size_t const n, FILE* const f )";
+			= sprintf "size_t ${namespace}_WriteArray_${recName}( const ${recType}* const a, size_t const n, FILE* const f )";
 
-		$rec->{ "proto" }{ "Destroy" }
-			= sprintf "void ${full}_Destroy( ${full}_t* const r )";
+		if ( $rec->{ "dynamic" } ) {
+			$rec->{ "proto" }{ "Destroy" }
+				= sprintf "void ${namespace}_Destroy_${recName}( ${recType}* const r )";
 
-		$rec->{ "proto" }{ "DestroyEach" }
-			= sprintf "void ${full}_DestroyEach( ${full}_t* const a, size_t const n )";
+			$rec->{ "proto" }{ "DestroyEach" }
+				= sprintf "void ${namespace}_DestroyEach_${recName}( ${recType}* const a, size_t const n )";
+		}
 
 		foreach ( sort keys %{$rec->{ "proto" }} ) {
 			print $f $rec->{ "proto" }{ $_ } . ";\n";
@@ -134,23 +144,21 @@ sub WriteC {
 	print $f "//   source: $filename\n";
 	print $f "//   namespace: $namespace\n\n";
 	print $f "#include \"$filename.h\"\n";
-	print $f "#include \"util_bio.h\"\n\n";
 
 	foreach ( @records ) {
 		my $rec = $_;
-		my $full = $rec->{ "full" };
+		my $recName = $rec->{ "recName" };
 
 		# Read() implementation
 		print $f $rec->{ "proto" }{ "Read" } . " {\n";
 		foreach ( @{ $rec->{ "fields" } } ) {
-			my $fld = $_;
-			my $type = $fld->{ "type" };
-			my $name = $fld->{ "name" };
+			my $type = $_->{ "type" };
+			my $name = $_->{ "name" };
 
-			if ( $type eq "uint8_t" ) {
+			if ( $type eq "uint8" ) {
 				print $f "	if ( fread( &( r->${name} ), 1, 1, f ) == 0 ) {\n";
 			} else {
-				print $f "	if ( ${BIO_NS}_Read_" . ( $type =~ s/_t$//r ) . "( &( r->${name} ), f ) == 0 ) {\n";
+				print $f "	if ( ${BIO_NS}_Read_${type}( &( r->${name} ), f ) == 0 ) {\n";
 			}
 			print $f "		return 0;\n";
 			print $f "	}\n\n";
@@ -162,7 +170,7 @@ sub WriteC {
 		print $f $rec->{ "proto" }{ "ReadArray" } . " {\n";
 		print $f "	size_t i;\n\n";
 		print $f "	for ( i = 0; i < n; i++ ) {\n";
-		print $f "		if ( ${full}_Read( &( a[ i ] ) ) == 0 ) {\n";
+		print $f "		if ( ${namespace}_Read_${recName}( &( a[ i ] ), f ) == 0 ) {\n";
 		print $f "			return 0;\n";
 		print $f "		}\n";
 		print $f "	}\n";
@@ -172,14 +180,13 @@ sub WriteC {
 		# Write() implementation
 		print $f $rec->{ "proto" }{ "Write" } . " {\n";
 		foreach ( @{ $rec->{ "fields" } } ) {
-			my $fld = $_;
-			my $type = $fld->{ "type" };
-			my $name = $fld->{ "name" };
+			my $type = $_->{ "type" };
+			my $name = $_->{ "name" };
 
-			if ( $type eq "uint8_t" ) {
+			if ( $type eq "uint8" ) {
 				print $f "	if ( fwrite( &( r->${name} ), 1, 1, f ) == 0 ) {\n";
 			} else {
-				print $f "	if ( ${BIO_NS}_Write_" . ( $type =~ s/_t$//r ) . "( r->${name}, f ) == 0 ) {\n";
+				print $f "	if ( ${BIO_NS}_Write_${type}( r->${name}, f ) == 0 ) {\n";
 			}
 			print $f "		return 0;\n";
 			print $f "	}\n\n";
@@ -191,26 +198,37 @@ sub WriteC {
 		print $f $rec->{ "proto" }{ "WriteArray" } . " {\n";
 		print $f "	size_t i;\n\n";
 		print $f "	for ( i = 0; i < n; i++ ) {\n";
-		print $f "		if ( ${full}_Write( &( a[ i ] ) ) == 0 ) {\n";
+		print $f "		if ( ${namespace}_Write_${recName}( &( a[ i ] ), f ) == 0 ) {\n";
 		print $f "			return 0;\n";
 		print $f "		}\n";
 		print $f "	}\n";
 		print $f "	return 1;\n";
 		print $f "}\n\n";
 
-		# Destroy() implementation
-		print $f $rec->{ "proto" }{ "Destroy" } . " {\n";
-		print $f "	// TODO free buffers\n";
-		print $f "	return;\n";
-		print $f "}\n\n";
+		if ( $rec->{ "dynamic" } ) {
+			# Destroy() implementation
+			print $f $rec->{ "proto" }{ "Destroy" } . " {\n";
+			foreach ( @{ $rec->{ "fields" } } ) {
+				my $type = $_->{ "type" };
+				my $name = $_->{ "name" };
 
-		# DestroyEach() implementation
-		print $f $rec->{ "proto" }{ "DestroyEach" } . " {\n";
-		print $f "	size_t i;\n\n";
-		print $f "	for ( i = 0; i < n; i++ ) {\n";
-		print $f "		${full}_Destroy( &( a[ i ] ) );\n";
-		print $f "	}\n";
-		print $f "}\n\n";
+				if ( $type eq "varbuf" ) {
+					print $f "	free( r->${name}.buf );\n";
+					print $f "	r->${name}.buf = NULL;\n";
+					print $f "	r->${name}.len = 0;\n\n";
+				}
+			}
+			print $f "	return;\n";
+			print $f "}\n\n";
+
+			# DestroyEach() implementation
+			print $f $rec->{ "proto" }{ "DestroyEach" } . " {\n";
+			print $f "	size_t i;\n\n";
+			print $f "	for ( i = 0; i < n; i++ ) {\n";
+			print $f "		${namespace}_Destroy_${recName}( &( a[ i ] ) );\n";
+			print $f "	}\n";
+			print $f "}\n\n";
+		}
 	}
 
 	close $f or die $!;

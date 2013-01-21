@@ -1,64 +1,42 @@
-RELEASE = 0
-DEBUG = 0
+include Makefile.linux_inc
 
-ifdef $(RELEASE)
-  BUILD_DIR = ../build/release
-else
-  BUILD_DIR = ../build/dev
-endif
-TESTS_DIR = $(BUILD_DIR)/tests
+LIB_SOURCES = \
+	sshot.c \
+	sshot_file.c \
+	sshot_file.bio.c \
+	util.c \
+	util_hash.c \
+	util_bio.c
 
-LIB_SOURCES = sshot.c sshot_file.c util.c util_hash.c util_bio.c
 EXE_SOURCES = client.c
-TST_SOURCES = tests/unit.c
 
 LIB_DEPENDS = $(LIB_SOURCES:.c=.h)
 EXE_DEPENDS = $(EXE_SOURCES:.c=.h)
-TST_DEPENDS = $(TST_SOURCES:.c=.h) tests/minunit.h
 
-LIB_NAME = bigbenbox
 EXE_NAME = bigbenbox
-TST_NAME = unit
 
-LIB_FILENAME = $(BUILD_DIR)/lib$(LIB_NAME).a
 LIB_OBJECTS = $(addprefix $(BUILD_DIR)/, $(LIB_SOURCES:.c=.o))
 EXE_FILENAME = $(BUILD_DIR)/$(EXE_NAME)
 EXE_OBJECTS = $(addprefix $(BUILD_DIR)/, $(EXE_SOURCES:.c=.o))
-TST_FILENAME = $(TESTS_DIR)/$(TST_NAME)
-
-COMPILER = gcc -c
-LINKER = gcc
-AR = ar -rv
-MKDIR_P = mkdir -p
-RMRF = rm -rf
-
-COMPILER_FLAGS = -Wall -Wextra -I. -DBBB_PLATFORM_LINUX
-ifeq ($(DEBUG), 1)
-	COMPILER_FLAGS += -DBBB_DEBUG
-endif
-LINKER_FLAGS = -Wall -Wextra -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
 
 # ==============================================
 
-.PHONY: bio delimiter directories library client tests run runtests
+.PHONY: bio delimiter directories library client run tests runtests
 
 all: delimiter directories library client tests
 
 bio:
-	ls -1 *.bio | xargs -n 1 -t perl util_bio.pl 
+	ls -1 *.bio | xargs -n 1 -t $(PERL) util_bio.pl 
 
 delimiter:
 	@echo "================================="
 
 directories:
 	$(MKDIR_P) $(BUILD_DIR)
-	$(MKDIR_P) $(TESTS_DIR)
 
 library: $(LIB_SOURCES) $(LIB_DEPENDS) $(LIB_FILENAME)
 
 client: $(EXE_SOURCES) $(EXE_DEPENDS) $(EXE_FILENAME)
-
-tests: $(TST_SOURCES) $(TST_DEPENDS) $(TST_FILENAME)
 
 $(LIB_FILENAME): $(LIB_OBJECTS)
 	$(AR) $(LIB_FILENAME) $(LIB_OBJECTS)
@@ -69,19 +47,17 @@ $(EXE_FILENAME): $(LIB_FILENAME) $(EXE_OBJECTS)
 $(BUILD_DIR)/%.o: %.c %.h
 	$(COMPILER) $(COMPILER_FLAGS) $< -o $@
 
-$(TST_FILENAME): $(TST_SOURCES)
-	$(COMPILER) $(COMPILER_FLAGS) $(TST_SOURCES) -o $(TESTS_DIR)/unit.o
-	$(LINKER) $(TESTS_DIR)/unit.o $(LINKER_FLAGS) -o $@
-
 clean:
 	$(RMRF) $(BUILD_DIR)
 
 run: delimiter
 	@cd $(BUILD_DIR); \
-		./$(EXE_NAME); \
-		cd - > /dev/null
+		./$(EXE_NAME);
 
-runtest: delimiter
-	@cd $(TESTS_DIR); \
-		./$(TST_NAME); \
-		cd - > /dev/null
+tests:
+	@cd tests; \
+		$(MAKE) -f Makefile.linux;
+
+runtests:
+	@cd tests; \
+		$(MAKE) -f Makefile.linux run;

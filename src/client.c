@@ -1,6 +1,6 @@
 #include "bigbenbox.h"
 
-#define DATA_DIR	"../../data"
+#define DATA_DIR	"../../test_data"
 
 // TODO treat DIRs and EMPTYs correctly
 // TODO UTF?

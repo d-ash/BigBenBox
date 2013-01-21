@@ -1,6 +1,8 @@
 #include "util_bio.h"
 #include "util.h"
 
+// ============== Writing =============
+
 size_t bbb_util_bio_Write_uint16( const uint16_t v, FILE* const f ) {
 	uint16_t	t;
 
@@ -22,19 +24,17 @@ size_t bbb_util_bio_Write_uint64( const uint64_t v, FILE* const f ) {
 	return fwrite( &t, sizeof ( t ), 1, f );
 }
 
-size_t bbb_util_bio_Write_varbuf( const bbb_byte_t* const buf, size_t const len, FILE* const f ) {
-	uint32_t	len32;
-
-	len32 = ( uint32_t ) len;
-
-	if ( bbb_util_bio_Write_uint32( len32, f ) == 0 ) {
+size_t bbb_util_bio_Write_varbuf( const bbb_varbuf_t vb, FILE* const f ) {
+	if ( bbb_util_bio_Write_uint32( vb.len, f ) == 0 ) {
 		return 0;
 	}
 
-	return fwrite( buf, len, 1, f );
+	return fwrite( vb.buf, vb.len, 1, f );
 }
 
-size_t bbb_util_bio_Read_uint16( uint16_t* v, FILE* const f ) {
+// ============== Reading =============
+
+size_t bbb_util_bio_Read_uint16( uint16_t* const v, FILE* const f ) {
 	uint16_t	t;
 	size_t		res;
 
@@ -47,7 +47,7 @@ size_t bbb_util_bio_Read_uint16( uint16_t* v, FILE* const f ) {
 	return res;
 }
 
-size_t bbb_util_bio_Read_uint32( uint32_t* v, FILE* const f ) {
+size_t bbb_util_bio_Read_uint32( uint32_t* const v, FILE* const f ) {
 	uint32_t	t;
 	size_t		res;
 
@@ -60,7 +60,7 @@ size_t bbb_util_bio_Read_uint32( uint32_t* v, FILE* const f ) {
 	return res;
 }
 
-size_t bbb_util_bio_Read_uint64( uint64_t* v, FILE* const f ) {
+size_t bbb_util_bio_Read_uint64( uint64_t* const v, FILE* const f ) {
 	uint64_t	t;
 	size_t		res;
 
@@ -73,19 +73,16 @@ size_t bbb_util_bio_Read_uint64( uint64_t* v, FILE* const f ) {
 	return res;
 }
 
-size_t bbb_util_bio_Read_varbuf( bbb_byte_t** buf, size_t* const len, FILE* const f ) {
-	uint32_t	len32;
-
-	if ( bbb_util_bio_Read_uint32( &len32, f ) == 0 ) {
+size_t bbb_util_bio_Read_varbuf( bbb_varbuf_t* const vb, FILE* const f ) {
+	if ( bbb_util_bio_Read_uint32( &( vb->len ), f ) == 0 ) {
 		return 0;
 	}
 
-	*len = ( size_t ) len32;
-	*buf = malloc( *len );
+	vb->buf = malloc( vb->len );
 
-	if ( *buf == NULL ) {
+	if ( vb->buf == NULL ) {
 		return 0;
 	}
 
-	return fread( *buf, *len, 1, f );
+	return fread( vb->buf, vb->len, 1, f );
 }

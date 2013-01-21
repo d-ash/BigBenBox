@@ -1,0 +1,9 @@
+// some comment
+
+hdr {				// some comm
+	uint8		magic;
+	uint16		runtime;		// ( endianess | WORD_SIZE )
+	uint32		platform;
+	uint64		ssFileVersion;	// version of a file structure
+	varbuf		vb;
+};

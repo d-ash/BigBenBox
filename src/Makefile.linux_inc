@@ -1,0 +1,26 @@
+LIB_NAME = bigbenbox
+
+RELEASE = 0
+DEBUG = 0
+
+ifdef $(RELEASE)
+  BUILD_DIR = ../build/release
+else
+  BUILD_DIR = ../build/dev
+endif
+LIB_FILENAME = $(BUILD_DIR)/lib$(LIB_NAME).a
+
+MAKE = make
+COMPILER = gcc -c
+LINKER = gcc
+AR = ar -rv
+MKDIR_P = mkdir -p
+CP = cp
+RMRF = rm -rf
+PERL = perl
+
+COMPILER_FLAGS = -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX
+ifeq ($(DEBUG), 1)
+	COMPILER_FLAGS += -DBBB_DEBUG
+endif
+LINKER_FLAGS = -Wall -Wextra -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)

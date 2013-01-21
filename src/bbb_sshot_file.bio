@@ -1,8 +1,8 @@
 // some comment
 
 hdr {			// some comm
-	uint8_t		magic;
-	uint8_t		runtime;		// ( endianess | WORD_SIZE )
-	uint8_t		platform;
-	uint8_t		ssFileVersion;	// version of a file structure
+	uint8_t			magic;
+	uint16_t		runtime;		// ( endianess | WORD_SIZE )
+	uint32_t		platform;
+	uint64_t		ssFileVersion;	// version of a file structure
 };

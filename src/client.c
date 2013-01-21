@@ -5,7 +5,7 @@
 // TODO treat DIRs and EMPTYs correctly
 // TODO UTF?
 
-int main( int argc, char* argv[] ) {
+int main() {
 	bbb_sshot_t	ss0;
 	bbb_sshot_t	ss1;
 

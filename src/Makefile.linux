@@ -32,11 +32,11 @@ AR = ar -rv
 MKDIR_P = mkdir -p
 RMRF = rm -rf
 
-COMPILER_FLAGS = -Wall -I. -DBBB_PLATFORM_LINUX
+COMPILER_FLAGS = -Wall -Wextra -I. -DBBB_PLATFORM_LINUX
 ifeq ($(DEBUG), 1)
 	COMPILER_FLAGS += -DBBB_DEBUG
 endif
-LINKER_FLAGS = -Wall -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
+LINKER_FLAGS = -Wall -Wextra -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
 
 # ==============================================
 

@@ -121,7 +121,7 @@ static char* _AllTests() {
 	return 0;
 }
 
-int main( const int argc, const char* const argv[] ) {
+int main() {
 	char*	result;
 	
 	result = _AllTests();

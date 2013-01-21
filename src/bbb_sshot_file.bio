@@ -1,0 +1,8 @@
+// some comment
+
+hdr {			// some comm
+	uint8_t		magic;
+	uint8_t		runtime;		// ( endianess | WORD_SIZE )
+	uint8_t		platform;
+	uint8_t		ssFileVersion;	// version of a file structure
+};

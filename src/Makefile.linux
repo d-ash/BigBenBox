@@ -40,9 +40,12 @@ LINKER_FLAGS = -Wall -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)
 
 # ==============================================
 
-.PHONY: delimiter directories library client tests run runtests
+.PHONY: bio delimiter directories library client tests run runtests
 
 all: delimiter directories library client tests
+
+bio:
+	ls -1 *.bio | xargs -n 1 -t perl util_bio.pl 
 
 delimiter:
 	@echo "================================="

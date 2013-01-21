@@ -37,6 +37,23 @@ static char* _TestStrncmp() {
 	return 0;
 }
 
+static char* _TestConvertBinary64() {
+	const uint64_t x = 0x0102030405060708;
+	const uint64_t y = 0x0807060504030201;
+
+	if ( bbb_util_IsLittleEndian() ) {
+		printf( "Little-endian platform\n" );
+		BBB_MU_ASSERT( "_ConvertBinary_hton64() failed", bbb_util_ConvertBinary_hton64( x ) == y );
+		BBB_MU_ASSERT( "_ConvertBinary_ntoh64() failed", bbb_util_ConvertBinary_ntoh64( y ) == x );
+	} else {
+		printf( "Big-endian platform\n" );
+		BBB_MU_ASSERT( "_ConvertBinary_hton64() failed", bbb_util_ConvertBinary_hton64( x ) == x );
+		BBB_MU_ASSERT( "_ConvertBinary_ntoh64() failed", bbb_util_ConvertBinary_ntoh64( y ) == y );
+	}
+
+	return 0;
+}
+
 static char* _TestSha256() {
 	bbb_byte_t			hash[ SHA256_DIGEST_LENGTH ];
 	const bbb_byte_t	ctrl[ SHA256_DIGEST_LENGTH ] = {
@@ -93,9 +110,11 @@ static char* _TestSsSaveLoad() {
 // ================================================
 
 static char* _AllTests() {
+	printf( "~~~~~~~~~~~~~ TESTS ~~~~~~~~~~~~~\n" );
 	BBB_MU_RUN_TEST( _TestHashing );
 	BBB_MU_RUN_TEST( _TestChecksum );
 	BBB_MU_RUN_TEST( _TestStrncmp );
+	BBB_MU_RUN_TEST( _TestConvertBinary64 );
 	BBB_MU_RUN_TEST( _TestSha256 );
 	BBB_MU_RUN_TEST( _TestSsEntrySize );
 	BBB_MU_RUN_TEST( _TestSsSaveLoad );
@@ -108,11 +127,10 @@ int main( const int argc, const char* const argv[] ) {
 	result = _AllTests();
 
 	if ( result == 0 ) {
-		printf( "\nALL TESTS PASSED\n" );
+		printf( "\nALL %d TESTS PASSED\n", _testsRun );
 	} else {
 		printf( "\nTEST FAILED: %s\n", result );
 	}
-	printf( "Tests run: %d\n", _testsRun );
 
 	return ( int ) ( result != 0 );
 }

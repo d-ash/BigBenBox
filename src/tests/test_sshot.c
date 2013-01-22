@@ -15,8 +15,8 @@ static char* _TestSsEntrySize() {
 }
 
 static char* _TestSsSaveLoad() {
-	bbb_sshot_t	ss1;
-	bbb_sshot_t	ss2;
+	bbb_sshot_t		ss1;
+	bbb_sshot_t		ss2;
 
 #ifdef BBB_PLATFORM_WINDOWS
 	bbb_sshot_Take( "G:\\English\\", &ss1 );
@@ -37,7 +37,7 @@ static char* _TestSsSaveLoad() {
 	BBB_MU_ASSERT( "Different values of 'takenFrom'", strcmp( ss1.takenFrom, ss2.takenFrom ) == 0 );
 	BBB_MU_ASSERT( "Restored snapshot differs from original", bbb_sshot_Diff( &ss1, &ss2 ) == 0 );
 
-	//unlink("_test_packfile");
+	//unlink( "_test_packfile" );
 	bbb_sshot_Destroy( &ss2 );
 	bbb_sshot_Destroy( &ss1 );
 	return 0;

@@ -78,16 +78,4 @@ static char* _AllTests() {
 	return 0;
 }
 
-int main() {
-	char*	result;
-	
-	result = _AllTests();
-
-	if ( result == 0 ) {
-		printf( "\nALL %d TESTS PASSED\n", _testsRun );
-	} else {
-		printf( "\n*** TEST FAILED: %s\n", result );
-	}
-
-	return ( int ) ( result != 0 );
-}
+MAIN

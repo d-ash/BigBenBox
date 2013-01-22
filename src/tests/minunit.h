@@ -9,4 +9,19 @@
 											if ( message ) return message; } while ( 0 )
 #define DATA_DIR	"../../../test_data"
 
+#define MAIN \
+	int main() { \
+		char*	result; \
+	\
+		result = _AllTests(); \
+	\
+		if ( result == 0 ) { \
+			printf( "\nALL %d TESTS PASSED\n", _testsRun ); \
+		} else { \
+			printf( "\n*** TEST FAILED: %s\n", result ); \
+		} \
+	\
+		return ( int ) ( result != 0 ); \
+	}
+
 #endif

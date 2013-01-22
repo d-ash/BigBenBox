@@ -18,7 +18,7 @@ all: delimiter directories build
 	$(CP) all.pl $(TESTS_DIR)/
 
 delimiter:
-	@echo "================================="
+	@echo "========================"
 
 directories:
 	$(MKDIR_P) $(TESTS_DIR)

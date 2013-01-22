@@ -29,7 +29,7 @@ bio:
 	ls -1 *.bio | xargs -n 1 -t $(PERL) util_bio.pl 
 
 delimiter:
-	@echo "================================="
+	@echo "========================"
 
 directories:
 	$(MKDIR_P) $(BUILD_DIR)

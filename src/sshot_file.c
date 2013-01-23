@@ -44,7 +44,7 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 
 	res = _Pack( f, ss, &checksum );
 
-	if ( bbb_util_bio_Write_uint32( checksum, f ) < 1 ) {
+	if ( bbb_util_bio_WriteToFile_uint32( checksum, f ) < 1 ) {
 		BBB_PERR( "Cannot write a checksum to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
@@ -131,7 +131,7 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Read_uint32( &checksumRead, f ) < 1 ) {
+	if ( bbb_util_bio_ReadFromFile_uint32( &checksumRead, f ) < 1 ) {
 		BBB_PERR( "Cannot read a checksum from the snapshot file %s: %s\n", path, strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;

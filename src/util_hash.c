@@ -22,7 +22,7 @@ uint16_t bbb_util_hash_Calc_uint16( const void* const buf, const size_t len ) {
 	return hash;
 }
 
-void bbb_util_hash_UpdateChecksum( const void* const buf, const size_t len, bbb_checksum_t* checksum ) {
+void bbb_util_hash_UpdateChecksum( const void* const buf, const size_t len, bbb_checksum_t* const checksum ) {
 	uint32_t	hash;
 	size_t		i;
 
@@ -35,7 +35,7 @@ void bbb_util_hash_UpdateChecksum( const void* const buf, const size_t len, bbb_
 	( *checksum ) = hash;
 }
 
-int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA256_DIGEST_LENGTH ] ) {
+int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t const hash[ SHA256_DIGEST_LENGTH ] ) {
     FILE*				f;
     SHA256_CTX			sha;
 	char*				buf = NULL;

@@ -19,8 +19,8 @@ uint16_t	bbb_util_hash_Calc_uint16( const void* const buf, const size_t len );
 			// Streaming version of SDBM-32 hashing.
 			// Accepts and updates hash value via parameters.
 			// The initial value has to be 0.
-void		bbb_util_hash_UpdateChecksum( const void* const buf, const size_t len, bbb_checksum_t* checksum );
+void		bbb_util_hash_UpdateChecksum( const void* const buf, const size_t len, bbb_checksum_t* const checksum );
 
-int			bbb_util_hash_ReadFile_sha256( const char* path, bbb_byte_t hash[ SHA256_DIGEST_LENGTH ] );
+int			bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t const hash[ SHA256_DIGEST_LENGTH ] );
 
 #endif

@@ -16,11 +16,15 @@ typedef struct {
 	bbb_varbuf_t	vb;
 } sshot_file_hdr_t;
 
+int sshot_file_Copy_hdr( sshot_file_hdr_t* const dst, const sshot_file_hdr_t* const src );
 void sshot_file_Destroy_hdr( sshot_file_hdr_t* const r );
 void sshot_file_DestroyEach_hdr( sshot_file_hdr_t* const a, size_t const n );
-size_t sshot_file_Read_hdr( sshot_file_hdr_t* const r, FILE* const f );
-size_t sshot_file_ReadArray_hdr( sshot_file_hdr_t* const a, size_t const n, FILE* const f );
-size_t sshot_file_Write_hdr( const sshot_file_hdr_t* const r, FILE* const f );
-size_t sshot_file_WriteArray_hdr( const sshot_file_hdr_t* const a, size_t const n, FILE* const f );
+size_t sshot_file_GetSize_hdr( const sshot_file_hdr_t* const r );
+size_t sshot_file_GetSizeArray_hdr( const sshot_file_hdr_t* const a, size_t const n );
+int sshot_file_IsEqual_hdr( const sshot_file_hdr_t* const r1, const sshot_file_hdr_t* const r2 );
+int sshot_file_ReadFromFile_hdr( sshot_file_hdr_t* const r, FILE* const f );
+int sshot_file_ReadFromFileArray_hdr( sshot_file_hdr_t* const a, size_t const n, FILE* const f );
+int sshot_file_WriteToFile_hdr( const sshot_file_hdr_t* const r, FILE* const f );
+int sshot_file_WriteToFileArray_hdr( const sshot_file_hdr_t* const a, size_t const n, FILE* const f );
 
 #endif

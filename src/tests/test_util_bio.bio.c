@@ -45,70 +45,80 @@ size_t test_util_bio_GetSize_fileHeader( const test_util_bio_fileHeader_t* const
 	return ( 0 + sizeof( uint8_t ) + sizeof( uint16_t ) + sizeof( uint32_t ) + sizeof( uint64_t ) + sizeof( r->var_buf_777.len ) + r->var_buf_777.len );
 }
 
-int test_util_bio_Read_fileHeader( test_util_bio_fileHeader_t* const r, FILE* const f ) {
+size_t test_util_bio_GetSizeArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n ) {
+	size_t	i;
+	size_t	sz = 0;
+
+	for ( i = 0; i < n; i++ ) {
+		sz += test_util_bio_GetSize_fileHeader( &( a[ i ] ) );
+	}
+	return sz;
+}
+
+int test_util_bio_ReadFromFile_fileHeader( test_util_bio_fileHeader_t* const r, FILE* const f ) {
 	if ( fread( &( r->theFirst ), 1, 1, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Read_uint16( &( r->theSecond ), f ) == 0 ) {
+	if ( bbb_util_bio_ReadFromFile_uint16( &( r->theSecond ), f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Read_uint32( &( r->theThird ), f ) == 0 ) {
+	if ( bbb_util_bio_ReadFromFile_uint32( &( r->theThird ), f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Read_uint64( &( r->theFourth ), f ) == 0 ) {
+	if ( bbb_util_bio_ReadFromFile_uint64( &( r->theFourth ), f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Read_varbuf( &( r->var_buf_777 ), f ) == 0 ) {
+	if ( bbb_util_bio_ReadFromFile_varbuf( &( r->var_buf_777 ), f ) == 0 ) {
 		return 0;
 	}
 
 	return 1;
 }
 
-int test_util_bio_ReadArray_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f ) {
+int test_util_bio_ReadFromFileArray_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f ) {
 	size_t	i;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( test_util_bio_Read_fileHeader( &( a[ i ] ), f ) == 0 ) {
+		if ( test_util_bio_ReadFromFile_fileHeader( &( a[ i ] ), f ) == 0 ) {
 			return 0;
 		}
 	}
 	return 1;
 }
 
-int test_util_bio_Write_fileHeader( const test_util_bio_fileHeader_t* const r, FILE* const f ) {
+int test_util_bio_WriteToFile_fileHeader( const test_util_bio_fileHeader_t* const r, FILE* const f ) {
 	if ( fwrite( &( r->theFirst ), 1, 1, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_uint16( r->theSecond, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_uint16( r->theSecond, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_uint32( r->theThird, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_uint32( r->theThird, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_uint64( r->theFourth, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_uint64( r->theFourth, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_varbuf( r->var_buf_777, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_varbuf( r->var_buf_777, f ) == 0 ) {
 		return 0;
 	}
 
 	return 1;
 }
 
-int test_util_bio_WriteArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f ) {
+int test_util_bio_WriteToFileArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f ) {
 	size_t	i;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( test_util_bio_Write_fileHeader( &( a[ i ] ), f ) == 0 ) {
+		if ( test_util_bio_WriteToFile_fileHeader( &( a[ i ] ), f ) == 0 ) {
 			return 0;
 		}
 	}
@@ -165,46 +175,56 @@ size_t test_util_bio_GetSize_ext333( const test_util_bio_ext333_t* const r ) {
 	return ( 0 + sizeof( r->v1.len ) + r->v1.len + sizeof( r->v2.len ) + r->v2.len );
 }
 
-int test_util_bio_Read_ext333( test_util_bio_ext333_t* const r, FILE* const f ) {
-	if ( bbb_util_bio_Read_varbuf( &( r->v1 ), f ) == 0 ) {
+size_t test_util_bio_GetSizeArray_ext333( const test_util_bio_ext333_t* const a, size_t const n ) {
+	size_t	i;
+	size_t	sz = 0;
+
+	for ( i = 0; i < n; i++ ) {
+		sz += test_util_bio_GetSize_ext333( &( a[ i ] ) );
+	}
+	return sz;
+}
+
+int test_util_bio_ReadFromFile_ext333( test_util_bio_ext333_t* const r, FILE* const f ) {
+	if ( bbb_util_bio_ReadFromFile_varbuf( &( r->v1 ), f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Read_varbuf( &( r->v2 ), f ) == 0 ) {
+	if ( bbb_util_bio_ReadFromFile_varbuf( &( r->v2 ), f ) == 0 ) {
 		return 0;
 	}
 
 	return 1;
 }
 
-int test_util_bio_ReadArray_ext333( test_util_bio_ext333_t* const a, size_t const n, FILE* const f ) {
+int test_util_bio_ReadFromFileArray_ext333( test_util_bio_ext333_t* const a, size_t const n, FILE* const f ) {
 	size_t	i;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( test_util_bio_Read_ext333( &( a[ i ] ), f ) == 0 ) {
+		if ( test_util_bio_ReadFromFile_ext333( &( a[ i ] ), f ) == 0 ) {
 			return 0;
 		}
 	}
 	return 1;
 }
 
-int test_util_bio_Write_ext333( const test_util_bio_ext333_t* const r, FILE* const f ) {
-	if ( bbb_util_bio_Write_varbuf( r->v1, f ) == 0 ) {
+int test_util_bio_WriteToFile_ext333( const test_util_bio_ext333_t* const r, FILE* const f ) {
+	if ( bbb_util_bio_WriteToFile_varbuf( r->v1, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_varbuf( r->v2, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_varbuf( r->v2, f ) == 0 ) {
 		return 0;
 	}
 
 	return 1;
 }
 
-int test_util_bio_WriteArray_ext333( const test_util_bio_ext333_t* const a, size_t const n, FILE* const f ) {
+int test_util_bio_WriteToFileArray_ext333( const test_util_bio_ext333_t* const a, size_t const n, FILE* const f ) {
 	size_t	i;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( test_util_bio_Write_ext333( &( a[ i ] ), f ) == 0 ) {
+		if ( test_util_bio_WriteToFile_ext333( &( a[ i ] ), f ) == 0 ) {
 			return 0;
 		}
 	}

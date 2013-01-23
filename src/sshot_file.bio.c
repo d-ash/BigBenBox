@@ -3,70 +3,122 @@
 //   namespace: sshot_file
 
 #include "sshot_file.bio.h"
-size_t sshot_file_Read_hdr( sshot_file_hdr_t* const r, FILE* const f ) {
-	if ( fread( &( r->magic ), 1, 1, f ) == 0 ) {
+
+int sshot_file_Copy_hdr( sshot_file_hdr_t* const dst, const sshot_file_hdr_t* const src ) {
+	size_t	len;
+
+	dst->magic = src->magic;
+	dst->runtime = src->runtime;
+	dst->platform = src->platform;
+	dst->ssFileVersion = src->ssFileVersion;
+	len = dst->vb.len = src->vb.len;
+	dst->vb.buf = malloc( len );
+	if ( dst->vb.buf == NULL ) {
+		return 0;	// ignoring this fatal error of malloc()
+	}
+	memcpy( dst->vb.buf, src->vb.buf, len );
+
+	return 1;
+}
+
+int sshot_file_IsEqual_hdr( const sshot_file_hdr_t* const r1, const sshot_file_hdr_t* const r2 ) {
+	if ( r1->magic != r2->magic ) {
 		return 0;
 	}
-
-	if ( bbb_util_bio_Read_uint16( &( r->runtime ), f ) == 0 ) {
+	if ( r1->runtime != r2->runtime ) {
 		return 0;
 	}
-
-	if ( bbb_util_bio_Read_uint32( &( r->platform ), f ) == 0 ) {
+	if ( r1->platform != r2->platform ) {
 		return 0;
 	}
-
-	if ( bbb_util_bio_Read_uint64( &( r->ssFileVersion ), f ) == 0 ) {
+	if ( r1->ssFileVersion != r2->ssFileVersion ) {
 		return 0;
 	}
-
-	if ( bbb_util_bio_Read_varbuf( &( r->vb ), f ) == 0 ) {
+	if ( !bbb_util_bio_IsEqual_varbuf( r1->vb, r2->vb ) ) {
 		return 0;
 	}
 
 	return 1;
 }
 
-size_t sshot_file_ReadArray_hdr( sshot_file_hdr_t* const a, size_t const n, FILE* const f ) {
-	size_t i;
+size_t sshot_file_GetSize_hdr( const sshot_file_hdr_t* const r ) {
+	return ( 0 + sizeof( uint8_t ) + sizeof( uint16_t ) + sizeof( uint32_t ) + sizeof( uint64_t ) + sizeof( r->vb.len ) + r->vb.len );
+}
+
+size_t sshot_file_GetSizeArray_hdr( const sshot_file_hdr_t* const a, size_t const n ) {
+	size_t	i;
+	size_t	sz = 0;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( sshot_file_Read_hdr( &( a[ i ] ), f ) == 0 ) {
+		sz += sshot_file_GetSize_hdr( &( a[ i ] ) );
+	}
+	return sz;
+}
+
+int sshot_file_ReadFromFile_hdr( sshot_file_hdr_t* const r, FILE* const f ) {
+	if ( fread( &( r->magic ), 1, 1, f ) == 0 ) {
+		return 0;
+	}
+
+	if ( bbb_util_bio_ReadFromFile_uint16( &( r->runtime ), f ) == 0 ) {
+		return 0;
+	}
+
+	if ( bbb_util_bio_ReadFromFile_uint32( &( r->platform ), f ) == 0 ) {
+		return 0;
+	}
+
+	if ( bbb_util_bio_ReadFromFile_uint64( &( r->ssFileVersion ), f ) == 0 ) {
+		return 0;
+	}
+
+	if ( bbb_util_bio_ReadFromFile_varbuf( &( r->vb ), f ) == 0 ) {
+		return 0;
+	}
+
+	return 1;
+}
+
+int sshot_file_ReadFromFileArray_hdr( sshot_file_hdr_t* const a, size_t const n, FILE* const f ) {
+	size_t	i;
+
+	for ( i = 0; i < n; i++ ) {
+		if ( sshot_file_ReadFromFile_hdr( &( a[ i ] ), f ) == 0 ) {
 			return 0;
 		}
 	}
 	return 1;
 }
 
-size_t sshot_file_Write_hdr( const sshot_file_hdr_t* const r, FILE* const f ) {
+int sshot_file_WriteToFile_hdr( const sshot_file_hdr_t* const r, FILE* const f ) {
 	if ( fwrite( &( r->magic ), 1, 1, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_uint16( r->runtime, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_uint16( r->runtime, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_uint32( r->platform, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_uint32( r->platform, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_uint64( r->ssFileVersion, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_uint64( r->ssFileVersion, f ) == 0 ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_Write_varbuf( r->vb, f ) == 0 ) {
+	if ( bbb_util_bio_WriteToFile_varbuf( r->vb, f ) == 0 ) {
 		return 0;
 	}
 
 	return 1;
 }
 
-size_t sshot_file_WriteArray_hdr( const sshot_file_hdr_t* const a, size_t const n, FILE* const f ) {
-	size_t i;
+int sshot_file_WriteToFileArray_hdr( const sshot_file_hdr_t* const a, size_t const n, FILE* const f ) {
+	size_t	i;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( sshot_file_Write_hdr( &( a[ i ] ), f ) == 0 ) {
+		if ( sshot_file_WriteToFile_hdr( &( a[ i ] ), f ) == 0 ) {
 			return 0;
 		}
 	}
@@ -82,10 +134,9 @@ void sshot_file_Destroy_hdr( sshot_file_hdr_t* const r ) {
 }
 
 void sshot_file_DestroyEach_hdr( sshot_file_hdr_t* const a, size_t const n ) {
-	size_t i;
+	size_t	i;
 
 	for ( i = 0; i < n; i++ ) {
 		sshot_file_Destroy_hdr( &( a[ i ] ) );
 	}
 }
-

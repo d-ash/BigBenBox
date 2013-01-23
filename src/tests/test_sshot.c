@@ -8,7 +8,7 @@ static char* _TestSsEntrySize() {
 	printf( "sizeof( size_t ): %" PRIuPTR "\n", sizeof( size_t ) );
 	printf( "sizeof( bbb_sshot_entry_t ): %" PRIuPTR "\n", sizeof( bbb_sshot_entry_t ) );
 
-	BBB_MU_ASSERT( "sizeof( bbb_sshot_entry_t ) is not appropriate for manual path alignment.",
+	MU_ASSERT( "sizeof( bbb_sshot_entry_t ) is not appropriate for manual path alignment.",
 		( sizeof( bbb_sshot_entry_t ) % BBB_WORD_SIZE ) == 0 );
 
 	return 0;
@@ -34,8 +34,8 @@ static char* _TestSsSaveLoad() {
 	bbb_sshot_file_Save( "_test_packfile", &ss1 );
 	bbb_sshot_file_Load( "_test_packfile", &ss2 );
 
-	BBB_MU_ASSERT( "Different values of 'takenFrom'", strcmp( ss1.takenFrom, ss2.takenFrom ) == 0 );
-	BBB_MU_ASSERT( "Restored snapshot differs from original", bbb_sshot_Diff( &ss1, &ss2 ) == 0 );
+	MU_ASSERT( "Different values of 'takenFrom'", strcmp( ss1.takenFrom, ss2.takenFrom ) == 0 );
+	MU_ASSERT( "Restored snapshot differs from original", bbb_sshot_Diff( &ss1, &ss2 ) == 0 );
 
 	//unlink( "_test_packfile" );
 	bbb_sshot_Destroy( &ss2 );
@@ -46,8 +46,8 @@ static char* _TestSsSaveLoad() {
 // ================================================
 
 static char* _AllTests() {
-	BBB_MU_RUN_TEST( _TestSsEntrySize );
-	BBB_MU_RUN_TEST( _TestSsSaveLoad );
+	MU_RUN_TEST( _TestSsEntrySize );
+	MU_RUN_TEST( _TestSsSaveLoad );
 	return 0;
 }
 

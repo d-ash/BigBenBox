@@ -11,8 +11,8 @@ static char* _TestHashing() {
 	x = bbb_util_hash_Calc_uint32( "abcde", 5 );
 	y = bbb_util_hash_Calc_uint16( "abcde", 5 );
 
-	BBB_MU_ASSERT( "bbb_util_hash_Calc_uint32() failed", x == 0xbd500063 );
-	BBB_MU_ASSERT( "bbb_util_hash_Calc_uint16() failed", y == 0x0063 );
+	MU_ASSERT( "bbb_util_hash_Calc_uint32() failed", x == 0xbd500063 );
+	MU_ASSERT( "bbb_util_hash_Calc_uint16() failed", y == 0x0063 );
 	return 0;
 }
 
@@ -25,14 +25,14 @@ static char* _TestChecksum() {
 	bbb_util_hash_UpdateChecksum( s, 8, &y );
 	bbb_util_hash_UpdateChecksum( s + 8, 8, &y );
 
-	BBB_MU_ASSERT( "Checksum algorithm failed", x == y );
+	MU_ASSERT( "Checksum algorithm failed", x == y );
 	return 0;
 }
 
 static char* _TestStrncmp() {
 	// strncmp()'s third parameter must be ( strlen() + 1 )
-	BBB_MU_ASSERT( "strncmp() failed (1)", strncmp( "abcdef", "abcde", 5 ) == 0 );
-	BBB_MU_ASSERT( "strncmp() failed (2)", strncmp( "abcdef", "abcde", 6 ) != 0 );
+	MU_ASSERT( "strncmp() failed (1)", strncmp( "abcdef", "abcde", 5 ) == 0 );
+	MU_ASSERT( "strncmp() failed (2)", strncmp( "abcdef", "abcde", 6 ) != 0 );
 	return 0;
 }
 
@@ -42,12 +42,12 @@ static char* _TestConvertBinary64() {
 
 	if ( bbb_util_IsLittleEndian() ) {
 		printf( "Little-endian platform\n" );
-		BBB_MU_ASSERT( "_ConvertBinary_hton64() failed", bbb_util_ConvertBinary_hton64( x ) == y );
-		BBB_MU_ASSERT( "_ConvertBinary_ntoh64() failed", bbb_util_ConvertBinary_ntoh64( y ) == x );
+		MU_ASSERT( "_ConvertBinary_hton64() failed", bbb_util_ConvertBinary_hton64( x ) == y );
+		MU_ASSERT( "_ConvertBinary_ntoh64() failed", bbb_util_ConvertBinary_ntoh64( y ) == x );
 	} else {
 		printf( "Big-endian platform\n" );
-		BBB_MU_ASSERT( "_ConvertBinary_hton64() failed", bbb_util_ConvertBinary_hton64( x ) == x );
-		BBB_MU_ASSERT( "_ConvertBinary_ntoh64() failed", bbb_util_ConvertBinary_ntoh64( y ) == y );
+		MU_ASSERT( "_ConvertBinary_hton64() failed", bbb_util_ConvertBinary_hton64( x ) == x );
+		MU_ASSERT( "_ConvertBinary_ntoh64() failed", bbb_util_ConvertBinary_ntoh64( y ) == y );
 	}
 
 	return 0;
@@ -62,19 +62,19 @@ static char* _TestSha256() {
 		0xe0, 0x7d, 0xdb, 0x6d, 0xce, 0x4f, 0x6e, 0xeb
 	};
 	
-	BBB_MU_ASSERT( "Cannot calc SHA256 on a file", bbb_util_hash_ReadFile_sha256( DATA_DIR "/tmp0/sha.hash", hash ) != 0 );
-	BBB_MU_ASSERT( "SHA256 do not match", memcmp( hash, ctrl, SHA256_DIGEST_LENGTH ) == 0 );
+	MU_ASSERT( "Cannot calc SHA256 on a file", bbb_util_hash_ReadFile_sha256( DATA_DIR "/tmp0/sha.hash", hash ) != 0 );
+	MU_ASSERT( "SHA256 do not match", memcmp( hash, ctrl, SHA256_DIGEST_LENGTH ) == 0 );
 	return 0;
 }
 
 // ================================================
 
 static char* _AllTests() {
-	BBB_MU_RUN_TEST( _TestHashing );
-	BBB_MU_RUN_TEST( _TestChecksum );
-	BBB_MU_RUN_TEST( _TestStrncmp );
-	BBB_MU_RUN_TEST( _TestConvertBinary64 );
-	BBB_MU_RUN_TEST( _TestSha256 );
+	MU_RUN_TEST( _TestHashing );
+	MU_RUN_TEST( _TestChecksum );
+	MU_RUN_TEST( _TestStrncmp );
+	MU_RUN_TEST( _TestConvertBinary64 );
+	MU_RUN_TEST( _TestSha256 );
 	return 0;
 }
 

@@ -24,4 +24,6 @@ size_t	bbb_util_bio_Read_uint32( uint32_t* const v, FILE* const f );
 size_t	bbb_util_bio_Read_uint64( uint64_t* const v, FILE* const f );
 size_t	bbb_util_bio_Read_varbuf( bbb_varbuf_t* const vb, FILE* const f );
 
+int		bbb_util_bio_IsEqual_varbuf( const bbb_varbuf_t vb1, const bbb_varbuf_t vb2 );
+
 #endif

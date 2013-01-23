@@ -7,15 +7,18 @@ LINKER_FLAGS += -L../$(BUILD_DIR)
 TESTS_DIR = ../$(BUILD_DIR)/tests
 
 TST_SOURCES = $(TESTS:=.c)
-TST_DEPENDS = $(TESTS:=.h)
+TST_DEPENDS = $(TESTS:=.h) minunit.h
 TST_EXECS = $(addprefix $(TESTS_DIR)/, $(TESTS:=.run))
 
 # ==============================================
 
 .PHONY: all delimiter directories build
 
-all: delimiter directories build
+all: delimiter bio directories build
 	$(CP) all.pl $(TESTS_DIR)/
+
+bio:
+	ls -1 *.bio | xargs -n 1 -t $(PERL) ../util_bio.pl 
 
 delimiter:
 	@echo "========================"

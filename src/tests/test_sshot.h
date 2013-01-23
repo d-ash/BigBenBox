@@ -1,5 +1,5 @@
-#ifndef _BBB_TEST_SSHOT_H
-#define _BBB_TEST_SSHOT_H
+#ifndef _TEST_SSHOT_H
+#define _TEST_SSHOT_H
 
 #include "minunit.h"
 

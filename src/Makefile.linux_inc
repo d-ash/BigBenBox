@@ -20,7 +20,10 @@ RMRF = rm -rf
 PERL = perl
 
 COMPILER_FLAGS = -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX
-ifeq ($(DEBUG), 1)
+ifdef $(DEBUG)
 	COMPILER_FLAGS += -DBBB_DEBUG
+endif
+ifndef $(RELEASE)
+	COMPILER_FLAGS += -g
 endif
 LINKER_FLAGS = -Wall -Wextra -L$(BUILD_DIR) -lssl -lcrypto -l$(LIB_NAME)

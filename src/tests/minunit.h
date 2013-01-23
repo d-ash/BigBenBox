@@ -1,11 +1,11 @@
 // Minimal unit testing "framework".
 // Got it from: http://www.jera.com/techinfo/jtns/jtn002.html
 
-#ifndef _BBB_TESTS_MINUNIT_H
-#define _BBB_TESTS_MINUNIT_H
+#ifndef _TESTS_MINUNIT_H
+#define _TESTS_MINUNIT_H
 
-#define BBB_MU_ASSERT(message, test)	do { if ( !( test ) ) return message; } while ( 0 )
-#define BBB_MU_RUN_TEST(test)			do { char* message = test(); _testsRun++; \
+#define MU_ASSERT(message, test)	do { if ( !( test ) ) return message; } while ( 0 )
+#define MU_RUN_TEST(test)			do { char* message = test(); _testsRun++; \
 											if ( message ) return message; } while ( 0 )
 #define DATA_DIR	"../../../test_data"
 
@@ -16,9 +16,9 @@
 		result = _AllTests(); \
 	\
 		if ( result == 0 ) { \
-			printf( "\nALL %d TESTS PASSED\n", _testsRun ); \
+			printf( "--------------------------------------------- OK\n" ); \
 		} else { \
-			printf( "\n*** TEST FAILED: %s\n", result ); \
+			printf( "--------------------------------------------- FAILED: %s\n", result ); \
 		} \
 	\
 		return ( int ) ( result != 0 ); \

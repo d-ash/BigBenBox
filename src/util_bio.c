@@ -86,3 +86,10 @@ size_t bbb_util_bio_Read_varbuf( bbb_varbuf_t* const vb, FILE* const f ) {
 
 	return fread( vb->buf, vb->len, 1, f );
 }
+
+int bbb_util_bio_IsEqual_varbuf( const bbb_varbuf_t vb1, const bbb_varbuf_t vb2 ) {
+	if ( vb1.len != vb2.len ) {
+		return 0;
+	}
+	return ( memcmp( vb1.buf, vb2.buf, vb1.len ) == 0 );
+}

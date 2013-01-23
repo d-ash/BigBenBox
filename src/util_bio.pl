@@ -103,17 +103,26 @@ sub WriteH {
 
 		$rec->{ "proto" } = {};
 
+		$rec->{ "proto" }{ "Copy" }
+			= sprintf "int ${namespace}_Copy_${recName}( ${recType}* const dst, const ${recType}* const src )";
+
+		$rec->{ "proto" }{ "IsEqual" }
+			= sprintf "int ${namespace}_IsEqual_${recName}( const ${recType}* const r1, const ${recType}* const r2 )";
+
+		$rec->{ "proto" }{ "GetSize" }
+			= sprintf "size_t ${namespace}_GetSize_${recName}( const ${recType}* const r )";
+
 		$rec->{ "proto" }{ "Read" }
-			= sprintf "size_t ${namespace}_Read_${recName}( ${recType}* const r, FILE* const f )";
+			= sprintf "int ${namespace}_Read_${recName}( ${recType}* const r, FILE* const f )";
 
 		$rec->{ "proto" }{ "ReadArray" }
-			= sprintf "size_t ${namespace}_ReadArray_${recName}( ${recType}* const a, size_t const n, FILE* const f )";
+			= sprintf "int ${namespace}_ReadArray_${recName}( ${recType}* const a, size_t const n, FILE* const f )";
 
 		$rec->{ "proto" }{ "Write" }
-			= sprintf "size_t ${namespace}_Write_${recName}( const ${recType}* const r, FILE* const f )";
+			= sprintf "int ${namespace}_Write_${recName}( const ${recType}* const r, FILE* const f )";
 
 		$rec->{ "proto" }{ "WriteArray" }
-			= sprintf "size_t ${namespace}_WriteArray_${recName}( const ${recType}* const a, size_t const n, FILE* const f )";
+			= sprintf "int ${namespace}_WriteArray_${recName}( const ${recType}* const a, size_t const n, FILE* const f )";
 
 		if ( $rec->{ "dynamic" } ) {
 			$rec->{ "proto" }{ "Destroy" }
@@ -134,6 +143,10 @@ sub WriteH {
 	close $f or die $!;
 }
 
+sub IsAtomType {
+	return ( shift =~ m/^uint(?:8|16|32|64)$/ );
+}
+
 sub WriteC {
 	my $BIO_NS = "bbb_util_bio";
 	my $f;
@@ -149,8 +162,71 @@ sub WriteC {
 		my $rec = $_;
 		my $recName = $rec->{ "recName" };
 
+		# Copy() implementation
+		print $f "\n" . $rec->{ "proto" }{ "Copy" } . " {\n";
+		print $f "	size_t	len;\n\n";
+		foreach ( @{ $rec->{ "fields" } } ) {
+			my $type = $_->{ "type" };
+			my $name = $_->{ "name" };
+
+			if ( IsAtomType $type ) {
+				print $f "	dst->${name} = src->${name};\n";
+			} elsif ( $type eq "varbuf" ) {
+				print $f "	len = dst->${name}.len = src->${name}.len;\n";
+				print $f "	dst->${name}.buf = malloc( len );\n";
+				print $f "	if ( dst->${name}.buf == NULL ) {\n";
+				print $f "		return 0;\n";
+				print $f "	}\n";
+				print $f "	memcpy( dst->${name}.buf, src->${name}.buf, len );\n";
+			} else {
+				die "Unknown field type: $type\n";
+			}
+		}
+		print $f "\n";
+		print $f "	return 1;\n";
+		print $f "}\n";
+
+		# IsEqual() implementation
+		print $f "\n" . $rec->{ "proto" }{ "IsEqual" } . " {\n";
+		foreach ( @{ $rec->{ "fields" } } ) {
+			my $type = $_->{ "type" };
+			my $name = $_->{ "name" };
+
+			if ( IsAtomType $type ) {
+				print $f "	if ( r1->${name} != r2->${name} ) {\n";
+			} elsif ( $type eq "varbuf" ) {
+				print $f "	if ( !bbb_util_bio_IsEqual_varbuf( r1->${name}, r2->${name} ) ) {\n";
+			} else {
+				die "Unknown field type: $type\n";
+			}
+			print $f "		return 0;\n";
+			print $f "	}\n";
+		}
+		print $f "\n";
+		print $f "	return 1;\n";
+		print $f "}\n";
+
+		# GetSize() implementation
+		print $f "\n" . $rec->{ "proto" }{ "GetSize" } . " {\n";
+		print $f "	return ( 0";
+		foreach ( @{ $rec->{ "fields" } } ) {
+			my $type = $_->{ "type" };
+			my $name = $_->{ "name" };
+
+			print $f " + ";
+			if ( IsAtomType $type ) {
+				print $f "sizeof( ${type}_t )";
+			} elsif ( $type eq "varbuf" ) {
+				print $f "sizeof( r->${name}.len ) + r->${name}.len";
+			} else {
+				die "Unknown field type: $type\n";
+			}
+		}
+		print $f " );\n";
+		print $f "}\n";
+
 		# Read() implementation
-		print $f $rec->{ "proto" }{ "Read" } . " {\n";
+		print $f "\n" . $rec->{ "proto" }{ "Read" } . " {\n";
 		foreach ( @{ $rec->{ "fields" } } ) {
 			my $type = $_->{ "type" };
 			my $name = $_->{ "name" };
@@ -164,21 +240,21 @@ sub WriteC {
 			print $f "	}\n\n";
 		}
 		print $f "	return 1;\n";
-		print $f "}\n\n";
+		print $f "}\n";
 
 		# ReadArray() implementation
-		print $f $rec->{ "proto" }{ "ReadArray" } . " {\n";
-		print $f "	size_t i;\n\n";
+		print $f "\n" . $rec->{ "proto" }{ "ReadArray" } . " {\n";
+		print $f "	size_t	i;\n\n";
 		print $f "	for ( i = 0; i < n; i++ ) {\n";
 		print $f "		if ( ${namespace}_Read_${recName}( &( a[ i ] ), f ) == 0 ) {\n";
 		print $f "			return 0;\n";
 		print $f "		}\n";
 		print $f "	}\n";
 		print $f "	return 1;\n";
-		print $f "}\n\n";
+		print $f "}\n";
 
 		# Write() implementation
-		print $f $rec->{ "proto" }{ "Write" } . " {\n";
+		print $f "\n" . $rec->{ "proto" }{ "Write" } . " {\n";
 		foreach ( @{ $rec->{ "fields" } } ) {
 			my $type = $_->{ "type" };
 			my $name = $_->{ "name" };
@@ -192,22 +268,22 @@ sub WriteC {
 			print $f "	}\n\n";
 		}
 		print $f "	return 1;\n";
-		print $f "}\n\n";
+		print $f "}\n";
 
 		# WriteArray() implementation
-		print $f $rec->{ "proto" }{ "WriteArray" } . " {\n";
-		print $f "	size_t i;\n\n";
+		print $f "\n" . $rec->{ "proto" }{ "WriteArray" } . " {\n";
+		print $f "	size_t	i;\n\n";
 		print $f "	for ( i = 0; i < n; i++ ) {\n";
 		print $f "		if ( ${namespace}_Write_${recName}( &( a[ i ] ), f ) == 0 ) {\n";
 		print $f "			return 0;\n";
 		print $f "		}\n";
 		print $f "	}\n";
 		print $f "	return 1;\n";
-		print $f "}\n\n";
+		print $f "}\n";
 
 		if ( $rec->{ "dynamic" } ) {
 			# Destroy() implementation
-			print $f $rec->{ "proto" }{ "Destroy" } . " {\n";
+			print $f "\n" . $rec->{ "proto" }{ "Destroy" } . " {\n";
 			foreach ( @{ $rec->{ "fields" } } ) {
 				my $type = $_->{ "type" };
 				my $name = $_->{ "name" };
@@ -219,15 +295,15 @@ sub WriteC {
 				}
 			}
 			print $f "	return;\n";
-			print $f "}\n\n";
+			print $f "}\n";
 
 			# DestroyEach() implementation
-			print $f $rec->{ "proto" }{ "DestroyEach" } . " {\n";
-			print $f "	size_t i;\n\n";
+			print $f "\n" . $rec->{ "proto" }{ "DestroyEach" } . " {\n";
+			print $f "	size_t	i;\n\n";
 			print $f "	for ( i = 0; i < n; i++ ) {\n";
 			print $f "		${namespace}_Destroy_${recName}( &( a[ i ] ) );\n";
 			print $f "	}\n";
-			print $f "}\n\n";
+			print $f "}\n";
 		}
 	}
 

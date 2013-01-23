@@ -23,7 +23,7 @@ if ( $arg && $arg eq "run" ) {
 		my $before = $_ . "_Before";
 		my $after = $_ . "_After";
 
-		print "--------------------------------------------- Running: $_\n";
+		print "--------------------------------------------- $_\n";
 		if ( exists( &{ $before } ) ) {
 			&{ $before };
 		}

@@ -14,7 +14,7 @@ int test_util_bio_Copy_fileHeader( test_util_bio_fileHeader_t* const dst, const 
 	len = dst->var_buf_777.len = src->var_buf_777.len;
 	dst->var_buf_777.buf = malloc( len );
 	if ( dst->var_buf_777.buf == NULL ) {
-		return 0;
+		return 0;	// ignoring this fatal error of malloc()
 	}
 	memcpy( dst->var_buf_777.buf, src->var_buf_777.buf, len );
 
@@ -137,13 +137,13 @@ int test_util_bio_Copy_ext333( test_util_bio_ext333_t* const dst, const test_uti
 	len = dst->v1.len = src->v1.len;
 	dst->v1.buf = malloc( len );
 	if ( dst->v1.buf == NULL ) {
-		return 0;
+		return 0;	// ignoring this fatal error of malloc()
 	}
 	memcpy( dst->v1.buf, src->v1.buf, len );
 	len = dst->v2.len = src->v2.len;
 	dst->v2.buf = malloc( len );
 	if ( dst->v2.buf == NULL ) {
-		return 0;
+		return 0;	// ignoring this fatal error of malloc()
 	}
 	memcpy( dst->v2.buf, src->v2.buf, len );
 

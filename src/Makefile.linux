@@ -48,7 +48,7 @@ $(BUILD_DIR)/%.o: %.c %.h
 	$(COMPILER) $(COMPILER_FLAGS) $< -o $@
 
 clean:
-	$(RMRF) $(BUILD_DIR)
+	$(RMRF) $(BUILD_DIR)/*
 
 run: delimiter
 	@cd $(BUILD_DIR); \

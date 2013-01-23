@@ -175,7 +175,7 @@ sub WriteC {
 				print $f "	len = dst->${name}.len = src->${name}.len;\n";
 				print $f "	dst->${name}.buf = malloc( len );\n";
 				print $f "	if ( dst->${name}.buf == NULL ) {\n";
-				print $f "		return 0;\n";
+				print $f "		return 0;	// ignoring this fatal error of malloc()\n";
 				print $f "	}\n";
 				print $f "	memcpy( dst->${name}.buf, src->${name}.buf, len );\n";
 			} else {

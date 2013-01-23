@@ -35,7 +35,7 @@ $(TESTS_DIR)/%.o: %.c %.h
 	$(COMPILER) $(COMPILER_FLAGS) $< -o $@
 
 clean:
-	$(RMRF) $(TESTS_DIR)
+	$(RMRF) $(TESTS_DIR)/*
 
 run:
 	@cd $(TESTS_DIR); \

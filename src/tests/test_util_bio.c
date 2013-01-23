@@ -7,7 +7,7 @@
 static int	_testsRun = 0;
 
 static char* _TestBioTypes() {
-	static const char		path[ 18 ] = "test_util_bio.bin";
+	static const char		path[ 19 ] = "_test_util_bio.bin";
 	static const bbb_byte_t	data[ 34 ] = {
 		0x00, 0x00, 0x00, 0x10,		// length of the following seria
 		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -57,6 +57,7 @@ static char* _TestBioTypes() {
 	MU_ASSERT( "bbb_util_bio_Read_uint64() failed", x64 == c64 );
 	fclose( f );
 
+	free( xvb.buf );
 	free( vb.buf );
 	vb.len = 0;
 	unlink( path );
@@ -64,7 +65,8 @@ static char* _TestBioTypes() {
 }
 
 static char* _TestBioRecords() {
-	static const char			path[ 26 ] = "test_util_bio.records.bin";
+	static const char			path[ 27 ] = "_test_util_bio.records.bin";
+	static const size_t			pathlen = 26;
 	test_util_bio_fileHeader_t	hdr;
 	test_util_bio_fileHeader_t	xhdr;
 	test_util_bio_ext333_t		ext[ 3 ];
@@ -75,16 +77,18 @@ static char* _TestBioRecords() {
 	hdr.theSecond = 0x0203;
 	hdr.theThird = 0x04050607;
 	hdr.theFourth = 0x0809101112131415;
-	hdr.var_buf_777.len = strlen( path ) + 1;
+	hdr.var_buf_777.len = pathlen + 1;
 	hdr.var_buf_777.buf = ( bbb_byte_t* ) strdup( path );
 
 	ext[ 0 ].v1.len = 4;
 	ext[ 0 ].v1.buf = ( bbb_byte_t* ) malloc( 4 );
 	memcpy( ext[ 0 ].v1.buf, &( hdr.theThird ), 4 );
+	ext[ 0 ].v2.len = pathlen + 1;
+	ext[ 0 ].v2.buf = ( bbb_byte_t* ) strdup( path );
 	MU_ASSERT( "Cannot copy ext333 (1)", test_util_bio_Copy_ext333( &( ext[ 1 ] ), &( ext[ 0 ] ) ) );
 	MU_ASSERT( "Cannot copy ext333 (2)", test_util_bio_Copy_ext333( &( ext[ 2 ] ), &( ext[ 0 ] ) ) );
 
-	MU_ASSERT( "test_util_bio_GetSize_...() failed", test_util_bio_GetSize_ext333( &( ext[ 2 ] ) ) == 8 );
+	MU_ASSERT( "test_util_bio_GetSize_...() failed", test_util_bio_GetSize_ext333( &( ext[ 2 ] ) ) == 13 + pathlen );
 
 	// Testing of writing.
 	f = fopen( path, "wb" );
@@ -105,10 +109,10 @@ static char* _TestBioRecords() {
 
 	test_util_bio_DestroyEach_ext333( xext, 3 );
 	test_util_bio_DestroyEach_ext333( ext, 3 );
-
 	test_util_bio_Destroy_fileHeader( &xhdr );
 	test_util_bio_Destroy_fileHeader( &hdr );
-	//unlink( path );
+
+	unlink( path );
 	return 0;
 }
 

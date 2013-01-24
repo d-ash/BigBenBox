@@ -3,6 +3,7 @@ use warnings;
 
 my @TESTS = qw(
 	test_util
+	test_util_hash
 	test_bio
 	test_sshot
 );

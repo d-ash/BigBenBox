@@ -1,3 +1,5 @@
+TODO FIX: test buffer I/O and destroy already read records when the whole process of reading has failed.
+
 Files are complex!
 https://www.dropbox.com/help/145/en
 + file permissions.

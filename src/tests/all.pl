@@ -3,16 +3,16 @@ use warnings;
 
 my @TESTS = qw(
 	test_util
-	test_util_bio
+	test_bio
 	test_sshot
 );
 my $arg = shift;
 
-sub test_util_bio_Before {
+sub test_bio_Before {
 	return;
 }
 
-sub test_util_bio_After {
+sub test_bio_After {
 	return;
 }
 

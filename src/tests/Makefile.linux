@@ -18,7 +18,7 @@ all: delimiter bio directories build
 	$(CP) all.pl $(TESTS_DIR)/
 
 bio:
-	ls -1 *.bio | xargs -n 1 -t $(PERL) ../util_bio.pl 
+	ls -1 *.bio | xargs -n 1 -t $(PERL) ../bio.pl 
 
 delimiter:
 	@echo "========================"

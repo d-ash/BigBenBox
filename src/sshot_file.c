@@ -1,7 +1,7 @@
 #include "sshot_file.h"
 #include "util.h"
 #include "util_hash.h"
-#include "util_bio.h"
+#include "bio.h"
 
 static void		_ConstructFileHdr( bbb_byte_t hdr[ BBB_SSHOT_FILE_HDR_SIZE ] );
 static int		_Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
@@ -45,7 +45,7 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 
 	res = _Pack( f, ss, &checksum );
 
-	if ( bbb_util_bio_WriteToFile_uint32( checksum, f, &dummy ) < 1 ) {
+	if ( bbb_bio_WriteToFile_uint32( checksum, f, &dummy ) < 1 ) {
 		BBB_PERR( "Cannot write a checksum to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
@@ -133,7 +133,7 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_ReadFromFile_uint32( &checksumRead, f, &dummy ) < 1 ) {
+	if ( bbb_bio_ReadFromFile_uint32( &checksumRead, f, &dummy ) < 1 ) {
 		BBB_PERR( "Cannot read a checksum from the snapshot file %s: %s\n", path, strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;

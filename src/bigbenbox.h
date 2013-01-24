@@ -7,6 +7,6 @@
 #include "sshot_file.h"
 #include "util.h"
 #include "util_hash.h"
-#include "util_bio.h"
+#include "bio.h"
 
 #endif

@@ -59,20 +59,30 @@ size_t test_bio_ReadFromBuf_fileHeader( test_bio_fileHeader_t* const r, const bb
 	size_t	cur = 0;
 	size_t	red;
 
-	if ( cur >= len ) { return 0; }
+	if ( cur >= len ) {
+		return 0;
+	}
 	r->theFirst = *( buf + cur );
 	cur++;
 	red = bbb_bio_ReadFromBuf_uint16( &( r->theSecond ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromBuf_uint32( &( r->theThird ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromBuf_uint64( &( r->theFourth ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromBuf_varbuf( &( r->var_buf_777 ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	return cur;
 }
@@ -84,7 +94,10 @@ size_t test_bio_ReadFromBufArray_fileHeader( test_bio_fileHeader_t* const a, siz
 
 	for ( i = 0; i < n; i++ ) {
 		red = test_bio_ReadFromBuf_fileHeader( &( a[ i ] ), buf + cur, len - cur );
-		if ( red == 0 ) { return 0; }
+		if ( red == 0 ) {
+			test_bio_DestroyEach_fileHeader( a, i );
+			return 0;
+		}
 		cur += red;
 	}
 	return cur;
@@ -129,20 +142,30 @@ size_t test_bio_ReadFromFile_fileHeader( test_bio_fileHeader_t* const r, FILE* c
 	size_t	cur = 0;
 	size_t	red;
 
-	if ( fread( &( r->theFirst ), 1, 1, f ) == 0 ) { return 0; }
+	if ( fread( &( r->theFirst ), 1, 1, f ) == 0 ) {
+		return 0;
+	}
 	bbb_util_hash_UpdateChecksum( &( r->theFirst ), 1, chk );
 	cur++;
 	red = bbb_bio_ReadFromFile_uint16( &( r->theSecond ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromFile_uint32( &( r->theThird ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromFile_uint64( &( r->theFourth ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromFile_varbuf( &( r->var_buf_777 ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	return cur;
 }
@@ -154,7 +177,10 @@ size_t test_bio_ReadFromFileArray_fileHeader( test_bio_fileHeader_t* const a, si
 
 	for ( i = 0; i < n; i++ ) {
 		red = test_bio_ReadFromFile_fileHeader( &( a[ i ] ), f, chk );
-		if ( red == 0 ) { return 0; }
+		if ( red == 0 ) {
+			test_bio_DestroyEach_fileHeader( a, i );
+			return 0;
+		}
 		cur += red;
 	}
 	return cur;
@@ -200,7 +226,6 @@ void test_bio_Destroy_fileHeader( test_bio_fileHeader_t* const r ) {
 	r->var_buf_777.buf = NULL;
 	r->var_buf_777.len = 0;
 
-	return;
 }
 
 void test_bio_DestroyEach_fileHeader( test_bio_fileHeader_t* const a, size_t const n ) {
@@ -260,10 +285,15 @@ size_t test_bio_ReadFromBuf_ext333( test_bio_ext333_t* const r, const bbb_byte_t
 	size_t	red;
 
 	red = bbb_bio_ReadFromBuf_varbuf( &( r->v1 ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromBuf_varbuf( &( r->v2 ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		free( r->v1.buf ); r->v1.buf = NULL; r->v1.len = 0;
+		return 0;
+	}
 	cur += red;
 	return cur;
 }
@@ -275,7 +305,10 @@ size_t test_bio_ReadFromBufArray_ext333( test_bio_ext333_t* const a, size_t cons
 
 	for ( i = 0; i < n; i++ ) {
 		red = test_bio_ReadFromBuf_ext333( &( a[ i ] ), buf + cur, len - cur );
-		if ( red == 0 ) { return 0; }
+		if ( red == 0 ) {
+			test_bio_DestroyEach_ext333( a, i );
+			return 0;
+		}
 		cur += red;
 	}
 	return cur;
@@ -312,10 +345,15 @@ size_t test_bio_ReadFromFile_ext333( test_bio_ext333_t* const r, FILE* const f, 
 	size_t	red;
 
 	red = bbb_bio_ReadFromFile_varbuf( &( r->v1 ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromFile_varbuf( &( r->v2 ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		free( r->v1.buf ); r->v1.buf = NULL; r->v1.len = 0;
+		return 0;
+	}
 	cur += red;
 	return cur;
 }
@@ -327,7 +365,10 @@ size_t test_bio_ReadFromFileArray_ext333( test_bio_ext333_t* const a, size_t con
 
 	for ( i = 0; i < n; i++ ) {
 		red = test_bio_ReadFromFile_ext333( &( a[ i ] ), f, chk );
-		if ( red == 0 ) { return 0; }
+		if ( red == 0 ) {
+			test_bio_DestroyEach_ext333( a, i );
+			return 0;
+		}
 		cur += red;
 	}
 	return cur;
@@ -368,7 +409,6 @@ void test_bio_Destroy_ext333( test_bio_ext333_t* const r ) {
 	r->v2.buf = NULL;
 	r->v2.len = 0;
 
-	return;
 }
 
 void test_bio_DestroyEach_ext333( test_bio_ext333_t* const a, size_t const n ) {

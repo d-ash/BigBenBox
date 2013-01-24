@@ -48,6 +48,9 @@ static char* _TestBioBufTypes() {
 	MU_ASSERT( "bbb_bio_ReadFromBuf_uint64() failed", x64 == c64 );
 
 	free( xvb.buf );
+
+	MU_ASSERT( "Error is not checked correctly (record)", bbb_bio_ReadFromBuf_varbuf( &xvb, xdata, 19 ) == 0 );
+
 	free( vb.buf );
 	vb.len = 0;
 	return 0;
@@ -92,6 +95,12 @@ static char* _TestBioBufRecords() {
 	MU_ASSERT( "Reading from a buffer failed (2)", test_bio_IsEqual_fileHeader( &( xhdr[ 2 ] ), &( hdr[ 2 ] ) ) );
 
 	test_bio_DestroyEach_fileHeader( xhdr, 3 );
+
+	MU_ASSERT( "Error is not checked correctly (array)", test_bio_ReadFromBufArray_fileHeader( xhdr, 3, xdata, 24 * 3 - 1 ) == 0 );
+	MU_ASSERT( "Varbufs are not freed correctly (array)",
+		xhdr[ 0 ].var_buf_777.len == 0 && xhdr[ 1 ].var_buf_777.len == 0
+		&& xhdr[ 0 ].var_buf_777.buf == NULL && xhdr[ 1 ].var_buf_777.buf == NULL );
+
 	test_bio_DestroyEach_fileHeader( hdr, 3 );
 	return 0;
 }

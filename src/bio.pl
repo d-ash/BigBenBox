@@ -87,12 +87,12 @@ sub WriteH {
 		my $recName = $rec->{ "recName" };
 		my $recType = $rec->{ "recType" } = "${namespace}_${recName}_t";
 
-		$rec->{ "dynamic" } = 0;
+		$rec->{ "isDynamic" } = 0;
 		print $f "typedef struct {\n";
 		foreach ( @{ $rec->{ "fields" } } ) {
 			if ( $_->{ "type" } eq "varbuf" ) {
-				$rec->{ "dynamic" } = 1;	# dynamic memory allocation for fields
 				print $f "	bbb_varbuf_t\t" . $_->{ "name" } . ";\n";
+				$rec->{ "isDynamic" } = 1;
 			} elsif ( $_->{ "type" } eq "uint8" ) {
 				print $f "	" . $_->{ "type" } . "_t\t\t\t" . $_->{ "name" } . ";\n";
 			} else {
@@ -143,13 +143,11 @@ sub WriteH {
 		$rec->{ "proto" }{ "WriteToFileArray" }
 			= sprintf "size_t	${namespace}_WriteToFileArray_${recName}( const ${recType}* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )";
 
-		if ( $rec->{ "dynamic" } ) {
-			$rec->{ "proto" }{ "Destroy" }
-				= sprintf "void	${namespace}_Destroy_${recName}( ${recType}* const r )";
+		$rec->{ "proto" }{ "Destroy" }
+			= sprintf "void	${namespace}_Destroy_${recName}( ${recType}* const r )";
 
-			$rec->{ "proto" }{ "DestroyEach" }
-				= sprintf "void	${namespace}_DestroyEach_${recName}( ${recType}* const a, size_t const n )";
-		}
+		$rec->{ "proto" }{ "DestroyEach" }
+			= sprintf "void	${namespace}_DestroyEach_${recName}( ${recType}* const a, size_t const n )";
 
 		foreach ( sort( keys %{$rec->{ "proto" }} ) ) {
 			print $f $rec->{ "proto" }{ $_ } . ";\n";
@@ -173,11 +171,25 @@ sub Output_ProtoImpl {
 	print $f "\n" . ( $proto =~ s/\t+/ /r ) . " {\n";
 }
 
+sub Output_Assert {
+	my $f = shift;
+	my $ifexp = shift;
+	my $fields = shift;
+
+	print $f "	if ( ${ifexp} ) {\n";
+	foreach ( @{$fields} ) {
+		print $f "		free( r->$_.buf ); r->$_.buf = NULL; r->$_.len = 0;\n";
+	}
+	print $f "		return 0;\n";
+	print $f "	}\n";
+}
+
 sub Output_ReadImpl {
 	my $f = shift;
 	my $mode = shift;		# ( Buf | File )
 	my $rec = shift;
 	my $recName = $rec->{ "recName" };
+	my @allocated = ();		# collection of fields with dynamically allocated memory
 
 	Output_ProtoImpl( $f, $rec->{ "proto" }{ "ReadFrom${mode}" } );
 	print $f "	size_t	cur = 0;\n";
@@ -188,10 +200,10 @@ sub Output_ReadImpl {
 
 		if ( $type eq "uint8" ) {
 			if ( $mode eq "Buf" ) {
-				print $f "	if ( cur >= len ) { return 0; }\n";
+				Output_Assert( $f, "cur >= len", \@allocated );
 				print $f "	r->${name} = *( buf + cur );\n";
 			} else {
-				print $f "	if ( fread( &( r->${name} ), 1, 1, f ) == 0 ) { return 0; }\n";
+				Output_Assert( $f, "fread( &( r->${name} ), 1, 1, f ) == 0", \@allocated );
 				print $f "	bbb_util_hash_UpdateChecksum( &( r->${name} ), 1, chk );\n";
 			}
 			print $f "	cur++;\n";
@@ -201,8 +213,12 @@ sub Output_ReadImpl {
 			} else {
 				print $f "	red = bbb_bio_ReadFrom${mode}_${type}( &( r->${name} ), f, chk );\n";
 			}
-			print $f "	if ( red == 0 ) { return 0; }\n";
+			Output_Assert( $f, "red == 0", \@allocated );
 			print $f "	cur += red;\n";
+
+			if ( $type eq "varbuf" ) {
+				push( @allocated, $name );
+			}
 		}
 	}
 	print $f "	return cur;\n";
@@ -225,7 +241,12 @@ sub Output_ReadArrayImpl {
 	} else {
 		print $f "		red = ${namespace}_ReadFrom${mode}_${recName}( &( a[ i ] ), f, chk );\n";
 	}
-	print $f "		if ( red == 0 ) { return 0; }\n";
+	print $f "		if ( red == 0 ) {\n";
+	if ( $rec->{ "isDynamic" } ) {
+		print $f "			${namespace}_DestroyEach_${recName}( a, i );\n";
+	}
+	print $f "			return 0;\n";
+	print $f "		}\n";
 	print $f "		cur += red;\n";
 	print $f "	}\n";
 	print $f "	return cur;\n";
@@ -378,19 +399,21 @@ sub WriteC {
 		print $f "	return sz;\n";
 		print $f "}\n";
 
+		# Buffer I/O
 		Output_ReadImpl( $f, "Buf", $rec );
 		Output_ReadArrayImpl( $f, "Buf", $rec );
 		Output_WriteImpl( $f, "Buf", $rec );
 		Output_WriteArrayImpl( $f, "Buf", $rec );
 
+		# File I/O
 		Output_ReadImpl( $f, "File", $rec );
 		Output_ReadArrayImpl( $f, "File", $rec );
 		Output_WriteImpl( $f, "File", $rec );
 		Output_WriteArrayImpl( $f, "File", $rec );
 
-		if ( $rec->{ "dynamic" } ) {
-			# Destroy() implementation
-			Output_ProtoImpl( $f, $rec->{ "proto" }{ "Destroy" } );
+		# Destroy() implementation
+		Output_ProtoImpl( $f, $rec->{ "proto" }{ "Destroy" } );
+		if ( $rec->{ "isDynamic" } ) {
 			foreach ( @{ $rec->{ "fields" } } ) {
 				my $type = $_->{ "type" };
 				my $name = $_->{ "name" };
@@ -401,17 +424,22 @@ sub WriteC {
 					print $f "	r->${name}.len = 0;\n\n";
 				}
 			}
+		} else {
 			print $f "	return;\n";
-			print $f "}\n";
+		}
+		print $f "}\n";
 
-			# DestroyEach() implementation
-			Output_ProtoImpl( $f, $rec->{ "proto" }{ "DestroyEach" } );
+		# DestroyEach() implementation
+		Output_ProtoImpl( $f, $rec->{ "proto" }{ "DestroyEach" } );
+		if ( $rec->{ "isDynamic" } ) {
 			print $f "	size_t	i;\n\n";
 			print $f "	for ( i = 0; i < n; i++ ) {\n";
 			print $f "		${namespace}_Destroy_${recName}( &( a[ i ] ) );\n";
 			print $f "	}\n";
-			print $f "}\n";
+		} else {
+			print $f "	return;\n";
 		}
+		print $f "}\n";
 	}
 
 	close $f or die $!;

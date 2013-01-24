@@ -59,20 +59,30 @@ size_t sshot_file_ReadFromBuf_hdr( sshot_file_hdr_t* const r, const bbb_byte_t* 
 	size_t	cur = 0;
 	size_t	red;
 
-	if ( cur >= len ) { return 0; }
+	if ( cur >= len ) {
+		return 0;
+	}
 	r->magic = *( buf + cur );
 	cur++;
 	red = bbb_bio_ReadFromBuf_uint16( &( r->runtime ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromBuf_uint32( &( r->platform ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromBuf_uint64( &( r->ssFileVersion ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromBuf_varbuf( &( r->vb ), buf + cur, len - cur );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	return cur;
 }
@@ -84,7 +94,10 @@ size_t sshot_file_ReadFromBufArray_hdr( sshot_file_hdr_t* const a, size_t const 
 
 	for ( i = 0; i < n; i++ ) {
 		red = sshot_file_ReadFromBuf_hdr( &( a[ i ] ), buf + cur, len - cur );
-		if ( red == 0 ) { return 0; }
+		if ( red == 0 ) {
+			sshot_file_DestroyEach_hdr( a, i );
+			return 0;
+		}
 		cur += red;
 	}
 	return cur;
@@ -129,20 +142,30 @@ size_t sshot_file_ReadFromFile_hdr( sshot_file_hdr_t* const r, FILE* const f, bb
 	size_t	cur = 0;
 	size_t	red;
 
-	if ( fread( &( r->magic ), 1, 1, f ) == 0 ) { return 0; }
+	if ( fread( &( r->magic ), 1, 1, f ) == 0 ) {
+		return 0;
+	}
 	bbb_util_hash_UpdateChecksum( &( r->magic ), 1, chk );
 	cur++;
 	red = bbb_bio_ReadFromFile_uint16( &( r->runtime ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromFile_uint32( &( r->platform ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromFile_uint64( &( r->ssFileVersion ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	red = bbb_bio_ReadFromFile_varbuf( &( r->vb ), f, chk );
-	if ( red == 0 ) { return 0; }
+	if ( red == 0 ) {
+		return 0;
+	}
 	cur += red;
 	return cur;
 }
@@ -154,7 +177,10 @@ size_t sshot_file_ReadFromFileArray_hdr( sshot_file_hdr_t* const a, size_t const
 
 	for ( i = 0; i < n; i++ ) {
 		red = sshot_file_ReadFromFile_hdr( &( a[ i ] ), f, chk );
-		if ( red == 0 ) { return 0; }
+		if ( red == 0 ) {
+			sshot_file_DestroyEach_hdr( a, i );
+			return 0;
+		}
 		cur += red;
 	}
 	return cur;
@@ -200,7 +226,6 @@ void sshot_file_Destroy_hdr( sshot_file_hdr_t* const r ) {
 	r->vb.buf = NULL;
 	r->vb.len = 0;
 
-	return;
 }
 
 void sshot_file_DestroyEach_hdr( sshot_file_hdr_t* const a, size_t const n ) {

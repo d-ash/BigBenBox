@@ -14,7 +14,7 @@ TST_EXECS = $(addprefix $(TESTS_DIR)/, $(TESTS:=.run))
 
 .PHONY: all delimiter directories build
 
-all: delimiter bio directories build
+all: delimiter directories build
 	$(CP) all.pl $(TESTS_DIR)/
 
 bio:

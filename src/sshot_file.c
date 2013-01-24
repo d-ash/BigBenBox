@@ -15,6 +15,7 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	bbb_sshot_file_hdr2_t	hdrExt;
 	int						res = 0;
 	bbb_checksum_t			checksum = 0;
+	bbb_checksum_t			dummy;
 
 	f = fopen( path, "wb" );
 	if ( f == NULL ) {
@@ -44,7 +45,7 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 
 	res = _Pack( f, ss, &checksum );
 
-	if ( bbb_util_bio_WriteToFile_uint32( checksum, f ) < 1 ) {
+	if ( bbb_util_bio_WriteToFile_uint32( checksum, f, &dummy ) < 1 ) {
 		BBB_PERR( "Cannot write a checksum to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
@@ -69,6 +70,7 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 	int						res = 0;
 	bbb_checksum_t			checksum = 0;
 	bbb_checksum_t			checksumRead = 0;
+	bbb_checksum_t			dummy;
 
 	if ( ss == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
@@ -131,7 +133,7 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	if ( bbb_util_bio_ReadFromFile_uint32( &checksumRead, f ) < 1 ) {
+	if ( bbb_util_bio_ReadFromFile_uint32( &checksumRead, f, &dummy ) < 1 ) {
 		BBB_PERR( "Cannot read a checksum from the snapshot file %s: %s\n", path, strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;

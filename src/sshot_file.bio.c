@@ -55,74 +55,144 @@ size_t sshot_file_GetSizeArray_hdr( const sshot_file_hdr_t* const a, size_t cons
 	return sz;
 }
 
-int sshot_file_ReadFromFile_hdr( sshot_file_hdr_t* const r, FILE* const f ) {
-	if ( fread( &( r->magic ), 1, 1, f ) == 0 ) {
-		return 0;
-	}
+size_t sshot_file_ReadFromBuf_hdr( sshot_file_hdr_t* const r, const bbb_byte_t* const buf, const size_t len ) {
+	size_t	cur = 0;
+	size_t	red;
 
-	if ( bbb_util_bio_ReadFromFile_uint16( &( r->runtime ), f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_ReadFromFile_uint32( &( r->platform ), f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_ReadFromFile_uint64( &( r->ssFileVersion ), f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_ReadFromFile_varbuf( &( r->vb ), f ) == 0 ) {
-		return 0;
-	}
-
-	return 1;
+	if ( cur >= len ) { return 0; }
+	r->magic = *( buf + cur );
+	cur++;
+	red = bbb_util_bio_ReadFromBuf_uint16( &( r->runtime ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromBuf_uint32( &( r->platform ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromBuf_uint64( &( r->ssFileVersion ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromBuf_varbuf( &( r->vb ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	return cur;
 }
 
-int sshot_file_ReadFromFileArray_hdr( sshot_file_hdr_t* const a, size_t const n, FILE* const f ) {
+size_t sshot_file_ReadFromBufArray_hdr( sshot_file_hdr_t* const a, size_t const n, const bbb_byte_t* const buf, const size_t len ) {
 	size_t	i;
+	size_t	cur = 0;
+	size_t	red;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( sshot_file_ReadFromFile_hdr( &( a[ i ] ), f ) == 0 ) {
-			return 0;
-		}
+		red = sshot_file_ReadFromBuf_hdr( &( a[ i ] ), buf + cur, len - cur );
+		if ( red == 0 ) { return 0; }
+		cur += red;
 	}
-	return 1;
+	return cur;
 }
 
-int sshot_file_WriteToFile_hdr( const sshot_file_hdr_t* const r, FILE* const f ) {
-	if ( fwrite( &( r->magic ), 1, 1, f ) == 0 ) {
-		return 0;
-	}
+size_t sshot_file_WriteToBuf_hdr( const sshot_file_hdr_t* const r, bbb_byte_t* const buf, const size_t len ) {
+	size_t	cur = 0;
+	size_t	wtn;
 
-	if ( bbb_util_bio_WriteToFile_uint16( r->runtime, f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_WriteToFile_uint32( r->platform, f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_WriteToFile_uint64( r->ssFileVersion, f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_WriteToFile_varbuf( r->vb, f ) == 0 ) {
-		return 0;
-	}
-
-	return 1;
+	if ( cur >= len ) { return 0; }
+	*( buf + cur ) = r->magic;
+	cur++;
+	wtn = bbb_util_bio_WriteToBuf_uint16( r->runtime, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToBuf_uint32( r->platform, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToBuf_uint64( r->ssFileVersion, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToBuf_varbuf( r->vb, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	return cur;
 }
 
-int sshot_file_WriteToFileArray_hdr( const sshot_file_hdr_t* const a, size_t const n, FILE* const f ) {
+size_t sshot_file_WriteToBufArray_hdr( const sshot_file_hdr_t* const a, size_t const n, bbb_byte_t* const buf, const size_t len ) {
 	size_t	i;
+	size_t	cur = 0;
+	size_t	wtn;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( sshot_file_WriteToFile_hdr( &( a[ i ] ), f ) == 0 ) {
-			return 0;
-		}
+		wtn = sshot_file_WriteToBuf_hdr( &( a[ i ] ), buf + cur, len - cur );
+		if ( wtn == 0 ) { return 0; }
+		cur += wtn;
 	}
-	return 1;
+	return cur;
+}
+
+size_t sshot_file_ReadFromFile_hdr( sshot_file_hdr_t* const r, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	cur = 0;
+	size_t	red;
+
+	if ( fread( &( r->magic ), 1, 1, f ) == 0 ) { return 0; }
+	bbb_util_hash_UpdateChecksum( &( r->magic ), 1, chk );
+	cur++;
+	red = bbb_util_bio_ReadFromFile_uint16( &( r->runtime ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromFile_uint32( &( r->platform ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromFile_uint64( &( r->ssFileVersion ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromFile_varbuf( &( r->vb ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	return cur;
+}
+
+size_t sshot_file_ReadFromFileArray_hdr( sshot_file_hdr_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	i;
+	size_t	cur = 0;
+	size_t	red;
+
+	for ( i = 0; i < n; i++ ) {
+		red = sshot_file_ReadFromFile_hdr( &( a[ i ] ), f, chk );
+		if ( red == 0 ) { return 0; }
+		cur += red;
+	}
+	return cur;
+}
+
+size_t sshot_file_WriteToFile_hdr( const sshot_file_hdr_t* const r, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	cur = 0;
+	size_t	wtn;
+
+	bbb_util_hash_UpdateChecksum( &( r->magic ), 1, chk );
+	if ( fwrite( &( r->magic ), 1, 1, f ) == 0 ) { return 0; }
+	cur++;
+	wtn = bbb_util_bio_WriteToFile_uint16( r->runtime, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToFile_uint32( r->platform, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToFile_uint64( r->ssFileVersion, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToFile_varbuf( r->vb, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	return cur;
+}
+
+size_t sshot_file_WriteToFileArray_hdr( const sshot_file_hdr_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	i;
+	size_t	cur = 0;
+	size_t	wtn;
+
+	for ( i = 0; i < n; i++ ) {
+		wtn = sshot_file_WriteToFile_hdr( &( a[ i ] ), f, chk );
+		if ( wtn == 0 ) { return 0; }
+		cur += wtn;
+	}
+	return cur;
 }
 
 void sshot_file_Destroy_hdr( sshot_file_hdr_t* const r ) {

@@ -23,7 +23,7 @@ EXE_OBJECTS = $(addprefix $(BUILD_DIR)/, $(EXE_SOURCES:.c=.o))
 
 .PHONY: bio delimiter directories library client run tests runtests
 
-all: delimiter directories library client tests
+all: delimiter directories bio library client tests
 
 bio:
 	ls -1 *.bio | xargs -n 1 -t $(PERL) util_bio.pl 

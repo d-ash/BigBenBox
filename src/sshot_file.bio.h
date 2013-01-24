@@ -16,15 +16,19 @@ typedef struct {
 	bbb_varbuf_t	vb;
 } sshot_file_hdr_t;
 
-int sshot_file_Copy_hdr( sshot_file_hdr_t* const dst, const sshot_file_hdr_t* const src );
-void sshot_file_Destroy_hdr( sshot_file_hdr_t* const r );
-void sshot_file_DestroyEach_hdr( sshot_file_hdr_t* const a, size_t const n );
-size_t sshot_file_GetSize_hdr( const sshot_file_hdr_t* const r );
-size_t sshot_file_GetSizeArray_hdr( const sshot_file_hdr_t* const a, size_t const n );
-int sshot_file_IsEqual_hdr( const sshot_file_hdr_t* const r1, const sshot_file_hdr_t* const r2 );
-int sshot_file_ReadFromFile_hdr( sshot_file_hdr_t* const r, FILE* const f );
-int sshot_file_ReadFromFileArray_hdr( sshot_file_hdr_t* const a, size_t const n, FILE* const f );
-int sshot_file_WriteToFile_hdr( const sshot_file_hdr_t* const r, FILE* const f );
-int sshot_file_WriteToFileArray_hdr( const sshot_file_hdr_t* const a, size_t const n, FILE* const f );
+int		sshot_file_Copy_hdr( sshot_file_hdr_t* const dst, const sshot_file_hdr_t* const src );
+void	sshot_file_Destroy_hdr( sshot_file_hdr_t* const r );
+void	sshot_file_DestroyEach_hdr( sshot_file_hdr_t* const a, size_t const n );
+size_t	sshot_file_GetSize_hdr( const sshot_file_hdr_t* const r );
+size_t	sshot_file_GetSizeArray_hdr( const sshot_file_hdr_t* const a, size_t const n );
+int		sshot_file_IsEqual_hdr( const sshot_file_hdr_t* const r1, const sshot_file_hdr_t* const r2 );
+size_t	sshot_file_ReadFromBuf_hdr( sshot_file_hdr_t* const r, const bbb_byte_t* const buf, const size_t len );
+size_t	sshot_file_ReadFromBufArray_hdr( sshot_file_hdr_t* const a, size_t const n, const bbb_byte_t* const buf, const size_t len );
+size_t	sshot_file_ReadFromFile_hdr( sshot_file_hdr_t* const r, FILE* const f, bbb_checksum_t* const chk );
+size_t	sshot_file_ReadFromFileArray_hdr( sshot_file_hdr_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk );
+size_t	sshot_file_WriteToBuf_hdr( const sshot_file_hdr_t* const r, bbb_byte_t* const buf, const size_t len );
+size_t	sshot_file_WriteToBufArray_hdr( const sshot_file_hdr_t* const a, size_t const n, bbb_byte_t* const buf, const size_t len );
+size_t	sshot_file_WriteToFile_hdr( const sshot_file_hdr_t* const r, FILE* const f, bbb_checksum_t* const chk );
+size_t	sshot_file_WriteToFileArray_hdr( const sshot_file_hdr_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk );
 
 #endif

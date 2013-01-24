@@ -6,13 +6,20 @@
 #define _BBB_UTIL_BIO_H
 
 #include "global.h"
+#include "util_hash.h"
 
 typedef struct {
 	uint32_t	len;
 	bbb_byte_t*	buf;
 } bbb_varbuf_t;
 
-// ================= Exported functions ==================
+/**
+ *  Read/Write functions return:
+ *		on a success:	a number of BYTES read
+ *		on a failure:	0 (values and position in a file are irrelevant)
+ *
+ *	In case of a failed call to File I/O better check feof() and ferror().
+ */
 
 // Buffer I/O
 

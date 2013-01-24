@@ -26,6 +26,8 @@ static char* _TestBioTypes() {
 	uint32_t		x32;
 	uint64_t		x64;
 	FILE*			f;
+	bbb_checksum_t	chk = 0;
+	bbb_checksum_t	xchk = 0;
 
 	vb.len = 16;
 	vb.buf = malloc( vb.len );
@@ -34,28 +36,33 @@ static char* _TestBioTypes() {
 	// Testing of writing.
 	f = fopen( path, "wb" );
 	MU_ASSERT( "Cannot create a data file", f != NULL );
-	MU_ASSERT( "Cannot write varbuf", bbb_util_bio_WriteToFile_varbuf( vb, f ) );
-	MU_ASSERT( "Cannot write uint16_t", bbb_util_bio_WriteToFile_uint16( c16, f ) );
-	MU_ASSERT( "Cannot write uint32_t", bbb_util_bio_WriteToFile_uint32( c32, f ) );
-	MU_ASSERT( "Cannot write uint64_t", bbb_util_bio_WriteToFile_uint64( c64, f ) );
+	MU_ASSERT( "Cannot write varbuf", bbb_util_bio_WriteToFile_varbuf( vb, f, &chk ) );
+	MU_ASSERT( "Cannot write uint16_t", bbb_util_bio_WriteToFile_uint16( c16, f, &chk ) );
+	MU_ASSERT( "Cannot write uint32_t", bbb_util_bio_WriteToFile_uint32( c32, f, &chk ) );
+	MU_ASSERT( "Cannot write uint64_t", bbb_util_bio_WriteToFile_uint64( c64, f, &chk ) );
 	MU_ASSERT( "Cannot close a data file", fclose( f ) == 0 );
 
 	f = fopen( path, "rb" );
 	MU_ASSERT( "Cannot read a data file", fread( x, sizeof( x ), 1, f ) == 1 );
 	MU_ASSERT( "bbb_util_bio_WriteToFile_...() failed", memcmp( x, data, sizeof( data ) ) == 0 );
+	bbb_util_hash_UpdateChecksum( x, sizeof( x ), &xchk);
+	MU_ASSERT( "Checksums failed (0)", xchk == chk );
 
 	// Testing of reading.
+	xchk = 0;
 	fseek( f, 0, SEEK_SET );
-	MU_ASSERT( "Cannot read varbuf", bbb_util_bio_ReadFromFile_varbuf( &xvb, f ) );
+	MU_ASSERT( "Cannot read varbuf", bbb_util_bio_ReadFromFile_varbuf( &xvb, f, &xchk ) );
 	MU_ASSERT( "bbb_util_bio_ReadFromFile_varbuf() failed", bbb_util_bio_IsEqual_varbuf( xvb, vb ) );
 
-	MU_ASSERT( "Cannot read uint16_t", bbb_util_bio_ReadFromFile_uint16( &x16, f ) );
+	MU_ASSERT( "Cannot read uint16_t", bbb_util_bio_ReadFromFile_uint16( &x16, f, &xchk ) );
 	MU_ASSERT( "bbb_util_bio_ReadFromFile_uint16() failed", x16 == c16 );
-	MU_ASSERT( "Cannot read uint32_t", bbb_util_bio_ReadFromFile_uint32( &x32, f ) );
+	MU_ASSERT( "Cannot read uint32_t", bbb_util_bio_ReadFromFile_uint32( &x32, f, &xchk ) );
 	MU_ASSERT( "bbb_util_bio_ReadFromFile_uint32() failed", x32 == c32 );
-	MU_ASSERT( "Cannot read uint64_t", bbb_util_bio_ReadFromFile_uint64( &x64, f ) );
+	MU_ASSERT( "Cannot read uint64_t", bbb_util_bio_ReadFromFile_uint64( &x64, f, &xchk ) );
 	MU_ASSERT( "bbb_util_bio_ReadFromFile_uint64() failed", x64 == c64 );
 	fclose( f );
+
+	MU_ASSERT( "Checksums failed (1)", xchk == chk );
 
 	free( xvb.buf );
 	free( vb.buf );
@@ -71,7 +78,9 @@ static char* _TestBioRecords() {
 	test_util_bio_fileHeader_t	xhdr;
 	test_util_bio_ext333_t		ext[ 3 ];
 	test_util_bio_ext333_t		xext[ 3 ];
-	FILE*	f;
+	FILE*			f;
+	bbb_checksum_t	chk = 0;
+	bbb_checksum_t	xchk = 0;
 
 	hdr.theFirst = 0x01;
 	hdr.theSecond = 0x0203;
@@ -94,19 +103,21 @@ static char* _TestBioRecords() {
 	// Testing of writing.
 	f = fopen( path, "wb" );
 	MU_ASSERT( "Cannot create a data file", f != NULL );
-	MU_ASSERT( "Cannot write a record", test_util_bio_WriteToFile_fileHeader( &hdr, f ) );
-	MU_ASSERT( "Cannot write array of records", test_util_bio_WriteToFileArray_ext333( ext, 3, f ) );
+	MU_ASSERT( "Cannot write a record", test_util_bio_WriteToFile_fileHeader( &hdr, f, &chk ) );
+	MU_ASSERT( "Cannot write array of records", test_util_bio_WriteToFileArray_ext333( ext, 3, f, &chk ) );
 	MU_ASSERT( "Cannot close a data file", fclose( f ) == 0 );
 
 	// Testing of reading.
 	f = fopen( path, "rb" );
-	MU_ASSERT( "Cannot read a record", test_util_bio_ReadFromFile_fileHeader( &xhdr, f ) );
+	MU_ASSERT( "Cannot read a record", test_util_bio_ReadFromFile_fileHeader( &xhdr, f, &xchk ) );
 	MU_ASSERT( "fileHeader I/O failed", test_util_bio_IsEqual_fileHeader( &xhdr, &hdr ) );
-	MU_ASSERT( "Cannot read array of records", test_util_bio_ReadFromFileArray_ext333( xext, 3, f ) );
+	MU_ASSERT( "Cannot read array of records", test_util_bio_ReadFromFileArray_ext333( xext, 3, f, &xchk ) );
 	MU_ASSERT( "ext333 I/O failed (0)", test_util_bio_IsEqual_ext333( &( xext[ 0 ] ), &( xext[ 0 ] ) ) );
 	MU_ASSERT( "ext333 I/O failed (1)", test_util_bio_IsEqual_ext333( &( xext[ 1 ] ), &( xext[ 1 ] ) ) );
 	MU_ASSERT( "ext333 I/O failed (2)", test_util_bio_IsEqual_ext333( &( xext[ 2 ] ), &( xext[ 2 ] ) ) );
 	fclose( f );
+
+	MU_ASSERT( "Checksums failed (2)", xchk == chk );
 
 	test_util_bio_DestroyEach_ext333( xext, 3 );
 	test_util_bio_DestroyEach_ext333( ext, 3 );

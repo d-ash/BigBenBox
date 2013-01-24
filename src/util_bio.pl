@@ -104,54 +104,54 @@ sub WriteH {
 		$rec->{ "proto" } = {};
 
 		$rec->{ "proto" }{ "Copy" }
-			= sprintf "int ${namespace}_Copy_${recName}( ${recType}* const dst, const ${recType}* const src )";
+			= sprintf "int		${namespace}_Copy_${recName}( ${recType}* const dst, const ${recType}* const src )";
 
 		$rec->{ "proto" }{ "IsEqual" }
-			= sprintf "int ${namespace}_IsEqual_${recName}( const ${recType}* const r1, const ${recType}* const r2 )";
+			= sprintf "int		${namespace}_IsEqual_${recName}( const ${recType}* const r1, const ${recType}* const r2 )";
 
 		$rec->{ "proto" }{ "GetSize" }
-			= sprintf "size_t ${namespace}_GetSize_${recName}( const ${recType}* const r )";
+			= sprintf "size_t	${namespace}_GetSize_${recName}( const ${recType}* const r )";
 
 		$rec->{ "proto" }{ "GetSizeArray" }
-			= sprintf "size_t ${namespace}_GetSizeArray_${recName}( const ${recType}* const a, size_t const n )";
+			= sprintf "size_t	${namespace}_GetSizeArray_${recName}( const ${recType}* const a, size_t const n )";
 
 		### Buffer I/O ###
 
 		$rec->{ "proto" }{ "ReadFromBuf" }
-			= sprintf "int ${namespace}_ReadFromBuf_${recName}( ${recType}* const r, const bbb_byte_t* const buf )";
+			= sprintf "size_t	${namespace}_ReadFromBuf_${recName}( ${recType}* const r, const bbb_byte_t* const buf, const size_t len )";
 
 		$rec->{ "proto" }{ "ReadFromBufArray" }
-			= sprintf "int ${namespace}_ReadFromBufArray_${recName}( ${recType}* const a, size_t const n, const bbb_byte_t* const buf )";
+			= sprintf "size_t	${namespace}_ReadFromBufArray_${recName}( ${recType}* const a, size_t const n, const bbb_byte_t* const buf, const size_t len )";
 
 		$rec->{ "proto" }{ "WriteToBuf" }
-			= sprintf "int ${namespace}_WriteToBuf_${recName}( const ${recType}* const r, bbb_byte_t* const buf )";
+			= sprintf "size_t	${namespace}_WriteToBuf_${recName}( const ${recType}* const r, bbb_byte_t* const buf, const size_t len )";
 
 		$rec->{ "proto" }{ "WriteToBufArray" }
-			= sprintf "int ${namespace}_WriteToBufArray_${recName}( const ${recType}* const a, size_t const n, bbb_byte_t* const buf )";
+			= sprintf "size_t	${namespace}_WriteToBufArray_${recName}( const ${recType}* const a, size_t const n, bbb_byte_t* const buf, const size_t len )";
 
 		### File I/O ###
 
 		$rec->{ "proto" }{ "ReadFromFile" }
-			= sprintf "int ${namespace}_ReadFromFile_${recName}( ${recType}* const r, FILE* const f, bbb_checksum_t* const chk )";
+			= sprintf "size_t	${namespace}_ReadFromFile_${recName}( ${recType}* const r, FILE* const f, bbb_checksum_t* const chk )";
 
 		$rec->{ "proto" }{ "ReadFromFileArray" }
-			= sprintf "int ${namespace}_ReadFromFileArray_${recName}( ${recType}* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )";
+			= sprintf "size_t	${namespace}_ReadFromFileArray_${recName}( ${recType}* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )";
 
 		$rec->{ "proto" }{ "WriteToFile" }
-			= sprintf "int ${namespace}_WriteToFile_${recName}( const ${recType}* const r, FILE* const f, bbb_checksum_t* const chk )";
+			= sprintf "size_t	${namespace}_WriteToFile_${recName}( const ${recType}* const r, FILE* const f, bbb_checksum_t* const chk )";
 
 		$rec->{ "proto" }{ "WriteToFileArray" }
-			= sprintf "int ${namespace}_WriteToFileArray_${recName}( const ${recType}* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )";
+			= sprintf "size_t	${namespace}_WriteToFileArray_${recName}( const ${recType}* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )";
 
 		if ( $rec->{ "dynamic" } ) {
 			$rec->{ "proto" }{ "Destroy" }
-				= sprintf "void ${namespace}_Destroy_${recName}( ${recType}* const r )";
+				= sprintf "void	${namespace}_Destroy_${recName}( ${recType}* const r )";
 
 			$rec->{ "proto" }{ "DestroyEach" }
-				= sprintf "void ${namespace}_DestroyEach_${recName}( ${recType}* const a, size_t const n )";
+				= sprintf "void	${namespace}_DestroyEach_${recName}( ${recType}* const a, size_t const n )";
 		}
 
-		foreach ( sort keys %{$rec->{ "proto" }} ) {
+		foreach ( sort( keys %{$rec->{ "proto" }} ) ) {
 			print $f $rec->{ "proto" }{ $_ } . ";\n";
 		}
 
@@ -166,8 +166,132 @@ sub IsAtomType {
 	return ( shift =~ m/^uint(?:8|16|32|64)$/ );
 }
 
+sub Output_ProtoImpl {
+	my $f = shift;
+	my $proto = shift;
+
+	print $f "\n" . ( $proto =~ s/\t+/ /r ) . " {\n";
+}
+
+sub Output_ReadImpl {
+	my $f = shift;
+	my $mode = shift;		# ( Buf | File )
+	my $rec = shift;
+	my $recName = $rec->{ "recName" };
+
+	Output_ProtoImpl( $f, $rec->{ "proto" }{ "ReadFrom${mode}" } );
+	print $f "	size_t	cur = 0;\n";
+	print $f "	size_t	red;\n\n";
+	foreach ( @{ $rec->{ "fields" } } ) {
+		my $type = $_->{ "type" };
+		my $name = $_->{ "name" };
+
+		if ( $type eq "uint8" ) {
+			if ( $mode eq "Buf" ) {
+				print $f "	if ( cur >= len ) { return 0; }\n";
+				print $f "	r->${name} = *( buf + cur );\n";
+			} else {
+				print $f "	if ( fread( &( r->${name} ), 1, 1, f ) == 0 ) { return 0; }\n";
+				print $f "	bbb_util_hash_UpdateChecksum( &( r->${name} ), 1, chk );\n";
+			}
+			print $f "	cur++;\n";
+		} else {
+			if ( $mode eq "Buf" ) {
+				print $f "	red = bbb_util_bio_ReadFrom${mode}_${type}( &( r->${name} ), buf + cur, len - cur );\n";
+			} else {
+				print $f "	red = bbb_util_bio_ReadFrom${mode}_${type}( &( r->${name} ), f, chk );\n";
+			}
+			print $f "	if ( red == 0 ) { return 0; }\n";
+			print $f "	cur += red;\n";
+		}
+	}
+	print $f "	return cur;\n";
+	print $f "}\n";
+}
+
+sub Output_ReadArrayImpl {
+	my $f = shift;
+	my $mode = shift;		# ( Buf | File )
+	my $rec = shift;
+	my $recName = $rec->{ "recName" };
+
+	Output_ProtoImpl( $f, $rec->{ "proto" }{ "ReadFrom${mode}Array" } );
+	print $f "	size_t	i;\n";
+	print $f "	size_t	cur = 0;\n";
+	print $f "	size_t	red;\n\n";
+	print $f "	for ( i = 0; i < n; i++ ) {\n";
+	if ( $mode eq "Buf" ) {
+		print $f "		red = ${namespace}_ReadFrom${mode}_${recName}( &( a[ i ] ), buf + cur, len - cur );\n";
+	} else {
+		print $f "		red = ${namespace}_ReadFrom${mode}_${recName}( &( a[ i ] ), f, chk );\n";
+	}
+	print $f "		if ( red == 0 ) { return 0; }\n";
+	print $f "		cur += red;\n";
+	print $f "	}\n";
+	print $f "	return cur;\n";
+	print $f "}\n";
+}
+
+sub Output_WriteImpl {
+	my $f = shift;
+	my $mode = shift;		# ( Buf | File )
+	my $rec = shift;
+	my $recName = $rec->{ "recName" };
+
+	Output_ProtoImpl( $f, $rec->{ "proto" }{ "WriteTo${mode}" } );
+	print $f "	size_t	cur = 0;\n";
+	print $f "	size_t	wtn;\n\n";
+	foreach ( @{ $rec->{ "fields" } } ) {
+		my $type = $_->{ "type" };
+		my $name = $_->{ "name" };
+
+		if ( $type eq "uint8" ) {
+			if ( $mode eq "Buf" ) {
+				print $f "	if ( cur >= len ) { return 0; }\n";
+				print $f "	*( buf + cur ) = r->${name};\n";
+			} else {
+				print $f "	bbb_util_hash_UpdateChecksum( &( r->${name} ), 1, chk );\n";
+				print $f "	if ( fwrite( &( r->${name} ), 1, 1, f ) == 0 ) { return 0; }\n";
+			}
+			print $f "	cur++;\n";
+		} else {
+			if ( $mode eq "Buf" ) {
+				print $f "	wtn = bbb_util_bio_WriteTo${mode}_${type}( r->${name}, buf + cur, len - cur );\n";
+			} else {
+				print $f "	wtn = bbb_util_bio_WriteToFile_${type}( r->${name}, f, chk );\n";
+			}
+			print $f "	if ( wtn == 0 ) { return 0; }\n";
+			print $f "	cur += wtn;\n";
+		}
+	}
+	print $f "	return cur;\n";
+	print $f "}\n";
+}
+
+sub Output_WriteArrayImpl {
+	my $f = shift;
+	my $mode = shift;		# ( Buf | File )
+	my $rec = shift;
+	my $recName = $rec->{ "recName" };
+
+	Output_ProtoImpl( $f, $rec->{ "proto" }{ "WriteTo${mode}Array" } );
+	print $f "	size_t	i;\n";
+	print $f "	size_t	cur = 0;\n";
+	print $f "	size_t	wtn;\n\n";
+	print $f "	for ( i = 0; i < n; i++ ) {\n";
+	if ( $mode eq "Buf" ) {
+		print $f "		wtn = ${namespace}_WriteTo${mode}_${recName}( &( a[ i ] ), buf + cur, len - cur );\n";
+	} else {
+		print $f "		wtn = ${namespace}_WriteTo${mode}_${recName}( &( a[ i ] ), f, chk );\n";
+	}
+	print $f "		if ( wtn == 0 ) { return 0; }\n";
+	print $f "		cur += wtn;\n";
+	print $f "	}\n";
+	print $f "	return cur;\n";
+	print $f "}\n";
+}
+
 sub WriteC {
-	my $BIO_NS = "bbb_util_bio";
 	my $f;
 
 	open $f, ">", "$filename.c" or die $!;
@@ -182,7 +306,7 @@ sub WriteC {
 		my $recName = $rec->{ "recName" };
 
 		# Copy() implementation
-		print $f "\n" . $rec->{ "proto" }{ "Copy" } . " {\n";
+		Output_ProtoImpl( $f, $rec->{ "proto" }{ "Copy" } );
 		print $f "	size_t	len;\n\n";
 		foreach ( @{ $rec->{ "fields" } } ) {
 			my $type = $_->{ "type" };
@@ -206,7 +330,7 @@ sub WriteC {
 		print $f "}\n";
 
 		# IsEqual() implementation
-		print $f "\n" . $rec->{ "proto" }{ "IsEqual" } . " {\n";
+		Output_ProtoImpl( $f, $rec->{ "proto" }{ "IsEqual" } );
 		foreach ( @{ $rec->{ "fields" } } ) {
 			my $type = $_->{ "type" };
 			my $name = $_->{ "name" };
@@ -226,7 +350,7 @@ sub WriteC {
 		print $f "}\n";
 
 		# GetSize() implementation
-		print $f "\n" . $rec->{ "proto" }{ "GetSize" } . " {\n";
+		Output_ProtoImpl( $f, $rec->{ "proto" }{ "GetSize" } );
 		print $f "	return ( 0";
 		foreach ( @{ $rec->{ "fields" } } ) {
 			my $type = $_->{ "type" };
@@ -245,7 +369,7 @@ sub WriteC {
 		print $f "}\n";
 
 		# GetSizeArray() implementation
-		print $f "\n" . $rec->{ "proto" }{ "GetSizeArray" } . " {\n";
+		Output_ProtoImpl( $f, $rec->{ "proto" }{ "GetSizeArray" } );
 		print $f "	size_t	i;\n";
 		print $f "	size_t	sz = 0;\n\n";
 		print $f "	for ( i = 0; i < n; i++ ) {\n";
@@ -254,130 +378,19 @@ sub WriteC {
 		print $f "	return sz;\n";
 		print $f "}\n";
 
-		### Buffer I/O ###
+		Output_ReadImpl( $f, "Buf", $rec );
+		Output_ReadArrayImpl( $f, "Buf", $rec );
+		Output_WriteImpl( $f, "Buf", $rec );
+		Output_WriteArrayImpl( $f, "Buf", $rec );
 
-		# ReadFromBuf() implementation
-		print $f "\n" . $rec->{ "proto" }{ "ReadFromBuf" } . " {\n";
-		print $f "	size_t idx;\n\n";
-		print $f "	idx = 0;\n";
-		foreach ( @{ $rec->{ "fields" } } ) {
-			my $type = $_->{ "type" };
-			my $name = $_->{ "name" };
-
-			if ( $type eq "uint8" ) {
-				print $f "	r->${name} = *( buf + idx );\n";
-				print $f "	idx++;\n";
-			} else {
-				print $f "	if ( ${BIO_NS}_ReadFromBuf_${type}( &( r->${name} ), buf + idx ) == 0 ) {\n";
-			}
-		}
-		print $f "	return 1;\n";
-		print $f "}\n";
-
-		# ReadFromBufArray() implementation
-		print $f "\n" . $rec->{ "proto" }{ "ReadFromBufArray" } . " {\n";
-		print $f "	size_t	i;\n\n";
-		print $f "	for ( i = 0; i < n; i++ ) {\n";
-		print $f "		if ( ${namespace}_ReadFromBuf_${recName}( &( a[ i ] ), f, chk ) == 0 ) {\n";
-		print $f "			return 0;\n";
-		print $f "		}\n";
-		print $f "	}\n";
-		print $f "	return 1;\n";
-		print $f "}\n";
-
-		# WriteToBuf() implementation
-		print $f "\n" . $rec->{ "proto" }{ "WriteToBuf" } . " {\n";
-		foreach ( @{ $rec->{ "fields" } } ) {
-			my $type = $_->{ "type" };
-			my $name = $_->{ "name" };
-
-			if ( $type eq "uint8" ) {
-				print $f "	if ( fwrite( &( r->${name} ), 1, 1, f ) == 0 ) {\n";
-			} else {
-				print $f "	if ( ${BIO_NS}_WriteToBuf_${type}( r->${name}, f, chk ) == 0 ) {\n";
-			}
-			print $f "		return 0;\n";
-			print $f "	}\n\n";
-		}
-		print $f "	return 1;\n";
-		print $f "}\n";
-
-		# WriteToBufArray() implementation
-		print $f "\n" . $rec->{ "proto" }{ "WriteToBufArray" } . " {\n";
-		print $f "	size_t	i;\n\n";
-		print $f "	for ( i = 0; i < n; i++ ) {\n";
-		print $f "		if ( ${namespace}_WriteToBuf_${recName}( &( a[ i ] ), f, chk ) == 0 ) {\n";
-		print $f "			return 0;\n";
-		print $f "		}\n";
-		print $f "	}\n";
-		print $f "	return 1;\n";
-		print $f "}\n";
-
-		### File I/O ###
-
-		# ReadFromFile() implementation
-		print $f "\n" . $rec->{ "proto" }{ "ReadFromFile" } . " {\n";
-		foreach ( @{ $rec->{ "fields" } } ) {
-			my $type = $_->{ "type" };
-			my $name = $_->{ "name" };
-
-			if ( $type eq "uint8" ) {
-				print $f "	if ( fread( &( r->${name} ), 1, 1, f ) == 0 ) {\n";
-			} else {
-				print $f "	if ( ${BIO_NS}_ReadFromFile_${type}( &( r->${name} ), f, chk ) == 0 ) {\n";
-			}
-			print $f "		return 0;\n";
-			print $f "	}\n\n";
-			if ( $type eq "uint8" ) {
-				print $f "	bbb_util_hash_UpdateChecksum( &( r->${name} ), 1, chk );\n";
-			}
-		}
-		print $f "	return 1;\n";
-		print $f "}\n";
-
-		# ReadFromFileArray() implementation
-		print $f "\n" . $rec->{ "proto" }{ "ReadFromFileArray" } . " {\n";
-		print $f "	size_t	i;\n\n";
-		print $f "	for ( i = 0; i < n; i++ ) {\n";
-		print $f "		if ( ${namespace}_ReadFromFile_${recName}( &( a[ i ] ), f, chk ) == 0 ) {\n";
-		print $f "			return 0;\n";
-		print $f "		}\n";
-		print $f "	}\n";
-		print $f "	return 1;\n";
-		print $f "}\n";
-
-		# WriteToFile() implementation
-		print $f "\n" . $rec->{ "proto" }{ "WriteToFile" } . " {\n";
-		foreach ( @{ $rec->{ "fields" } } ) {
-			my $type = $_->{ "type" };
-			my $name = $_->{ "name" };
-
-			if ( $type eq "uint8" ) {
-				print $f "	bbb_util_hash_UpdateChecksum( &( r->${name} ), 1, chk );\n";
-				print $f "	if ( fwrite( &( r->${name} ), 1, 1, f ) == 0 ) {\n";
-			} else {
-				print $f "	if ( ${BIO_NS}_WriteToFile_${type}( r->${name}, f, chk ) == 0 ) {\n";
-			}
-			print $f "		return 0;\n";
-			print $f "	}\n\n";
-		}
-		print $f "	return 1;\n";
-		print $f "}\n";
-
-		# WriteToFileArray() implementation
-		print $f "\n" . $rec->{ "proto" }{ "WriteToFileArray" } . " {\n";
-		print $f "	size_t	i;\n\n";
-		print $f "	for ( i = 0; i < n; i++ ) {\n";
-		print $f "		if ( ${namespace}_WriteToFile_${recName}( &( a[ i ] ), f, chk ) == 0 ) {\n";
-		print $f "			return 0;\n";
-		print $f "		}\n";
-		print $f "	}\n";
-		print $f "	return 1;\n";
-		print $f "}\n";
+		Output_ReadImpl( $f, "File", $rec );
+		Output_ReadArrayImpl( $f, "File", $rec );
+		Output_WriteImpl( $f, "File", $rec );
+		Output_WriteArrayImpl( $f, "File", $rec );
 
 		if ( $rec->{ "dynamic" } ) {
 			# Destroy() implementation
-			print $f "\n" . $rec->{ "proto" }{ "Destroy" } . " {\n";
+			Output_ProtoImpl( $f, $rec->{ "proto" }{ "Destroy" } );
 			foreach ( @{ $rec->{ "fields" } } ) {
 				my $type = $_->{ "type" };
 				my $name = $_->{ "name" };
@@ -392,7 +405,7 @@ sub WriteC {
 			print $f "}\n";
 
 			# DestroyEach() implementation
-			print $f "\n" . $rec->{ "proto" }{ "DestroyEach" } . " {\n";
+			Output_ProtoImpl( $f, $rec->{ "proto" }{ "DestroyEach" } );
 			print $f "	size_t	i;\n\n";
 			print $f "	for ( i = 0; i < n; i++ ) {\n";
 			print $f "		${namespace}_Destroy_${recName}( &( a[ i ] ) );\n";

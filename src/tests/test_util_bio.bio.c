@@ -55,74 +55,144 @@ size_t test_util_bio_GetSizeArray_fileHeader( const test_util_bio_fileHeader_t* 
 	return sz;
 }
 
-int test_util_bio_ReadFromFile_fileHeader( test_util_bio_fileHeader_t* const r, FILE* const f ) {
-	if ( fread( &( r->theFirst ), 1, 1, f ) == 0 ) {
-		return 0;
-	}
+size_t test_util_bio_ReadFromBuf_fileHeader( test_util_bio_fileHeader_t* const r, const bbb_byte_t* const buf, const size_t len ) {
+	size_t	cur = 0;
+	size_t	red;
 
-	if ( bbb_util_bio_ReadFromFile_uint16( &( r->theSecond ), f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_ReadFromFile_uint32( &( r->theThird ), f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_ReadFromFile_uint64( &( r->theFourth ), f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_ReadFromFile_varbuf( &( r->var_buf_777 ), f ) == 0 ) {
-		return 0;
-	}
-
-	return 1;
+	if ( cur >= len ) { return 0; }
+	r->theFirst = *( buf + cur );
+	cur++;
+	red = bbb_util_bio_ReadFromBuf_uint16( &( r->theSecond ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromBuf_uint32( &( r->theThird ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromBuf_uint64( &( r->theFourth ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromBuf_varbuf( &( r->var_buf_777 ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	return cur;
 }
 
-int test_util_bio_ReadFromFileArray_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f ) {
+size_t test_util_bio_ReadFromBufArray_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n, const bbb_byte_t* const buf, const size_t len ) {
 	size_t	i;
+	size_t	cur = 0;
+	size_t	red;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( test_util_bio_ReadFromFile_fileHeader( &( a[ i ] ), f ) == 0 ) {
-			return 0;
-		}
+		red = test_util_bio_ReadFromBuf_fileHeader( &( a[ i ] ), buf + cur, len - cur );
+		if ( red == 0 ) { return 0; }
+		cur += red;
 	}
-	return 1;
+	return cur;
 }
 
-int test_util_bio_WriteToFile_fileHeader( const test_util_bio_fileHeader_t* const r, FILE* const f ) {
-	if ( fwrite( &( r->theFirst ), 1, 1, f ) == 0 ) {
-		return 0;
-	}
+size_t test_util_bio_WriteToBuf_fileHeader( const test_util_bio_fileHeader_t* const r, bbb_byte_t* const buf, const size_t len ) {
+	size_t	cur = 0;
+	size_t	wtn;
 
-	if ( bbb_util_bio_WriteToFile_uint16( r->theSecond, f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_WriteToFile_uint32( r->theThird, f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_WriteToFile_uint64( r->theFourth, f ) == 0 ) {
-		return 0;
-	}
-
-	if ( bbb_util_bio_WriteToFile_varbuf( r->var_buf_777, f ) == 0 ) {
-		return 0;
-	}
-
-	return 1;
+	if ( cur >= len ) { return 0; }
+	*( buf + cur ) = r->theFirst;
+	cur++;
+	wtn = bbb_util_bio_WriteToBuf_uint16( r->theSecond, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToBuf_uint32( r->theThird, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToBuf_uint64( r->theFourth, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToBuf_varbuf( r->var_buf_777, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	return cur;
 }
 
-int test_util_bio_WriteToFileArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f ) {
+size_t test_util_bio_WriteToBufArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n, bbb_byte_t* const buf, const size_t len ) {
 	size_t	i;
+	size_t	cur = 0;
+	size_t	wtn;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( test_util_bio_WriteToFile_fileHeader( &( a[ i ] ), f ) == 0 ) {
-			return 0;
-		}
+		wtn = test_util_bio_WriteToBuf_fileHeader( &( a[ i ] ), buf + cur, len - cur );
+		if ( wtn == 0 ) { return 0; }
+		cur += wtn;
 	}
-	return 1;
+	return cur;
+}
+
+size_t test_util_bio_ReadFromFile_fileHeader( test_util_bio_fileHeader_t* const r, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	cur = 0;
+	size_t	red;
+
+	if ( fread( &( r->theFirst ), 1, 1, f ) == 0 ) { return 0; }
+	bbb_util_hash_UpdateChecksum( &( r->theFirst ), 1, chk );
+	cur++;
+	red = bbb_util_bio_ReadFromFile_uint16( &( r->theSecond ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromFile_uint32( &( r->theThird ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromFile_uint64( &( r->theFourth ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromFile_varbuf( &( r->var_buf_777 ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	return cur;
+}
+
+size_t test_util_bio_ReadFromFileArray_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	i;
+	size_t	cur = 0;
+	size_t	red;
+
+	for ( i = 0; i < n; i++ ) {
+		red = test_util_bio_ReadFromFile_fileHeader( &( a[ i ] ), f, chk );
+		if ( red == 0 ) { return 0; }
+		cur += red;
+	}
+	return cur;
+}
+
+size_t test_util_bio_WriteToFile_fileHeader( const test_util_bio_fileHeader_t* const r, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	cur = 0;
+	size_t	wtn;
+
+	bbb_util_hash_UpdateChecksum( &( r->theFirst ), 1, chk );
+	if ( fwrite( &( r->theFirst ), 1, 1, f ) == 0 ) { return 0; }
+	cur++;
+	wtn = bbb_util_bio_WriteToFile_uint16( r->theSecond, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToFile_uint32( r->theThird, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToFile_uint64( r->theFourth, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToFile_varbuf( r->var_buf_777, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	return cur;
+}
+
+size_t test_util_bio_WriteToFileArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	i;
+	size_t	cur = 0;
+	size_t	wtn;
+
+	for ( i = 0; i < n; i++ ) {
+		wtn = test_util_bio_WriteToFile_fileHeader( &( a[ i ] ), f, chk );
+		if ( wtn == 0 ) { return 0; }
+		cur += wtn;
+	}
+	return cur;
 }
 
 void test_util_bio_Destroy_fileHeader( test_util_bio_fileHeader_t* const r ) {
@@ -185,50 +255,108 @@ size_t test_util_bio_GetSizeArray_ext333( const test_util_bio_ext333_t* const a,
 	return sz;
 }
 
-int test_util_bio_ReadFromFile_ext333( test_util_bio_ext333_t* const r, FILE* const f ) {
-	if ( bbb_util_bio_ReadFromFile_varbuf( &( r->v1 ), f ) == 0 ) {
-		return 0;
-	}
+size_t test_util_bio_ReadFromBuf_ext333( test_util_bio_ext333_t* const r, const bbb_byte_t* const buf, const size_t len ) {
+	size_t	cur = 0;
+	size_t	red;
 
-	if ( bbb_util_bio_ReadFromFile_varbuf( &( r->v2 ), f ) == 0 ) {
-		return 0;
-	}
-
-	return 1;
+	red = bbb_util_bio_ReadFromBuf_varbuf( &( r->v1 ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromBuf_varbuf( &( r->v2 ), buf + cur, len - cur );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	return cur;
 }
 
-int test_util_bio_ReadFromFileArray_ext333( test_util_bio_ext333_t* const a, size_t const n, FILE* const f ) {
+size_t test_util_bio_ReadFromBufArray_ext333( test_util_bio_ext333_t* const a, size_t const n, const bbb_byte_t* const buf, const size_t len ) {
 	size_t	i;
+	size_t	cur = 0;
+	size_t	red;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( test_util_bio_ReadFromFile_ext333( &( a[ i ] ), f ) == 0 ) {
-			return 0;
-		}
+		red = test_util_bio_ReadFromBuf_ext333( &( a[ i ] ), buf + cur, len - cur );
+		if ( red == 0 ) { return 0; }
+		cur += red;
 	}
-	return 1;
+	return cur;
 }
 
-int test_util_bio_WriteToFile_ext333( const test_util_bio_ext333_t* const r, FILE* const f ) {
-	if ( bbb_util_bio_WriteToFile_varbuf( r->v1, f ) == 0 ) {
-		return 0;
-	}
+size_t test_util_bio_WriteToBuf_ext333( const test_util_bio_ext333_t* const r, bbb_byte_t* const buf, const size_t len ) {
+	size_t	cur = 0;
+	size_t	wtn;
 
-	if ( bbb_util_bio_WriteToFile_varbuf( r->v2, f ) == 0 ) {
-		return 0;
-	}
-
-	return 1;
+	wtn = bbb_util_bio_WriteToBuf_varbuf( r->v1, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToBuf_varbuf( r->v2, buf + cur, len - cur );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	return cur;
 }
 
-int test_util_bio_WriteToFileArray_ext333( const test_util_bio_ext333_t* const a, size_t const n, FILE* const f ) {
+size_t test_util_bio_WriteToBufArray_ext333( const test_util_bio_ext333_t* const a, size_t const n, bbb_byte_t* const buf, const size_t len ) {
 	size_t	i;
+	size_t	cur = 0;
+	size_t	wtn;
 
 	for ( i = 0; i < n; i++ ) {
-		if ( test_util_bio_WriteToFile_ext333( &( a[ i ] ), f ) == 0 ) {
-			return 0;
-		}
+		wtn = test_util_bio_WriteToBuf_ext333( &( a[ i ] ), buf + cur, len - cur );
+		if ( wtn == 0 ) { return 0; }
+		cur += wtn;
 	}
-	return 1;
+	return cur;
+}
+
+size_t test_util_bio_ReadFromFile_ext333( test_util_bio_ext333_t* const r, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	cur = 0;
+	size_t	red;
+
+	red = bbb_util_bio_ReadFromFile_varbuf( &( r->v1 ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	red = bbb_util_bio_ReadFromFile_varbuf( &( r->v2 ), f, chk );
+	if ( red == 0 ) { return 0; }
+	cur += red;
+	return cur;
+}
+
+size_t test_util_bio_ReadFromFileArray_ext333( test_util_bio_ext333_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	i;
+	size_t	cur = 0;
+	size_t	red;
+
+	for ( i = 0; i < n; i++ ) {
+		red = test_util_bio_ReadFromFile_ext333( &( a[ i ] ), f, chk );
+		if ( red == 0 ) { return 0; }
+		cur += red;
+	}
+	return cur;
+}
+
+size_t test_util_bio_WriteToFile_ext333( const test_util_bio_ext333_t* const r, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	cur = 0;
+	size_t	wtn;
+
+	wtn = bbb_util_bio_WriteToFile_varbuf( r->v1, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	wtn = bbb_util_bio_WriteToFile_varbuf( r->v2, f, chk );
+	if ( wtn == 0 ) { return 0; }
+	cur += wtn;
+	return cur;
+}
+
+size_t test_util_bio_WriteToFileArray_ext333( const test_util_bio_ext333_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk ) {
+	size_t	i;
+	size_t	cur = 0;
+	size_t	wtn;
+
+	for ( i = 0; i < n; i++ ) {
+		wtn = test_util_bio_WriteToFile_ext333( &( a[ i ] ), f, chk );
+		if ( wtn == 0 ) { return 0; }
+		cur += wtn;
+	}
+	return cur;
 }
 
 void test_util_bio_Destroy_ext333( test_util_bio_ext333_t* const r ) {

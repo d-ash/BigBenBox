@@ -16,31 +16,39 @@ typedef struct {
 	bbb_varbuf_t	var_buf_777;
 } test_util_bio_fileHeader_t;
 
-int test_util_bio_Copy_fileHeader( test_util_bio_fileHeader_t* const dst, const test_util_bio_fileHeader_t* const src );
-void test_util_bio_Destroy_fileHeader( test_util_bio_fileHeader_t* const r );
-void test_util_bio_DestroyEach_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n );
-size_t test_util_bio_GetSize_fileHeader( const test_util_bio_fileHeader_t* const r );
-size_t test_util_bio_GetSizeArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n );
-int test_util_bio_IsEqual_fileHeader( const test_util_bio_fileHeader_t* const r1, const test_util_bio_fileHeader_t* const r2 );
-int test_util_bio_ReadFromFile_fileHeader( test_util_bio_fileHeader_t* const r, FILE* const f );
-int test_util_bio_ReadFromFileArray_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f );
-int test_util_bio_WriteToFile_fileHeader( const test_util_bio_fileHeader_t* const r, FILE* const f );
-int test_util_bio_WriteToFileArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f );
+int		test_util_bio_Copy_fileHeader( test_util_bio_fileHeader_t* const dst, const test_util_bio_fileHeader_t* const src );
+void	test_util_bio_Destroy_fileHeader( test_util_bio_fileHeader_t* const r );
+void	test_util_bio_DestroyEach_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n );
+size_t	test_util_bio_GetSize_fileHeader( const test_util_bio_fileHeader_t* const r );
+size_t	test_util_bio_GetSizeArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n );
+int		test_util_bio_IsEqual_fileHeader( const test_util_bio_fileHeader_t* const r1, const test_util_bio_fileHeader_t* const r2 );
+size_t	test_util_bio_ReadFromBuf_fileHeader( test_util_bio_fileHeader_t* const r, const bbb_byte_t* const buf, const size_t len );
+size_t	test_util_bio_ReadFromBufArray_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n, const bbb_byte_t* const buf, const size_t len );
+size_t	test_util_bio_ReadFromFile_fileHeader( test_util_bio_fileHeader_t* const r, FILE* const f, bbb_checksum_t* const chk );
+size_t	test_util_bio_ReadFromFileArray_fileHeader( test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk );
+size_t	test_util_bio_WriteToBuf_fileHeader( const test_util_bio_fileHeader_t* const r, bbb_byte_t* const buf, const size_t len );
+size_t	test_util_bio_WriteToBufArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n, bbb_byte_t* const buf, const size_t len );
+size_t	test_util_bio_WriteToFile_fileHeader( const test_util_bio_fileHeader_t* const r, FILE* const f, bbb_checksum_t* const chk );
+size_t	test_util_bio_WriteToFileArray_fileHeader( const test_util_bio_fileHeader_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk );
 
 typedef struct {
 	bbb_varbuf_t	v1;
 	bbb_varbuf_t	v2;
 } test_util_bio_ext333_t;
 
-int test_util_bio_Copy_ext333( test_util_bio_ext333_t* const dst, const test_util_bio_ext333_t* const src );
-void test_util_bio_Destroy_ext333( test_util_bio_ext333_t* const r );
-void test_util_bio_DestroyEach_ext333( test_util_bio_ext333_t* const a, size_t const n );
-size_t test_util_bio_GetSize_ext333( const test_util_bio_ext333_t* const r );
-size_t test_util_bio_GetSizeArray_ext333( const test_util_bio_ext333_t* const a, size_t const n );
-int test_util_bio_IsEqual_ext333( const test_util_bio_ext333_t* const r1, const test_util_bio_ext333_t* const r2 );
-int test_util_bio_ReadFromFile_ext333( test_util_bio_ext333_t* const r, FILE* const f );
-int test_util_bio_ReadFromFileArray_ext333( test_util_bio_ext333_t* const a, size_t const n, FILE* const f );
-int test_util_bio_WriteToFile_ext333( const test_util_bio_ext333_t* const r, FILE* const f );
-int test_util_bio_WriteToFileArray_ext333( const test_util_bio_ext333_t* const a, size_t const n, FILE* const f );
+int		test_util_bio_Copy_ext333( test_util_bio_ext333_t* const dst, const test_util_bio_ext333_t* const src );
+void	test_util_bio_Destroy_ext333( test_util_bio_ext333_t* const r );
+void	test_util_bio_DestroyEach_ext333( test_util_bio_ext333_t* const a, size_t const n );
+size_t	test_util_bio_GetSize_ext333( const test_util_bio_ext333_t* const r );
+size_t	test_util_bio_GetSizeArray_ext333( const test_util_bio_ext333_t* const a, size_t const n );
+int		test_util_bio_IsEqual_ext333( const test_util_bio_ext333_t* const r1, const test_util_bio_ext333_t* const r2 );
+size_t	test_util_bio_ReadFromBuf_ext333( test_util_bio_ext333_t* const r, const bbb_byte_t* const buf, const size_t len );
+size_t	test_util_bio_ReadFromBufArray_ext333( test_util_bio_ext333_t* const a, size_t const n, const bbb_byte_t* const buf, const size_t len );
+size_t	test_util_bio_ReadFromFile_ext333( test_util_bio_ext333_t* const r, FILE* const f, bbb_checksum_t* const chk );
+size_t	test_util_bio_ReadFromFileArray_ext333( test_util_bio_ext333_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk );
+size_t	test_util_bio_WriteToBuf_ext333( const test_util_bio_ext333_t* const r, bbb_byte_t* const buf, const size_t len );
+size_t	test_util_bio_WriteToBufArray_ext333( const test_util_bio_ext333_t* const a, size_t const n, bbb_byte_t* const buf, const size_t len );
+size_t	test_util_bio_WriteToFile_ext333( const test_util_bio_ext333_t* const r, FILE* const f, bbb_checksum_t* const chk );
+size_t	test_util_bio_WriteToFileArray_ext333( const test_util_bio_ext333_t* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk );
 
 #endif

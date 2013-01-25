@@ -5,7 +5,7 @@
 
 use strict;
 use warnings;
-use Data::Dumper;
+#use Data::Dumper;
 
 my @records = ();
 my $errors = 0;
@@ -33,7 +33,7 @@ sub ReadBIO {
 
 	for ( <$f> ) {
 		$line += 1;
-		if ( $_ =~ /^($SYMBOL)\s+\{$COMMENTS$/ ) {
+		if ( /^($SYMBOL)\s+\{$COMMENTS$/ ) {
 			# record definition (begin)
 			if ( $inRecord ) {
 				Perr "The record ( $1 ) is inside another one.";
@@ -41,7 +41,7 @@ sub ReadBIO {
 				$inRecord = 1;
 				push( @records, { "recName" => $1, "fields" => [] } );
 			}
-		} elsif ( $_ =~ /^\t($SYMBOL)\s+($SYMBOL);$COMMENTS$/ ) {
+		} elsif ( /^\t($SYMBOL)\s+($SYMBOL);$COMMENTS$/ ) {
 			# field definition
 			if ( $inRecord ) {
 				push( @{ $records[ $#records ]{ "fields" } }, {
@@ -51,14 +51,14 @@ sub ReadBIO {
 			} else {
 				Perr "The field ( $1 $2 ) is outside of records.";
 			}
-		} elsif ( $_ =~ /^\};$COMMENTS$/ ) {
+		} elsif ( /^\};$COMMENTS$/ ) {
 			# record definition (end)
 			if ( $inRecord ) {
 				$inRecord = 0;
 			} else {
 				Perr "Unexpected end of a record.";
 			}
-		} elsif ( $_ =~ /^$COMMENTS$/ ) {
+		} elsif ( /^$COMMENTS$/ ) {
 			# skipping
 		} elsif ( $_ =~ /^#namespace\s+($SYMBOL)$COMMENTS$/ ) {
 			if ( $namespace ) {
@@ -465,13 +465,13 @@ sub WriteC {
 	close $f or die $!;
 }
 
-$filename = shift or die "Usage: perl bio.pl < bioFilename >\n";
+$filename = shift or die "Usage: perl bio.pl <bioFilename>\n";
 
-ReadBIO;
+&ReadBIO;
 
 if ( $errors > 0 ) {
 	die "*** $errors errors.\n";
 }
 
-WriteH;
-WriteC;
+&WriteH;
+&WriteC;

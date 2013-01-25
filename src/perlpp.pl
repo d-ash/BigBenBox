@@ -1,36 +1,58 @@
-# Perl preprocessor
+#
+# PerlPP (PPP): Perl preprocessor
+#
+# http://darkness.codefu.org/wordpress/2003/03/perl-scoping/
+
+package PerlPP;
 
 use strict;
 use warnings;
-use feature "state";
+#use Data::Dumper;
 
-my $_TAG_OPEN = "<[?]";
-my $_TAG_CLOSE = "[?]>";
-my $_code = "";
+my $TAG_OPEN = "<[?]";
+my $TAG_CLOSE = "[?]>";
+
+my $filename = "";
+my $outFilename = "";
+my $package = "";
+my $code = "";
+my $f;
+my $PerlPP_out;
 
 sub Execute {
-	eval( shift );
+	eval( "package PPP_${package}; use strict; use warnings; " . shift );
 }
 
+( $filename = shift ) and ( $outFilename = shift ) or die "Usage: perl perlpp.pl <pppFilename> <outFilename>\n";
+$package = ( $filename =~ s/^([a-zA-Z_][a-zA-Z_0-9]*).ppp$/$1/r );
+
+open $f, $filename or die $!;
+open $PerlPP_out, ">", "${outFilename}" or die $!;
+
+Execute( "sub echo { print \$PerlPP_out shift; }" );
+
 OPENING:
-while ( <STDIN> ) {
-	if ( /^(.*?)$_TAG_OPEN(.*)$/ ) {
-		print $1;
+while ( <$f> ) {
+	if ( /^(.*?)$TAG_OPEN(.*)$/ ) {
+		print $PerlPP_out $1;
 		$_ = $2 . "\n";
 		
 		CLOSING:
-		if ( /^(.*?)$_TAG_CLOSE(.*)$/ ) {
-			Execute( $_code . $1 );
+		if ( /^(.*?)$TAG_CLOSE(.*)$/ ) {
+			Execute( $code . $1 );
 			warn $@ if $@;
-			$_code = "";
+			$code = "";
 			$_ = $2 . "\n";
 			redo OPENING;
 		} else {
-			$_code .= $_ . "\n";
-			$_ = <STDIN>;
+			$code .= $_ . "\n";
+			$_ = <$f>;
 			goto CLOSING;
 		};
 	} else {
-		print $_;
+		print $PerlPP_out $_;
 	}
 }
+
+close $f or die $!;
+close $PerlPP_out or die $!;

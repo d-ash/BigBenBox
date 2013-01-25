@@ -1,5 +1,7 @@
 include Makefile.linux_inc
 
+CODEGEN_DIR = generated
+
 LIB_SOURCES = \
 	sshot.c \
 	sshot_file.c \
@@ -21,9 +23,12 @@ EXE_OBJECTS = $(addprefix $(BUILD_DIR)/, $(EXE_SOURCES:.c=.o))
 
 # ==============================================
 
-.PHONY: delimiter directories bio library client run tests runtests
+.PHONY: delimiter directories p bio library client run tests runtests
 
 all: delimiter directories library client tests
+
+p:
+	ls -1 *.p | $(PERL) -ne 'print s/\.p$$//gr;' | xargs -n 1 -I '{}' -t $(PERL) perlpp.pl '{}.p' "$(CODEGEN_DIR)/{}"
 
 bio:
 	ls -1 *.bio | xargs -n 1 -t $(PERL) bio.pl 
@@ -33,6 +38,7 @@ delimiter:
 
 directories:
 	$(MKDIR_P) $(BUILD_DIR)
+	$(MKDIR_P) $(CODEGEN_DIR)
 
 library: $(LIB_SOURCES) $(LIB_DEPENDS) $(LIB_FILENAME)
 

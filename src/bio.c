@@ -113,7 +113,9 @@ size_t bbb_bio_WriteToFile_uint32( const uint32_t v, FILE* const f, bbb_checksum
 	uint32_t	t;
 
 	t = htonl( v );
-	bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
+	if ( chk != NULL ) {	// special case for a trailing checksum in files
+		bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
+	}
 	return ( fwrite( &t, sizeof( t ), 1, f ) * sizeof( t ) );
 }
 
@@ -155,7 +157,9 @@ size_t bbb_bio_ReadFromFile_uint32( uint32_t* const v, FILE* const f, bbb_checks
 		return 0;
 	}
 
-	bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
+	if ( chk != NULL ) {	// special case for a trailing checksum in files
+		bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
+	}
 	*v = ntohl( t );
 	return sizeof( t );
 }

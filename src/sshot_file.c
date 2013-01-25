@@ -3,7 +3,7 @@
 #include "util_hash.h"
 #include "bio.h"
 
-static void		_ConstructFileHdr( bbb_byte_t hdr[ BBB_SSHOT_FILE_HDR_SIZE ] );
+static void		_ConstructHdr( bbb_sshot_file_hdr_t* const hdr );
 static int		_Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
 static int		_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
 
@@ -11,11 +11,10 @@ static int		_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* check
 
 int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	FILE*					f;
-	bbb_byte_t				hdr[ BBB_SSHOT_FILE_HDR_SIZE ];
+	bbb_sshot_file_hdr_t	hdr;
 	bbb_sshot_file_hdr2_t	hdrExt;
 	int						res = 0;
 	bbb_checksum_t			checksum = 0;
-	bbb_checksum_t			dummy;
 
 	f = fopen( path, "wb" );
 	if ( f == NULL ) {
@@ -23,21 +22,20 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	_ConstructFileHdr( hdr );
-	if ( fwrite( hdr, sizeof( hdr ), 1, f ) < 1 ) {
+	_ConstructHdr( &hdr );
+	if ( bbb_sshot_file_WriteToFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_PERR( "Cannot write a header to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
-	bbb_util_hash_UpdateChecksum( hdr, sizeof( hdr ), &checksum );
 
 	hdrExt.takenFromMem = strlen( ss->takenFrom ) + 1;
-	if ( fwrite( &hdrExt, sizeof( hdrExt ), 1, f ) < 1 ) {
+	if ( fwrite( &hdrExt, sizeof( hdrExt ), 1, f ) == 0 ) {
 		BBB_PERR( "Cannot write an extended header to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
-	if ( fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f ) < 1 ) {
+	if ( fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
 		BBB_PERR( "Cannot write 'takenFrom' to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
@@ -45,7 +43,7 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 
 	res = _Pack( f, ss, &checksum );
 
-	if ( bbb_bio_WriteToFile_uint32( checksum, f, &dummy ) < 1 ) {
+	if ( bbb_bio_WriteToFile_uint32( checksum, f, NULL ) == 0 ) {
 		BBB_PERR( "Cannot write a checksum to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
@@ -64,13 +62,12 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 
 int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 	FILE*					f = NULL;
-	bbb_byte_t				hdr[ BBB_SSHOT_FILE_HDR_SIZE ];
-	bbb_byte_t				hdrControl[ BBB_SSHOT_FILE_HDR_SIZE ];
+	bbb_sshot_file_hdr_t	hdr;
+	bbb_sshot_file_hdr_t	hdrControl;
 	bbb_sshot_file_hdr2_t	hdrExt;
 	int						res = 0;
 	bbb_checksum_t			checksum = 0;
 	bbb_checksum_t			checksumRead = 0;
-	bbb_checksum_t			dummy;
 
 	if ( ss == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
@@ -87,15 +84,13 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	if ( fread( hdr, sizeof( hdr ), 1, f ) < 1 ) {
+	if ( bbb_sshot_file_ReadFromFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_PERR( "Cannot read from %s: %s\n", path, strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;
 	}
-	bbb_util_hash_UpdateChecksum( hdr, sizeof( hdr ), &checksum );
-
-	_ConstructFileHdr( hdrControl );
-	if ( memcmp( hdr, hdrControl, sizeof( hdr ) ) != 0 ) {
+	_ConstructHdr( &hdrControl );
+	if ( !bbb_sshot_file_IsEqual_hdr( &hdr, &hdrControl ) ) {
 		BBB_PERR( "Header of the snapshot file %s is incorrect.\n", path );
 		bbb_sshot_Destroy( ss );
 		return 0;
@@ -103,7 +98,7 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 
 	// Reading extended header. Platform dependent types are already in use!
 	// We can correctly read files only created with this same program on this machine.
-	if ( fread( &hdrExt, sizeof( hdrExt ), 1, f ) < 1 ) {
+	if ( fread( &hdrExt, sizeof( hdrExt ), 1, f ) == 0 ) {
 		BBB_PERR( "Cannot read an extended header from a snapshot file: %s\n", strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;
@@ -117,7 +112,7 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) < 1 ) {
+	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
 		BBB_PERR( "Cannot read 'takenFrom' from a snapshot file: %s\n", strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;
@@ -133,7 +128,7 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	if ( bbb_bio_ReadFromFile_uint32( &checksumRead, f, &dummy ) < 1 ) {
+	if ( bbb_bio_ReadFromFile_uint32( &checksumRead, f, NULL ) == 0 ) {
 		BBB_PERR( "Cannot read a checksum from the snapshot file %s: %s\n", path, strerror( errno ) );
 		bbb_sshot_Destroy( ss );
 		return 0;
@@ -158,11 +153,11 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 	return res;
 }
 
-static void _ConstructFileHdr( bbb_byte_t hdr[ BBB_SSHOT_FILE_HDR_SIZE ] ) {
-	hdr[ 0 ] = BBB_SSHOT_FILE_MAGIC;
-	hdr[ 1 ] = ( bbb_util_IsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
-	hdr[ 2 ] = BBB_PLATFORM_ID;
-	hdr[ 3 ] = BBB_SSHOT_FILE_VERSION;
+static void _ConstructHdr( bbb_sshot_file_hdr_t* const hdr ) {
+	hdr->magic = BBB_SSHOT_FILE_MAGIC;
+	hdr->runtime = ( bbb_util_IsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
+	hdr->platform = BBB_PLATFORM_ID;
+	hdr->format = BBB_SSHOT_FILE_FORMAT;
 }
 
 static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
@@ -182,14 +177,14 @@ static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* ch
 		fileHashHdr.hash = i;
 		fileHashHdr.size = hashHdr->size;
 
-		if ( fwrite( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) < 1 ) {
+		if ( fwrite( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) == 0 ) {
 			return 0;
 		}
 		bbb_util_hash_UpdateChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
 
 		entry = hashHdr->first;
 		do {
-			if ( fwrite( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, 1, f ) < 1 ) {
+			if ( fwrite( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, 1, f ) == 0 ) {
 				return 0;
 			}
 			bbb_util_hash_UpdateChecksum( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, checksum_p );
@@ -224,7 +219,7 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 		// The highest possible pointer value (counting not empty string).
 		maxPtr = ( bbb_byte_t* ) hashHdr->first + fileHashHdr.size - sizeof( bbb_sshot_entry_t ) - 2;
 
-		if ( fread( hashHdr->first, fileHashHdr.size, 1, f ) < 1 ) {
+		if ( fread( hashHdr->first, fileHashHdr.size, 1, f ) == 0 ) {
 			BBB_PERR( "Cannot read from a snapshot file: %s\n", strerror( errno ) );
 			return 0;
 		}

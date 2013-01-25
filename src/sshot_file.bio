@@ -1,9 +1,12 @@
-// some comment
 
-hdr {				// some comm
+// WARNING: do not add any dynamically allocated fields (varbufs).
+// This fields are not destroyed properly in the code.
+
+#namespace		bbb_sshot_file
+
+hdr {
 	uint8		magic;
-	uint16		runtime;		// ( endianess | WORD_SIZE )
-	uint32		platform;
-	uint64		ssFileVersion;	// version of a file structure
-	varbuf		vb;
+	uint8		runtime;		// ( endianess | WORD_SIZE )
+	uint8		platform;
+	uint8		format;			// version of a file format
 };

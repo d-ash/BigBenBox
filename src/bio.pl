@@ -60,9 +60,19 @@ sub ReadBIO {
 			}
 		} elsif ( $_ =~ /^$COMMENTS$/ ) {
 			# skipping
+		} elsif ( $_ =~ /^#namespace\s+($SYMBOL)$COMMENTS$/ ) {
+			if ( $namespace ) {
+				Perr "#namespace is used several times.";
+			} else {
+				$namespace = $1;
+			}
 		} else {
 			Perr "Corrupted line.";
 		}
+	}
+
+	if ( !$namespace ) {
+		Perr "#namespace is not found.";
 	}
 
 	close $f or die $!;
@@ -87,16 +97,19 @@ sub WriteH {
 		my $recName = $rec->{ "recName" };
 		my $recType = $rec->{ "recType" } = "${namespace}_${recName}_t";
 
+		$rec->{ "isBytesOnly" } = 1;
 		$rec->{ "isDynamic" } = 0;
 		print $f "typedef struct {\n";
 		foreach ( @{ $rec->{ "fields" } } ) {
 			if ( $_->{ "type" } eq "varbuf" ) {
 				print $f "	bbb_varbuf_t\t" . $_->{ "name" } . ";\n";
 				$rec->{ "isDynamic" } = 1;
+				$rec->{ "isBytesOnly" } = 0;
 			} elsif ( $_->{ "type" } eq "uint8" ) {
 				print $f "	" . $_->{ "type" } . "_t\t\t\t" . $_->{ "name" } . ";\n";
 			} else {
 				print $f "	" . $_->{ "type" } . "_t\t\t" . $_->{ "name" } . ";\n";
+				$rec->{ "isBytesOnly" } = 0;
 			}
 		}
 		print $f "} ${recType};\n\n";
@@ -193,7 +206,9 @@ sub Output_ReadImpl {
 
 	Output_ProtoImpl( $f, $rec->{ "proto" }{ "ReadFrom${mode}" } );
 	print $f "	size_t	cur = 0;\n";
-	print $f "	size_t	red;\n\n";
+	if ( !$rec->{ "isBytesOnly" } ) {
+		print $f "	size_t	red;\n\n";
+	}
 	foreach ( @{ $rec->{ "fields" } } ) {
 		my $type = $_->{ "type" };
 		my $name = $_->{ "name" };
@@ -261,7 +276,9 @@ sub Output_WriteImpl {
 
 	Output_ProtoImpl( $f, $rec->{ "proto" }{ "WriteTo${mode}" } );
 	print $f "	size_t	cur = 0;\n";
-	print $f "	size_t	wtn;\n\n";
+	if ( !$rec->{ "isBytesOnly" } ) {
+		print $f "	size_t	wtn;\n\n";
+	}
 	foreach ( @{ $rec->{ "fields" } } ) {
 		my $type = $_->{ "type" };
 		my $name = $_->{ "name" };
@@ -328,7 +345,9 @@ sub WriteC {
 
 		# Copy() implementation
 		Output_ProtoImpl( $f, $rec->{ "proto" }{ "Copy" } );
-		print $f "	size_t	len;\n\n";
+		if ( $rec->{ "isDynamic" } ) {
+			print $f "	size_t	len;\n\n";
+		}
 		foreach ( @{ $rec->{ "fields" } } ) {
 			my $type = $_->{ "type" };
 			my $name = $_->{ "name" };
@@ -379,7 +398,7 @@ sub WriteC {
 
 			print $f " + ";
 			if ( IsAtomType $type ) {
-				print $f "sizeof( ${type}_t )";
+				print $f "sizeof( r->${name} )";
 			} elsif ( $type eq "varbuf" ) {
 				print $f "sizeof( r->${name}.len ) + r->${name}.len";
 			} else {
@@ -425,7 +444,7 @@ sub WriteC {
 				}
 			}
 		} else {
-			print $f "	return;\n";
+			print $f "	( void ) r;\n";
 		}
 		print $f "}\n";
 
@@ -437,7 +456,8 @@ sub WriteC {
 			print $f "		${namespace}_Destroy_${recName}( &( a[ i ] ) );\n";
 			print $f "	}\n";
 		} else {
-			print $f "	return;\n";
+			print $f "	( void ) a;\n";
+			print $f "	( void ) n;\n";
 		}
 		print $f "}\n";
 	}
@@ -446,11 +466,6 @@ sub WriteC {
 }
 
 $filename = shift or die "Usage: perl bio.pl < bioFilename >\n";
-if ( $filename =~ /^([a-z][a-z_0-9]+)\.bio$/ ) {
-	$namespace = $1;
-} else {
-	die "bio.pl: Input file has a strange extension (must be .bio)\n";
-}
 
 ReadBIO;
 

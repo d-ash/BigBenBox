@@ -2,10 +2,10 @@
 #define _BBB_SSHOT_FILE_H
 
 #include "sshot.h"
+#include "sshot_file.bio.h"
 
 #define BBB_SSHOT_FILE_MAGIC		0x8D
-#define BBB_SSHOT_FILE_VERSION		0x01
-#define BBB_SSHOT_FILE_HDR_SIZE		4
+#define BBB_SSHOT_FILE_FORMAT		0x01
 
 /**
  *	Structure of a saved snapshot after a file header:
@@ -25,20 +25,13 @@
  *	]
  *
  *	WARNING: do not read/write C-structs, it will be not cross-platform.
- *	Memory packing takes place!
- *
- *		struct bbb_sshot_file_hdr {
- *			uint8_t	magic;
- *			uint8_t	runtime;		// ( endianess | WORD_SIZE )
- *			uint8_t	platform;
- *			uint8_t	ssFileVersion;	// version of a file structure
- *		};
+ *	Compilers are aligning memory!
  */
 
 // In the following structs we use platform dependant types!
 typedef struct {
 	size_t	takenFromMem;			// strlen( bbb_sshot_t.takenFrom ) + 1
-} bbb_sshot_file_hdr2_t;			// second (extended) header
+} bbb_sshot_file_hdr2_t;			// second (extended) header, machine specific
 /**
  *  bbb_sshot_t.takenFrom will be stored here, just after the struct.
  */

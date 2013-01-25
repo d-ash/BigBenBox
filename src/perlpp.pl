@@ -16,32 +16,31 @@ my $filename = "";
 my $outFilename = "";
 my $package = "";
 my $code = "";
+my $plain = "";
 my $f;
 my $PerlPP_out;
 
-sub Execute {
-	eval( "package PPP_${package}; use strict; use warnings; " . shift );
+sub OutputPlain {
+	$code .= "print \$PerlPP_out '" . $plain =~ s/'/\\'/gr . "';";
+	$plain = "";
 }
 
 ( $filename = shift ) and ( $outFilename = shift ) or die "Usage: perl perlpp.pl <pppFilename> <outFilename>\n";
 $package = ( $filename =~ s/^([a-zA-Z_][a-zA-Z_0-9]*).ppp$/$1/r );
 
 open $f, $filename or die $!;
-open $PerlPP_out, ">", "${outFilename}" or die $!;
-
-Execute( "sub echo { print \$PerlPP_out shift; }" );
 
 OPENING:
 while ( <$f> ) {
 	if ( /^(.*?)$TAG_OPEN(.*)$/ ) {
-		print $PerlPP_out $1;
+		$plain .= $1;
+		&OutputPlain;
+
 		$_ = $2 . "\n";
 		
 		CLOSING:
 		if ( /^(.*?)$TAG_CLOSE(.*)$/ ) {
-			Execute( $code . $1 );
-			warn $@ if $@;
-			$code = "";
+			$code .= $1;
 			$_ = $2 . "\n";
 			redo OPENING;
 		} else {
@@ -50,9 +49,14 @@ while ( <$f> ) {
 			goto CLOSING;
 		};
 	} else {
-		print $PerlPP_out $_;
+		$plain .= $_;
 	}
 }
+&OutputPlain;
 
 close $f or die $!;
+
+open $PerlPP_out, ">", "${outFilename}" or die $!;
+eval( "package PPP_${package}; use strict; use warnings; sub echo { print \$PerlPP_out shift; }\n" . $code );
+warn $@ if $@;
 close $PerlPP_out or die $!;

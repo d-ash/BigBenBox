@@ -1,5 +1,3 @@
-TODO FIX: test buffer I/O and destroy already read records when the whole process of reading has failed.
-
 Files are complex!
 https://www.dropbox.com/help/145/en
 + file permissions.
@@ -7,7 +5,7 @@ https://www.dropbox.com/help/145/en
 config (exclude like .gitignore)
 access permissions (LDAP auth)
 web-access
-file encryption (on server and on clients)
+file encryption (on server and on clients, current user can be EXCLUDED from the group of using file)
 banding and customization
 backups
 hooks (events), API

@@ -9,7 +9,9 @@
 all: delimiter clean directories ../build/dev/libbigbenbox.a
 
 makefiles:
-	perl tools/perlpp.pl Makefile.p Makefile_linux "hash"
+	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "LINUX";' Makefile.p Makefile_linux
+	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "WINDOWS";' Makefile.p Makefile_windows
+	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "OSX";' Makefile.p Makefile_osx
 
 delimiter:
 	@echo "========================"
@@ -33,9 +35,9 @@ clean:
     
 
 generated/bio.c: bio.c.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 generated/bio.h: bio.h.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 
     
 
@@ -47,9 +49,9 @@ generated/bio.h: bio.h.p
     
 
 generated/sshot.c: sshot.c.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 generated/sshot.h: sshot.h.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 
     
 
@@ -61,9 +63,9 @@ generated/sshot.h: sshot.h.p
     
 
 generated/sshot_file.c: sshot_file.c.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 generated/sshot_file.h: sshot_file.h.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 
     
 
@@ -89,9 +91,9 @@ generated/sshot_file.bio.h: generated/sshot_file.bio.c
     
 
 generated/util.c: util.c.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 generated/util.h: util.h.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 
     
 
@@ -103,13 +105,13 @@ generated/util.h: util.h.p
     
 
 generated/util_hash.c: util_hash.c.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 generated/util_hash.h: util_hash.h.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 
     
 
 
 
 generated/global.h: global.h.p
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@

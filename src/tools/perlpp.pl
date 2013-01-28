@@ -12,10 +12,13 @@ use warnings;
 my $TAG_OPEN = "<[?]";
 my $TAG_CLOSE = "[?]>";
 
+my $argCommentsType = "";
+my $argEval = "";
+my $argDebug = 0;
+
 my $filename = "";
 my $outFilename = "";
 my $package = "";
-my $commentsType = "";
 my $echoMode = 0;		# contrary to an eval mode
 my $code = "";
 my $plain = "";
@@ -30,9 +33,9 @@ sub OutputPlain {
 sub OutputComments {
 	my $prefix = "";
 
-	if ( $commentsType eq "doubleslash" ) {
+	if ( $argCommentsType eq "doubleslash" ) {
 		$prefix = "//";
-	} elsif ( $commentsType eq "hash" ) {
+	} elsif ( $argCommentsType eq "hash" ) {
 		$prefix = "#";
 	} else {
 		print "Unknown type of comments style.\n";
@@ -44,11 +47,22 @@ sub OutputComments {
 	print $PerlPP_out "${prefix}   package: $package\n\n";
 }
 
-( $filename = shift ) and ( $outFilename = shift ) or die "Usage: perl perlpp.pl <inFilename> <outFilename>\n";
+while ( my $a = shift ) {
+	if ( $a eq "--eval" ) {
+		$argEval .= ( shift ) || "";
+	} elsif ( $a eq "--debug" ) {
+		$argDebug = 1;
+	} elsif ( $a eq "--comments" ) {
+		$argCommentsType = ( shift ) || "";
+	} else {
+		$filename = $a;
+		( $outFilename = shift ) or die "Usage: perl perlpp.pl [options] <inFilename> <outFilename>\n";
+	}
+}
 
 $package = ( $filename =~ s/^([a-zA-Z_][a-zA-Z_0-9.]*).p$/$1/r );
 $package =~ s/\./_/g;
-$commentsType = ( shift ) || "";
+$code = "package PPP_${package}; use strict; use warnings; sub echo { print \$PerlPP_out shift; }\n${argEval}\n";
 
 open $f, $filename or die $!;
 
@@ -80,7 +94,7 @@ while ( <$f> ) {
 			$_ = $2 . "\n";
 			redo OPENING;
 		} else {
-			$inside .= $_ . "\n";
+			$inside .= $_;
 			$_ = <$f>;
 			goto CLOSING;
 		};
@@ -92,8 +106,12 @@ while ( <$f> ) {
 
 close $f or die $!;
 
-open $PerlPP_out, ">", "${outFilename}" or die $!;
-&OutputComments;
-eval( "package PPP_${package}; use strict; use warnings; sub echo { print \$PerlPP_out shift; }\n" . $code );
-warn $@ if $@;
-close $PerlPP_out or die $!;
+if ( $argDebug ) {
+	print( $code );
+} else {
+	open $PerlPP_out, ">", "${outFilename}" or die $!;
+	&OutputComments;
+	eval( $code );
+	warn $@ if $@;
+	close $PerlPP_out or die $!;
+}

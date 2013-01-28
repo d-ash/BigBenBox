@@ -1,14 +1,12 @@
 <?
-    our $PLATFORM = uc("linux");
+    my $LIB_NAME = "bigbenbox";
+    my $RELEASE = 0;
+    my $DEBUG = 0;
 
-    our $LIB_NAME = "bigbenbox";
-    our $RELEASE = 0;
-    our $DEBUG = 0;
-
-    our $BUILD_DIR;
-    our $LIB_FILENAME;
-    our $COMPILER_FLAGS;
-    our $LINKER_FLAGS;
+    my $BUILD_DIR;
+    my $LIB_FILENAME;
+    my $COMPILER_FLAGS;
+    my $LINKER_FLAGS;
 
     if ( $RELEASE ) {
         $BUILD_DIR = "../build/release";
@@ -32,7 +30,7 @@
 
     # ================ Library ================
 
-    our @LIB_SOURCE_FILES = qw(
+    my @LIB_SOURCE_FILES = qw(
         bio
         sshot
         sshot_file
@@ -41,7 +39,7 @@
         util_hash
     );
 
-    our $CODEGEN_DIR = "generated";
+    my $CODEGEN_DIR = "generated";
 
     sub asString {
         return join( " ", @_ );
@@ -67,9 +65,9 @@
         return ( "${BUILD_DIR}/" . shift . ".o" );
     }
 
-    our @LIB_C_FILES = map { cDst( $_ ); } @LIB_SOURCE_FILES;
-    our @LIB_H_FILES = map { hDst( $_ ); } @LIB_SOURCE_FILES;
-    our @LIB_O_FILES = map { oDst( $_ ); } @LIB_SOURCE_FILES;
+    my @LIB_C_FILES = map { cDst( $_ ); } @LIB_SOURCE_FILES;
+    my @LIB_H_FILES = map { hDst( $_ ); } @LIB_SOURCE_FILES;
+    my @LIB_O_FILES = map { oDst( $_ ); } @LIB_SOURCE_FILES;
 ?>
 
 .PHONY: all makefiles delimiter directories clean
@@ -77,7 +75,9 @@
 all: delimiter clean directories <?= $LIB_FILENAME ?>
 
 makefiles:
-	perl tools/perlpp.pl Makefile.p Makefile_linux "hash"
+	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "LINUX";' Makefile.p Makefile_linux
+	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "WINDOWS";' Makefile.p Makefile_windows
+	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "OSX";' Makefile.p Makefile_osx
 
 delimiter:
 	@echo "========================"
@@ -108,13 +108,13 @@ clean:
     <? } else { ?>
 
 <?= cDst( $_ ) ?>: <?= cpSrc( $_ ) ?>
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 <?= hDst( $_ ) ?>: <?= hpSrc( $_ ) ?>
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
 
     <? } ?>
 
 <? } ?>
 
 <?= hDst( "global" ) ?>: <?= hpSrc( "global" ) ?>
-	perl tools/perlpp.pl $< $@ "doubleslash"
+	perl tools/perlpp.pl --comments "doubleslash" $< $@

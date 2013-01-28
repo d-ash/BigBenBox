@@ -6,7 +6,7 @@
 
 .PHONY: all makefiles delimiter directories clean
 
-all: delimiter clean directories ../build/dev/libbigbenbox.a
+all: delimiter clean directories ../build/dev/libbigbenbox.a ../build/dev/client
 
 makefiles:
 	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "LINUX";' Makefile.p Makefile_linux
@@ -24,12 +24,12 @@ clean:
 	rm -rf generated
 	rm -rf ../build/dev
 
+### Library
 ../build/dev/libbigbenbox.a: generated/bio.c generated/sshot.c generated/sshot_file.c generated/sshot_file.bio.c generated/util.c generated/util_hash.c generated/bio.h generated/sshot.h generated/sshot_file.h generated/sshot_file.bio.h generated/util.h generated/util_hash.h ../build/dev/bio.o ../build/dev/sshot.o ../build/dev/sshot_file.o ../build/dev/sshot_file.bio.o ../build/dev/util.o ../build/dev/util_hash.o
 	ar -rv ../build/dev/libbigbenbox.a ../build/dev/bio.o ../build/dev/sshot.o ../build/dev/sshot_file.o ../build/dev/sshot_file.bio.o ../build/dev/util.o ../build/dev/util_hash.o
 
 
-
-../build/dev/bio.o: generated/bio.c generated/bio.h generated/global.h
+../build/dev/bio.o: generated/bio.c generated/bio.h generated/global.h generated/bigbenbox.h
 	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
@@ -43,7 +43,7 @@ generated/bio.h: bio.h.p
 
 
 
-../build/dev/sshot.o: generated/sshot.c generated/sshot.h generated/global.h
+../build/dev/sshot.o: generated/sshot.c generated/sshot.h generated/global.h generated/bigbenbox.h
 	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
@@ -57,7 +57,7 @@ generated/sshot.h: sshot.h.p
 
 
 
-../build/dev/sshot_file.o: generated/sshot_file.c generated/sshot_file.h generated/global.h
+../build/dev/sshot_file.o: generated/sshot_file.c generated/sshot_file.h generated/global.h generated/bigbenbox.h
 	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
@@ -71,7 +71,7 @@ generated/sshot_file.h: sshot_file.h.p
 
 
 
-../build/dev/sshot_file.bio.o: generated/sshot_file.bio.c generated/sshot_file.bio.h generated/global.h
+../build/dev/sshot_file.bio.o: generated/sshot_file.bio.c generated/sshot_file.bio.h generated/global.h generated/bigbenbox.h
 	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
@@ -79,13 +79,13 @@ generated/sshot_file.h: sshot_file.h.p
 generated/sshot_file.bio.c: sshot_file.bio
 	perl tools/bio.pl $< generated
 generated/sshot_file.bio.h: generated/sshot_file.bio.c
-    # do nothing
+	# do nothing
 
     
 
 
 
-../build/dev/util.o: generated/util.c generated/util.h generated/global.h
+../build/dev/util.o: generated/util.c generated/util.h generated/global.h generated/bigbenbox.h
 	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
@@ -99,7 +99,7 @@ generated/util.h: util.h.p
 
 
 
-../build/dev/util_hash.o: generated/util_hash.c generated/util_hash.h generated/global.h
+../build/dev/util_hash.o: generated/util_hash.c generated/util_hash.h generated/global.h generated/bigbenbox.h
 	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
@@ -113,5 +113,26 @@ generated/util_hash.h: util_hash.h.p
 
 
 
+### Client
+../build/dev/client: ../build/dev/libbigbenbox.a generated/client.c generated/client.h ../build/dev/client.o
+	gcc ../build/dev/client.o -Wall -Wextra -L../build/dev -lssl -lcrypto -lbigbenbox -o $@
+
+
+../build/dev/client.o: generated/client.c generated/client.h generated/global.h generated/bigbenbox.h
+	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+
+    
+
+generated/client.c: client.c.p
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+generated/client.h: client.h.p
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+    
+
+
+
 generated/global.h: global.h.p
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+generated/bigbenbox.h: bigbenbox.h.p
 	perl tools/perlpp.pl --comments "doubleslash" $< $@

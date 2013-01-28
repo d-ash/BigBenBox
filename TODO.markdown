@@ -1,3 +1,8 @@
+Competitors:
+ * box.net
+ * powerfolder.com (?)
+ * filosync.com (?)
+
 Files are complex!
 https://www.dropbox.com/help/145/en
 + file permissions.

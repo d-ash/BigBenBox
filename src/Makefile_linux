@@ -77,7 +77,7 @@ generated/sshot_file.h: sshot_file.h.p
     
 
 generated/sshot_file.bio.c: sshot_file.bio
-	perl tools/bio.pl $< generated
+	perl tools/bio.pl --output-dir generated $<
 generated/sshot_file.bio.h: generated/sshot_file.bio.c
 	# do nothing
 
@@ -113,6 +113,11 @@ generated/util_hash.h: util_hash.h.p
 
 
 
+generated/global.h: global.h.p
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+generated/bigbenbox.h: bigbenbox.h.p
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 ### Client
 ../build/dev/client: ../build/dev/libbigbenbox.a generated/client.c generated/client.h ../build/dev/client.o
 	gcc ../build/dev/client.o -Wall -Wextra -L../build/dev -lssl -lcrypto -lbigbenbox -o $@
@@ -131,8 +136,3 @@ generated/client.h: client.h.p
     
 
 
-
-generated/global.h: global.h.p
-	perl tools/perlpp.pl --comments "doubleslash" $< $@
-generated/bigbenbox.h: bigbenbox.h.p
-	perl tools/perlpp.pl --comments "doubleslash" $< $@

@@ -2,10 +2,11 @@
 # Portable binary records I/O.
 # Generates one .h and .c files from .bio definition.
 #
+# Usage: perl bio.pl --output-dir <outputDir> <bioFilename>
+#
 
 use strict;
 use warnings;
-#use Data::Dumper;
 
 my @records = ();
 my $errors = 0;
@@ -466,7 +467,13 @@ sub WriteC {
 	close $f or die $!;
 }
 
-( $filename = shift ) and ( $outputDir = shift ) or die "Usage: perl bio.pl <bioFilename> <outputDir>\n";
+while ( my $a = shift ) {
+	if ( $a eq "--output-dir" ) {
+		$outputDir .= ( shift ) || ".";
+	} else {
+		$filename = $a;
+	}
+}
 
 &ReadBIO;
 

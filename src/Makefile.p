@@ -1,4 +1,5 @@
-<?
+<?  # vim: filetype=make
+
     my $LIB_NAME = "bigbenbox";
     my $RELEASE = 0;
     my $DEBUG = 0;
@@ -69,7 +70,7 @@
         return ( "${BUILD_DIR}/" . shift . ".o" );
     }
 
-    sub build {
+    sub Build {
         foreach ( @_ ) {
 ?>
 
@@ -79,7 +80,7 @@
     <? if ( m/\.bio$/ ) { ?>
 
 <?= cDst( $_ ) ?>: <?= $_ ?>
-	perl tools/bio.pl $< <?= $CODEGEN_DIR ?>
+	perl tools/bio.pl --output-dir <?= $CODEGEN_DIR ?> $<
 <?= hDst( $_ ) ?>: <?= cDst( $_ ) ?>
 	# do nothing
 
@@ -128,14 +129,14 @@ clean:
 ### Library
 <?= $LIB_FILENAME ?>: <?= asString @LIB_C_FILES ?> <?= asString @LIB_H_FILES ?> <?= asString @LIB_O_FILES ?>
 	ar -rv <?= $LIB_FILENAME ?> <?= asString @LIB_O_FILES ?>
-<? build( @LIB_SOURCE_FILES ); ?>
-
-### Client
-<?= $CLT_FILENAME ?>: <?= $LIB_FILENAME ?> <?= asString @CLT_C_FILES ?> <?= asString @CLT_H_FILES ?> <?= asString @CLT_O_FILES ?>
-	gcc <?= asString @CLT_O_FILES ?> <?= $LINKER_FLAGS ?> -o $@
-<? build( @CLT_SOURCE_FILES ); ?>
+<? Build( @LIB_SOURCE_FILES ); ?>
 
 <?= hDst( "global" ) ?>: <?= hpSrc( "global" ) ?>
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
 <?= hDst( "bigbenbox" ) ?>: <?= hpSrc( "bigbenbox" ) ?>
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+### Client
+<?= $CLT_FILENAME ?>: <?= $LIB_FILENAME ?> <?= asString @CLT_C_FILES ?> <?= asString @CLT_H_FILES ?> <?= asString @CLT_O_FILES ?>
+	gcc <?= asString @CLT_O_FILES ?> <?= $LINKER_FLAGS ?> -o $@
+<? Build( @CLT_SOURCE_FILES ); ?>

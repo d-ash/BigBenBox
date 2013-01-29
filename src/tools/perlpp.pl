@@ -1,13 +1,16 @@
 #
 # PerlPP (PPP): Perl preprocessor
 #
+# Usage: perl perlpp.pl [options] <inFilename> <outFilename>
+#
+# More info about scoping in Perl:
 # http://darkness.codefu.org/wordpress/2003/03/perl-scoping/
+#
 
 package PerlPP;
 
 use strict;
 use warnings;
-#use Data::Dumper;
 
 my $TAG_OPEN = "<[?]";
 my $TAG_CLOSE = "[?]>";

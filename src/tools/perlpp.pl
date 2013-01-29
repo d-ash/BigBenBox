@@ -22,7 +22,7 @@ my $argDebug = 0;
 my $filename = "";
 my $outFilename = "";
 my $package = "";
-my $echoMode = 0;		# contrary to an eval mode
+my $echoMode = 0;
 my $code = "";
 my $plain = "";
 my $f;
@@ -64,7 +64,7 @@ while ( my $a = shift ) {
 }
 
 $package = ( $filename =~ s/^([a-zA-Z_][a-zA-Z_0-9.]*).p$/$1/r );
-$package =~ s/\./_/g;
+$package =~ s/[.\/\\]/_/g;
 $code = "package PPP_${package}; use strict; use warnings; sub echo { print \$PerlPP_out shift; }\n${argEval}\n";
 
 open $f, $filename or die $!;

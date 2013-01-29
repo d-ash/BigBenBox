@@ -25,3 +25,6 @@ Searching:
 1. Zero-step, go up to the first splitting found.
 2. The second changing of direction is not allowed.
 3. Lockfiles for: head, lastid, stones/.../ch*
+
+Syntax highlighting does not work:
+http://stackoverflow.com/questions/5176972/trouble-using-vims-syn-include-and-syn-region-to-embed-syntax-highlighting

@@ -4,9 +4,9 @@
 
 
 
-.PHONY: all makefiles delimiter directories clean
+.PHONY: all makefiles delimiter clean directories includes library client tests run runtests
 
-all: delimiter clean directories ../build/dev/libbigbenbox.a ../build/dev/client
+all: delimiter clean directories includes library client tests
 
 makefiles:
 	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "LINUX";' Makefile.p Makefile_linux
@@ -19,120 +19,281 @@ delimiter:
 directories:
 	mkdir -p generated
 	mkdir -p ../build/dev
+	mkdir -p generated/tests
+	mkdir -p ../build/dev/tests
 
 clean:
 	rm -rf generated
 	rm -rf ../build/dev
 
-### Library
-../build/dev/libbigbenbox.a: generated/bio.c generated/sshot.c generated/sshot_file.c generated/sshot_file.bio.c generated/util.c generated/util_hash.c generated/bio.h generated/sshot.h generated/sshot_file.h generated/sshot_file.bio.h generated/util.h generated/util_hash.h ../build/dev/bio.o ../build/dev/sshot.o ../build/dev/sshot_file.o ../build/dev/sshot_file.bio.o ../build/dev/util.o ../build/dev/util_hash.o
+run:
+	@cd ../build/dev; \
+		./client;
+
+runtests:
+	@cd ../build/dev/tests; \
+		perl runner.pl run;
+
+includes: generated/bio.h generated/sshot.h generated/sshot_file.h generated/sshot_file.bio.h generated/util.h generated/util_hash.h generated/client.h generated/tests/test_util.h generated/tests/test_util_hash.h generated/tests/test_bio.h generated/tests/test_sshot.h generated/tests/minunit.h generated/tests/test_bio.bio.h generated/tests/test_bio.bio.c
+
+#
+# ========== Library ==========
+#
+
+library: ../build/dev/libbigbenbox.a
+
+../build/dev/libbigbenbox.a: ../build/dev/bio.o ../build/dev/sshot.o ../build/dev/sshot_file.o ../build/dev/sshot_file.bio.o ../build/dev/util.o ../build/dev/util_hash.o
 	ar -rv ../build/dev/libbigbenbox.a ../build/dev/bio.o ../build/dev/sshot.o ../build/dev/sshot_file.o ../build/dev/sshot_file.bio.o ../build/dev/util.o ../build/dev/util_hash.o
 
 
+
 ../build/dev/bio.o: generated/bio.c generated/bio.h generated/global.h generated/bigbenbox.h
-	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
 
 generated/bio.c: bio.c.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 generated/bio.h: bio.h.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 
     
 
 
 
 ../build/dev/sshot.o: generated/sshot.c generated/sshot.h generated/global.h generated/bigbenbox.h
-	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
 
 generated/sshot.c: sshot.c.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 generated/sshot.h: sshot.h.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 
     
 
 
 
 ../build/dev/sshot_file.o: generated/sshot_file.c generated/sshot_file.h generated/global.h generated/bigbenbox.h
-	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
 
 generated/sshot_file.c: sshot_file.c.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 generated/sshot_file.h: sshot_file.h.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 
     
 
 
 
 ../build/dev/sshot_file.bio.o: generated/sshot_file.bio.c generated/sshot_file.bio.h generated/global.h generated/bigbenbox.h
-	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
 
-generated/sshot_file.bio.c: sshot_file.bio
-	perl tools/bio.pl --output-dir generated $<
 generated/sshot_file.bio.h: generated/sshot_file.bio.c
-	# do nothing
+generated/sshot_file.bio.c: sshot_file.bio
+	
+	perl tools/bio.pl --output-dir generated $<
+
 
     
 
 
 
 ../build/dev/util.o: generated/util.c generated/util.h generated/global.h generated/bigbenbox.h
-	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
 
 generated/util.c: util.c.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 generated/util.h: util.h.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 
     
 
 
 
 ../build/dev/util_hash.o: generated/util_hash.c generated/util_hash.h generated/global.h generated/bigbenbox.h
-	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
 
 generated/util_hash.c: util_hash.c.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 generated/util_hash.h: util_hash.h.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
 
     
 
 
 
 generated/global.h: global.h.p
-	perl tools/perlpp.pl --comments "doubleslash" $< $@
-generated/bigbenbox.h: bigbenbox.h.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
 
-### Client
-../build/dev/client: ../build/dev/libbigbenbox.a generated/client.c generated/client.h ../build/dev/client.o
+
+generated/bigbenbox.h: bigbenbox.h.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+
+#
+# ========== Client ==========
+#
+
+client: ../build/dev/client
+
+../build/dev/client: ../build/dev/libbigbenbox.a ../build/dev/client.o
 	gcc ../build/dev/client.o -Wall -Wextra -L../build/dev -lssl -lcrypto -lbigbenbox -o $@
 
 
+
 ../build/dev/client.o: generated/client.c generated/client.h generated/global.h generated/bigbenbox.h
-	gcc -c -Wall -Wextra -I./ -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
 
     
 
 generated/client.c: client.c.p
-	perl tools/perlpp.pl --comments "doubleslash" $< $@
-generated/client.h: client.h.p
+	
 	perl tools/perlpp.pl --comments "doubleslash" $< $@
 
+generated/client.h: client.h.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+
     
+
+
+
+#
+# ========== Tests ==========
+#
+
+tests: tests/runner.pl ../build/dev/tests/test_util ../build/dev/tests/test_util_hash ../build/dev/tests/test_bio ../build/dev/tests/test_sshot
+	cp $< ../build/dev/tests/
+
+
+../build/dev/tests/test_util: ../build/dev/tests/test_util.o library
+	gcc $< -Wall -Wextra -L../build/dev -lssl -lcrypto -lbigbenbox -o $@
+
+../build/dev/tests/test_util_hash: ../build/dev/tests/test_util_hash.o library
+	gcc $< -Wall -Wextra -L../build/dev -lssl -lcrypto -lbigbenbox -o $@
+
+../build/dev/tests/test_bio: ../build/dev/tests/test_bio.o library
+	gcc $< -Wall -Wextra -L../build/dev -lssl -lcrypto -lbigbenbox -o $@
+
+../build/dev/tests/test_sshot: ../build/dev/tests/test_sshot.o library
+	gcc $< -Wall -Wextra -L../build/dev -lssl -lcrypto -lbigbenbox -o $@
+
+
+
+
+../build/dev/tests/test_util.o: generated/tests/test_util.c generated/tests/test_util.h generated/global.h generated/bigbenbox.h
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+
+    
+
+generated/tests/test_util.c: tests/test_util.c.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+generated/tests/test_util.h: tests/test_util.h.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+
+    
+
+
+
+../build/dev/tests/test_util_hash.o: generated/tests/test_util_hash.c generated/tests/test_util_hash.h generated/global.h generated/bigbenbox.h
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+
+    
+
+generated/tests/test_util_hash.c: tests/test_util_hash.c.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+generated/tests/test_util_hash.h: tests/test_util_hash.h.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+
+    
+
+
+
+../build/dev/tests/test_bio.o: generated/tests/test_bio.c generated/tests/test_bio.h generated/global.h generated/bigbenbox.h
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+
+    
+
+generated/tests/test_bio.c: tests/test_bio.c.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+generated/tests/test_bio.h: tests/test_bio.h.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+
+    
+
+
+
+../build/dev/tests/test_sshot.o: generated/tests/test_sshot.c generated/tests/test_sshot.h generated/global.h generated/bigbenbox.h
+	gcc -c -Wall -Wextra -Igenerated -DBBB_PLATFORM_LINUX -ggdb $< -o $@
+
+    
+
+generated/tests/test_sshot.c: tests/test_sshot.c.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+generated/tests/test_sshot.h: tests/test_sshot.h.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+
+    
+
+
+
+generated/tests/minunit.h: tests/minunit.h.p
+	
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+
+
+generated/tests/test_bio.bio.h: generated/tests/test_bio.bio.c
+generated/tests/test_bio.bio.c: tests/test_bio.bio
+	
+	perl tools/bio.pl --output-dir generated $<
 
 

@@ -1,35 +1,10 @@
 <?  # vim: filetype=make
 
+	# TODO smart dependency generation
+
     my $LIB_NAME = "bigbenbox";
     my $RELEASE = 0;
     my $DEBUG = 0;
-
-    my $BUILD_DIR;
-    my $LIB_FILENAME;
-    my $CLT_FILENAME;
-    my $COMPILER_FLAGS;
-    my $LINKER_FLAGS;
-
-    if ( $RELEASE ) {
-        $BUILD_DIR = "../build/release";
-    } else {
-        $BUILD_DIR = "../build/dev";
-    }
-
-    if ( $PLATFORM eq "LINUX" ) {
-        $LIB_FILENAME = "${BUILD_DIR}/lib${LIB_NAME}.a";
-        $CLT_FILENAME = "${BUILD_DIR}/client";
-        $COMPILER_FLAGS = "-Wall -Wextra -I./ -DBBB_PLATFORM_LINUX";
-        if ( $DEBUG ) {
-            $COMPILER_FLAGS .= " -DBBB_DEBUG";
-        }
-        if ( !$RELEASE ) {
-            $COMPILER_FLAGS .= " -ggdb";
-        }
-        $LINKER_FLAGS = "-Wall -Wextra -L${BUILD_DIR} -lssl -lcrypto -l${LIB_NAME}";
-    } else {
-        die "Unknown PLATFORM.\n";
-    }
 
     my @LIB_SOURCE_FILES = qw(
         bio
@@ -44,10 +19,25 @@
         client
     );
 
+	my $TST_RUNNER = "tests/runner.pl";
+	my @TST_SOURCE_FILES = map { ( "tests/" . s/\n$//r ); } `perl $TST_RUNNER`;
+
+	# =========================================
+
+    my $BUILD_DIR;
+    my $LIB_FILENAME;
+    my $CLT_FILENAME;
+    my $COMPILER_FLAGS;
+    my $LINKER_FLAGS;
     my $CODEGEN_DIR = "generated";
 
-    sub asString {
-        return join( " ", @_ );
+    my $extObj = ".o";
+    my $extExe = "";
+
+    if ( $RELEASE ) {
+        $BUILD_DIR = "../build/release";
+    } else {
+        $BUILD_DIR = "../build/dev";
     }
 
     sub cpSrc {
@@ -67,10 +57,26 @@
     }
 
     sub oDst {
-        return ( "${BUILD_DIR}/" . shift . ".o" );
+        return ( "${BUILD_DIR}/" . shift . $extObj );
     }
 
-    sub Build {
+    sub exeDst {
+        return ( "${BUILD_DIR}/" . shift . $extExe );
+    }
+
+	sub perlppCmd {
+?>
+	perl tools/perlpp.pl --comments "doubleslash" $< $@
+<?
+	}
+
+	sub bioCmd {
+?>
+	perl tools/bio.pl --output-dir <?= $CODEGEN_DIR ?> $<
+<?
+	}
+
+    sub PreprocessAndCompile {
         foreach ( @_ ) {
 ?>
 
@@ -79,17 +85,16 @@
 
     <? if ( m/\.bio$/ ) { ?>
 
-<?= cDst( $_ ) ?>: <?= $_ ?>
-	perl tools/bio.pl --output-dir <?= $CODEGEN_DIR ?> $<
 <?= hDst( $_ ) ?>: <?= cDst( $_ ) ?>
-	# do nothing
+<?= cDst( $_ ) ?>: <?= $_ ?>
+	<? &bioCmd; ?>
 
     <? } else { ?>
 
 <?= cDst( $_ ) ?>: <?= cpSrc( $_ ) ?>
-	perl tools/perlpp.pl --comments "doubleslash" $< $@
+	<? &perlppCmd; ?>
 <?= hDst( $_ ) ?>: <?= hpSrc( $_ ) ?>
-	perl tools/perlpp.pl --comments "doubleslash" $< $@
+	<? &perlppCmd; ?>
 
     <? } ?>
 
@@ -97,18 +102,44 @@
         }
     }
 
-    my @LIB_C_FILES = map { cDst( $_ ); } @LIB_SOURCE_FILES;
-    my @LIB_H_FILES = map { hDst( $_ ); } @LIB_SOURCE_FILES;
-    my @LIB_O_FILES = map { oDst( $_ ); } @LIB_SOURCE_FILES;
+    if ( $PLATFORM eq "LINUX" ) {
+        $LIB_FILENAME = "${BUILD_DIR}/lib${LIB_NAME}.a";
+        $CLT_FILENAME = "${BUILD_DIR}/client";
+        $COMPILER_FLAGS = "-Wall -Wextra -I${CODEGEN_DIR} -DBBB_PLATFORM_LINUX";
+        if ( $DEBUG ) {
+            $COMPILER_FLAGS .= " -DBBB_DEBUG";
+        }
+        if ( !$RELEASE ) {
+            $COMPILER_FLAGS .= " -ggdb";
+        }
+        $LINKER_FLAGS = "-Wall -Wextra -L${BUILD_DIR} -lssl -lcrypto -l${LIB_NAME}";
+	} elsif ( $PLATFORM eq "WINDOWS" ) {
+		$extObj = ".obj";
+		$extExe = ".exe";
+    } else {
+        die "Unknown PLATFORM.\n";
+    }
 
-    my @CLT_C_FILES = map { cDst( $_ ); } @CLT_SOURCE_FILES;
-    my @CLT_H_FILES = map { hDst( $_ ); } @CLT_SOURCE_FILES;
-    my @CLT_O_FILES = map { oDst( $_ ); } @CLT_SOURCE_FILES;
+    my $LIB_O_FILES = join( " " , map { oDst( $_ ); } @LIB_SOURCE_FILES );
+    my $CLT_O_FILES = join( " ", map { oDst( $_ ); } @CLT_SOURCE_FILES );
+    my $TST_FILENAMES = join( " ", map { exeDst( $_ ); } @TST_SOURCE_FILES );
+
+	# Let's process them before anything else.
+	my @INCLUDES = map { hDst( $_ ); } (
+		@LIB_SOURCE_FILES,
+		@CLT_SOURCE_FILES,
+		@TST_SOURCE_FILES
+	);
+	push( @INCLUDES, (
+		hDst( "tests/minunit" ),
+		hDst( "tests/test_bio.bio" ),
+		cDst( "tests/test_bio.bio" )
+	) );
 ?>
 
-.PHONY: all makefiles delimiter directories clean
+.PHONY: all makefiles delimiter clean directories includes library client tests run runtests
 
-all: delimiter clean directories <?= $LIB_FILENAME ?> <?= $CLT_FILENAME ?>
+all: delimiter clean directories includes library client tests
 
 makefiles:
 	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "LINUX";' Makefile.p Makefile_linux
@@ -121,22 +152,69 @@ delimiter:
 directories:
 	mkdir -p <?= $CODEGEN_DIR ?>
 	mkdir -p <?= $BUILD_DIR ?>
+	mkdir -p <?= $CODEGEN_DIR ?>/tests
+	mkdir -p <?= $BUILD_DIR ?>/tests
 
 clean:
 	rm -rf <?= $CODEGEN_DIR ?>
 	rm -rf <?= $BUILD_DIR ?>
 
-### Library
-<?= $LIB_FILENAME ?>: <?= asString @LIB_C_FILES ?> <?= asString @LIB_H_FILES ?> <?= asString @LIB_O_FILES ?>
-	ar -rv <?= $LIB_FILENAME ?> <?= asString @LIB_O_FILES ?>
-<? Build( @LIB_SOURCE_FILES ); ?>
+run:
+	@cd <?= $BUILD_DIR ?>; \
+		./client;
+
+runtests:
+	@cd <?= $BUILD_DIR ?>/tests; \
+		perl runner.pl run;
+
+includes: <?= join( " ", @INCLUDES ) ?>
+
+#
+# ========== Library ==========
+#
+
+library: <?= $LIB_FILENAME ?>
+
+<?= $LIB_FILENAME ?>: <?= $LIB_O_FILES ?>
+	ar -rv <?= $LIB_FILENAME ?> <?= $LIB_O_FILES ?>
+
+<? PreprocessAndCompile( @LIB_SOURCE_FILES ); ?>
 
 <?= hDst( "global" ) ?>: <?= hpSrc( "global" ) ?>
-	perl tools/perlpp.pl --comments "doubleslash" $< $@
-<?= hDst( "bigbenbox" ) ?>: <?= hpSrc( "bigbenbox" ) ?>
-	perl tools/perlpp.pl --comments "doubleslash" $< $@
+	<? &perlppCmd; ?>
 
-### Client
-<?= $CLT_FILENAME ?>: <?= $LIB_FILENAME ?> <?= asString @CLT_C_FILES ?> <?= asString @CLT_H_FILES ?> <?= asString @CLT_O_FILES ?>
-	gcc <?= asString @CLT_O_FILES ?> <?= $LINKER_FLAGS ?> -o $@
-<? Build( @CLT_SOURCE_FILES ); ?>
+<?= hDst( "bigbenbox" ) ?>: <?= hpSrc( "bigbenbox" ) ?>
+	<? &perlppCmd; ?>
+
+#
+# ========== Client ==========
+#
+
+client: <?= $CLT_FILENAME ?>
+
+<?= $CLT_FILENAME ?>: <?= $LIB_FILENAME ?> <?= $CLT_O_FILES ?>
+	gcc <?= $CLT_O_FILES ?> <?= $LINKER_FLAGS ?> -o $@
+
+<? PreprocessAndCompile( @CLT_SOURCE_FILES ); ?>
+
+#
+# ========== Tests ==========
+#
+
+tests: <?= $TST_RUNNER ?> <?= $TST_FILENAMES ?>
+	cp $< <?= $BUILD_DIR ?>/tests/
+
+<? foreach ( @TST_SOURCE_FILES ) { ?>
+<?= exeDst( $_ ) ?>: <?= oDst( $_ ) ?> library
+	gcc $< <?= $LINKER_FLAGS ?> -o $@
+<? } ?>
+
+<? PreprocessAndCompile( @TST_SOURCE_FILES ); ?>
+
+<?= hDst( "tests/minunit" ) ?>: <?= hpSrc( "tests/minunit" ) ?>
+	<? &perlppCmd; ?>
+
+<?= hDst( "tests/test_bio.bio" ) ?>: <?= cDst( "tests/test_bio.bio" ) ?>
+<?= cDst( "tests/test_bio.bio" ) ?>: <?= "tests/test_bio.bio" ?>
+	<? &bioCmd; ?>
+

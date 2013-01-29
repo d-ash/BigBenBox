@@ -28,11 +28,11 @@ if ( $arg && $arg eq "run" ) {
 		if ( exists( &{ $before } ) ) {
 			&{ $before };
 		}
-		system( "./$_.run" );
+		system( "./$_" );
 		if ( exists( &{ $after } ) ) {
 			&{ $after };
 		}
 	}
 } else {
-	print join( " ", @TESTS ) . "\n";
+	print join( "\n", @TESTS ) . "\n";
 }

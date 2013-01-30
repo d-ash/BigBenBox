@@ -112,9 +112,10 @@ close $f or die $!;
 if ( $argDebug ) {
 	print( $code );
 } else {
-	open $PerlPP_out, ">", "${outFilename}" or die $!;
+	open $PerlPP_out, ">", "${outFilename}.tmp" or die $!;
 	&OutputComments;
 	eval( $code );
 	warn $@ if $@;
 	close $PerlPP_out or die $!;
+    rename "${outFilename}.tmp", $outFilename;
 }

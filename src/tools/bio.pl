@@ -23,6 +23,7 @@ sub Perr {
 }
 
 sub ReadBIO {
+    my $_;
 	my $SYMBOL = "[a-zA-Z_][a-zA-Z_0-9]*";
 	my $COMMENTS = "\\s*(?:\\/\\/.*)?";
 	my $inRecord = 0;
@@ -81,6 +82,7 @@ sub ReadBIO {
 }
 
 sub WriteH {
+    my $_;
 	my $def = "_" . uc( $namespace ) . "_BIO_H";
 	my $f;
 
@@ -187,6 +189,7 @@ sub Output_ProtoImpl {
 }
 
 sub Output_Assert {
+    my $_;
 	my $f = shift;
 	my $ifexp = shift;
 	my $fields = shift;
@@ -200,6 +203,7 @@ sub Output_Assert {
 }
 
 sub Output_ReadImpl {
+    my $_;
 	my $f = shift;
 	my $mode = shift;		# ( Buf | File )
 	my $rec = shift;
@@ -243,6 +247,7 @@ sub Output_ReadImpl {
 }
 
 sub Output_ReadArrayImpl {
+    my $_;
 	my $f = shift;
 	my $mode = shift;		# ( Buf | File )
 	my $rec = shift;
@@ -271,6 +276,7 @@ sub Output_ReadArrayImpl {
 }
 
 sub Output_WriteImpl {
+    my $_;
 	my $f = shift;
 	my $mode = shift;		# ( Buf | File )
 	my $rec = shift;
@@ -309,6 +315,7 @@ sub Output_WriteImpl {
 }
 
 sub Output_WriteArrayImpl {
+    my $_;
 	my $f = shift;
 	my $mode = shift;		# ( Buf | File )
 	my $rec = shift;
@@ -332,6 +339,7 @@ sub Output_WriteArrayImpl {
 }
 
 sub WriteC {
+    my $_;
 	my $f;
 
 	open $f, ">", "${outputDir}/${filename}.c" or die $!;

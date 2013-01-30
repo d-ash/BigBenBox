@@ -64,23 +64,17 @@
         return ( "${BUILD_DIR}/" . shift . $extExe );
     }
 
-	sub perlppCmd {
-?>
-	perl tools/perlpp.pl --comments "doubleslash" $< $@
-<?
-	}
+	sub perlppCmd { ?>perl tools/perlpp.pl --comments "doubleslash" $< $@<? }
 
-	sub bioCmd {
-?>
-	perl tools/bio.pl --output-dir <?= $CODEGEN_DIR ?> $<
-<?
-	}
+	sub bioCmd { ?>perl tools/bio.pl --output-dir <?= $CODEGEN_DIR ?> $<<? }
 
     sub PreprocessAndCompile {
+		my $_;
+
         foreach ( @_ ) {
 ?>
 
-<?= oDst( $_ ) ?>: <?= cDst( $_ ) ?> <?= hDst( $_ ) ?> <?= hDst( "global" ) ?> <?= hDst( "bigbenbox" ) ?>
+<?= oDst( $_ ) ?>: <?= cDst( $_ ) ?> <?= hDst( "global" ) ?> <?= hDst( "bigbenbox" ) ?>
 	gcc -c <?= $COMPILER_FLAGS ?> $< -o $@
 
     <? if ( m/\.bio$/ ) { ?>
@@ -130,11 +124,11 @@
 		@CLT_SOURCE_FILES,
 		@TST_SOURCE_FILES
 	);
-	push( @INCLUDES, (
-		hDst( "tests/minunit" ),
-		hDst( "tests/test_bio.bio" ),
-		cDst( "tests/test_bio.bio" )
-	) );
+	push @INCLUDES, (
+			hDst( "tests/minunit" ),
+			hDst( "tests/test_bio.bio" ),
+			cDst( "tests/test_bio.bio" )
+		);
 ?>
 
 .PHONY: all makefiles delimiter clean directories includes library client tests run runtests

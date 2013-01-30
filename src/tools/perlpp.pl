@@ -29,7 +29,9 @@ my $f;
 my $PerlPP_out;
 
 sub OutputPlain {
-	$code .= "print \$PerlPP_out '" . ( $plain =~ s/\\/\\\\/gr ) =~ s/'/\\'/gr . "';\n";
+	$plain =~ s/\\/\\\\/g;
+	$plain =~ s/'/\\'/g;
+	$code .= "print \$PerlPP_out '${plain}';\n";
 	$plain = "";
 }
 
@@ -63,7 +65,8 @@ while ( my $a = shift ) {
 	}
 }
 
-$package = ( $filename =~ s/^([a-zA-Z_][a-zA-Z_0-9.]*).p$/$1/r );
+$package = $filename;
+$package =~ s/^([a-zA-Z_][a-zA-Z_0-9.]*).p$/$1/;
 $package =~ s/[.\/\\]/_/g;
 $code = "package PPP_${package}; use strict; use warnings; sub echo { print \$PerlPP_out shift; }\n${argEval}\n";
 

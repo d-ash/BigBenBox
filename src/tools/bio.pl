@@ -185,7 +185,8 @@ sub Output_ProtoImpl {
 	my $f = shift;
 	my $proto = shift;
 
-	print $f "\n" . ( $proto =~ s/\t+/ /r ) . " {\n";
+	$proto =~ s/\t+/ /;
+	print $f "\n${proto} {\n";
 }
 
 sub Output_Assert {

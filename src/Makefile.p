@@ -20,7 +20,7 @@
     );
 
 	my $TST_RUNNER = "tests/runner.pl";
-	my @TST_SOURCE_FILES = map { ( "tests/" . s/\n$//r ); } `perl $TST_RUNNER`;
+	my @TST_SOURCE_FILES = map { s/\n$//; "tests/$_"; } `perl $TST_RUNNER`;
 
 	# =========================================
 
@@ -96,10 +96,10 @@
         }
     }
 
-    if ( $PLATFORM eq "LINUX" ) {
+    if ( ( $PLATFORM eq "LINUX" ) or ( $PLATFORM eq "OSX" ) ) {
         $LIB_FILENAME = "${BUILD_DIR}/lib${LIB_NAME}.a";
         $CLT_FILENAME = "${BUILD_DIR}/client";
-        $COMPILER_FLAGS = "-Wall -Wextra -I${CODEGEN_DIR} -DBBB_PLATFORM_LINUX";
+        $COMPILER_FLAGS = "-Wall -Wextra -I${CODEGEN_DIR} -DBBB_PLATFORM_${PLATFORM}";
         if ( $DEBUG ) {
             $COMPILER_FLAGS .= " -DBBB_DEBUG";
         }

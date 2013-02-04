@@ -74,25 +74,25 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	bbb_sshot_Init( ss );
+	bbb_sshot_Init( ss ); <? my $cleanup = "?>bbb_sshot_Destroy( ss );<?"; ?>
 	ss->restored = 1;
 
 	f = fopen( path, "rb" );
 	if ( f == NULL ) {
 		BBB_PERR( "Cannot open %s: %s\n", path, strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 
 	if ( bbb_sshot_file_ReadFromFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_PERR( "Cannot read from %s: %s\n", path, strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 	_ConstructHdr( &hdrControl );
 	if ( !bbb_sshot_file_IsEqual_hdr( &hdr, &hdrControl ) ) {
 		BBB_PERR( "Header of the snapshot file %s is incorrect.\n", path );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 
@@ -100,7 +100,7 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 	// We can correctly read files only created with this same program on this machine.
 	if ( fread( &hdrExt, sizeof( hdrExt ), 1, f ) == 0 ) {
 		BBB_PERR( "Cannot read an extended header from a snapshot file: %s\n", strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
@@ -108,13 +108,13 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 	ss->takenFrom = malloc( hdrExt.takenFromMem );
 	if ( ss->takenFrom == NULL ) {
 		BBB_PERR( "Cannot allocate memory: %s\n", strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 
 	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
 		BBB_PERR( "Cannot read 'takenFrom' from a snapshot file: %s\n", strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
@@ -124,30 +124,30 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 	// checksum will be overread by the previous fread()
 	if ( fseek( f, 0 - sizeof( checksumRead ), SEEK_END ) != 0 ) {
 		BBB_PERR( "Cannot fseek() to a checksum of the file %s: %s\n", path, strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 
 	if ( bbb_bio_ReadFromFile_uint32( &checksumRead, f, NULL ) == 0 ) {
 		BBB_PERR( "Cannot read a checksum from the snapshot file %s: %s\n", path, strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 
 	if ( checksum != checksumRead ) {
 		BBB_PERR( "The snapshot file %s is corrupted (checksum failed): %s\n", path, strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 
 	if ( fclose( f ) != 0 ) {
 		BBB_PERR( "Cannot close %s: %s\n", path, strerror( errno ) );
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 		return 0;
 	}
 
 	if ( !res ) {
-		bbb_sshot_Destroy( ss );
+		<?= $cleanup ?>
 	}
 
 	return res;

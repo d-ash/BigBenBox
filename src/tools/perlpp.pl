@@ -3,7 +3,7 @@
 #
 # Usage: perl perlpp.pl [options] <inFilename> <outFilename>
 #
-# More info about scoping in Perl:
+# Some info about scoping in Perl:
 # http://darkness.codefu.org/wordpress/2003/03/perl-scoping/
 #
 
@@ -23,6 +23,8 @@ my $filename = "";
 my $outFilename = "";
 my $package = "";
 my $echoMode = 0;
+my $catching = 0;
+my $wasCatched = 0;
 my $code = "";
 my $plain = "";
 my $f;
@@ -31,7 +33,11 @@ my $PerlPP_out;
 sub OutputPlain {
 	$plain =~ s/\\/\\\\/g;
 	$plain =~ s/'/\\'/g;
-	$code .= "print \$PerlPP_out '${plain}';\n";
+	if ( $catching ) {
+		$code .= "'${plain}'";
+	} else {
+		$code .= "print \$PerlPP_out '${plain}';\n";
+	}
 	$plain = "";
 }
 
@@ -81,23 +87,54 @@ while ( <$f> ) {
 		$plain .= $1;
 		&OutputPlain;
 
-		if ( $after =~ /^=/ ) {
-			$echoMode = 1;
-			$_ = substr( $after, 1 ) . "\n";
+		$wasCatched = 0;
+		if ( $catching ) {
+			if ( $after =~ /^"/ ) {
+				$catching = 0;
+				$wasCatched = 1;
+				$_ = substr( $after, 1 ) . "\n";
+			} else {
+				die "Unfinished catching.";
+			}
 		} else {
-			$_ = $after . "\n";
+			if ( $after =~ /^=/ ) {
+				$echoMode = 1;
+				$_ = substr( $after, 1 ) . "\n";
+			} elsif ( $after =~ /^"/ ) {
+				die "Unexpected end of catching. It was not started.";
+			} else {
+				$_ = $after . "\n";
+			}
 		}
-		
+
 		CLOSING:
 		if ( /^(.*?)$TAG_CLOSE(.*)$/ ) {
 			$inside .= $1;
-			if ( $echoMode ) {
-				$code .= "print \$PerlPP_out ( ${inside} );\n";
-				$echoMode = 0;
-			} else {
-				$code .= $inside;
-			}
 			$_ = $2 . "\n";
+			if ( $inside =~ /"$/ ) {
+				$catching = 1;
+				$inside = substr( $inside, 0, -1 );
+				if ( $echoMode ) {
+					if ( $wasCatched ) {
+						$code .= $inside;							# middle part of print() statement
+					} else {
+						$code .= "print \$PerlPP_out ( ${inside}";	# the start of print() statement
+					}
+				} else {
+					$code .= $inside;
+				}
+			} else {
+				if ( $echoMode ) {
+					if ( $wasCatched ) {
+						$code .= " );\n";							# the end of print() statement
+					} else {
+						$code .= "print \$PerlPP_out ( ${inside} );\n";
+					}
+					$echoMode = 0;
+				} else {
+					$code .= $inside;
+				}
+			}
 			redo OPENING;
 		} else {
 			$inside .= $_;
@@ -107,6 +144,10 @@ while ( <$f> ) {
 	} else {
 		$plain .= $_;
 	}
+}
+
+if ( $catching ) {
+	die "Unfinished catching.";
 }
 &OutputPlain;
 

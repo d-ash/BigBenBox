@@ -32,7 +32,7 @@ sub ReadBIO {
 	$errors = 0;
 	$line = 0;
 
-	open $f, $filename or die $!;
+	open $f, "<", $filename or die $!;
 
 	for ( <$f> ) {
 		$line += 1;

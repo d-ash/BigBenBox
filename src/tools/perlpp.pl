@@ -100,7 +100,7 @@ $code = "package PPP_${package}; use strict; use warnings;\n";
 $code .= "sub echo { print \$PerlPP_out shift; }\n";
 $code .= "${argEval}\n";
 
-open $f, $filename or die $!;
+open $f, "<", $filename or die $!;
 
 OPENING:
 while ( <$f> ) {

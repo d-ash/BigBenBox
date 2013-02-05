@@ -3,18 +3,21 @@
 #include "util_hash.h"
 #include "bio.h"
 
-static void		_ConstructHdr( bbb_sshot_file_hdr_t* const hdr );
+<?:prefix @_ bbb_sshot_file_ ?>
+<?:prefix @^ BBB_SSHOT_FILE_ ?>
+
+static void		_ConstructHdr( @_hdr_t* const hdr );
 static int		_Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
 static int		_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
 
 // ============================================
 
-int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
-	FILE*					f;
-	bbb_sshot_file_hdr_t	hdr;
-	bbb_sshot_file_hdr2_t	hdrExt;
-	int						res = 0;
-	bbb_checksum_t			checksum = 0;
+int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
+	FILE*			f;
+	@_hdr_t	        hdr;
+	@_hdr2_t	    hdrExt;
+	int				res = 0;
+	bbb_checksum_t	checksum = 0;
 
 	f = fopen( path, "wb" );
 	if ( f == NULL ) {
@@ -23,7 +26,7 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	}
 
 	_ConstructHdr( &hdr );
-	if ( bbb_sshot_file_WriteToFile_hdr( &hdr, f, &checksum ) == 0 ) {
+	if ( @_WriteToFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_PERR( "Cannot write a header to the snapshot file %s: %s\n", path, strerror( errno ) );
 		return 0;
 	}
@@ -60,14 +63,14 @@ int bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	return res;
 }
 
-int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
-	FILE*					f = NULL;
-	bbb_sshot_file_hdr_t	hdr;
-	bbb_sshot_file_hdr_t	hdrControl;
-	bbb_sshot_file_hdr2_t	hdrExt;
-	int						res = 0;
-	bbb_checksum_t			checksum = 0;
-	bbb_checksum_t			checksumRead = 0;
+int @_Load( const char* const path, bbb_sshot_t* const ss ) {
+	FILE*			f = NULL;
+	@_hdr_t         hdr;
+	@_hdr_t         hdrControl;
+	@_hdr2_t	    hdrExt;
+	int				res = 0;
+	bbb_checksum_t	checksum = 0;
+	bbb_checksum_t	checksumRead = 0;
 
 	if ( ss == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
@@ -84,13 +87,13 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	if ( bbb_sshot_file_ReadFromFile_hdr( &hdr, f, &checksum ) == 0 ) {
+	if ( @_ReadFromFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_PERR( "Cannot read from %s: %s\n", path, strerror( errno ) );
 		<?= $cleanup ?>
 		return 0;
 	}
 	_ConstructHdr( &hdrControl );
-	if ( !bbb_sshot_file_IsEqual_hdr( &hdr, &hdrControl ) ) {
+	if ( !@_IsEqual_hdr( &hdr, &hdrControl ) ) {
 		BBB_PERR( "Header of the snapshot file %s is incorrect.\n", path );
 		<?= $cleanup ?>
 		return 0;
@@ -153,18 +156,18 @@ int bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss ) {
 	return res;
 }
 
-static void _ConstructHdr( bbb_sshot_file_hdr_t* const hdr ) {
-	hdr->magic = BBB_SSHOT_FILE_MAGIC;
-	hdr->runtime = ( bbb_util_IsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
-	hdr->platform = BBB_PLATFORM_ID;
-	hdr->format = BBB_SSHOT_FILE_FORMAT;
+static void _ConstructHdr( @_hdr_t* const hdr ) {
+	hdr->magic      = @^MAGIC;
+	hdr->runtime    = ( bbb_util_IsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
+	hdr->platform   = BBB_PLATFORM_ID;
+	hdr->format     = @^FORMAT;
 }
 
 static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
-	bbb_sshot_hash_t		i;
-	bbb_sshot_entry_t*		entry = NULL;
-	bbb_sshot_ht_t*			hashHdr = NULL;
-	bbb_sshot_file_ht_t		fileHashHdr;
+	bbb_sshot_hash_t	i;
+	bbb_sshot_entry_t*	entry = NULL;
+	bbb_sshot_ht_t*		hashHdr = NULL;
+	@_ht_t		        fileHashHdr;
 
 	for ( i = 0; i < BBB_SSHOT_HASH_MAX; i++ ) {
 		hashHdr = & ss->ht[ i ];
@@ -197,10 +200,10 @@ static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* ch
 }
 
 static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
-	bbb_sshot_file_ht_t		fileHashHdr;
-	bbb_sshot_entry_t*		entry = NULL;
-	bbb_sshot_ht_t*			hashHdr = NULL;
-	bbb_byte_t*				maxPtr = NULL;
+	@_ht_t		        fileHashHdr;
+	bbb_sshot_entry_t*	entry = NULL;
+	bbb_sshot_ht_t*		hashHdr = NULL;
+	bbb_byte_t*			maxPtr = NULL;
 
 	// iterating over the hash list
 	while ( fread( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) == 1 ) {

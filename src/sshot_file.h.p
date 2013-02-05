@@ -1,11 +1,13 @@
-#ifndef _BBB_SSHOT_FILE_H
-#define _BBB_SSHOT_FILE_H
+<?:c:guard ?>
 
 #include "sshot.h"
 #include "sshot_file.bio.h"
 
-#define BBB_SSHOT_FILE_MAGIC		0x8D
-#define BBB_SSHOT_FILE_FORMAT		0x01
+<?:prefix @_ bbb_sshot_file_ ?>
+<?:prefix @^ BBB_SSHOT_FILE_ ?>
+
+#define @^MAGIC		0x8D
+#define @^FORMAT	0x01
 
 /**
  *	Structure of a saved snapshot after a file header:
@@ -13,14 +15,11 @@
  *	[ list of hash values
  *		sizeof( bbb_sshot_hash_t )		- hash value
  *		sizeof( size_t )				- size of the following list of entries
- *
  *		[ list of entries
- *			sizeof( bbb_sshot_entry_t )	- bbbSsEntry_t (bbbSsEntry_t.next has dummy value, we recognize NULL values only)
+ *			sizeof( bbb_sshot_entry_t )	- bbb_sshot_entry_t (.next has a dummy value, we recognize NULL values only)
  *			bbb_sshot_entry_t.pathMem	- path
- *
  *			...
  *		]
- *
  *		...
  *	]
  *
@@ -31,7 +30,7 @@
 // In the following structs we use platform dependant types!
 typedef struct {
 	size_t	takenFromMem;			// strlen( bbb_sshot_t.takenFrom ) + 1
-} bbb_sshot_file_hdr2_t;			// second (extended) header, machine specific
+} @_hdr2_t;			                // second (extended) header, machine specific
 /**
  *  bbb_sshot_t.takenFrom will be stored here, just after the struct.
  */
@@ -39,13 +38,11 @@ typedef struct {
 typedef struct {
 	bbb_sshot_hash_t	hash;
 	size_t				size;		// memory size used by the following list of entries
-} bbb_sshot_file_ht_t;
+} @_ht_t;
 
 
 // =================== Exported functions ===================
 
-int		bbb_sshot_file_Save( const char* const path, const bbb_sshot_t* const ss );
+int		@_Save( const char* const path, const bbb_sshot_t* const ss );
 
-int		bbb_sshot_file_Load( const char* const path, bbb_sshot_t* const ss );
-
-#endif
+int		@_Load( const char* const path, bbb_sshot_t* const ss );

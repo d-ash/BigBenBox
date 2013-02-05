@@ -7,7 +7,7 @@ Files are complex!
 https://www.dropbox.com/help/145/en
 + file permissions.
 
-config (exclude like .gitignore)
+config (exclude like .gitignore!)
 access permissions (LDAP auth)
 web-access
 file encryption (on server and on clients, current user can be EXCLUDED from the group of using file)

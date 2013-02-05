@@ -12,8 +12,8 @@ package PerlPP;
 use strict;
 use warnings;
 
-my $TAG_OPEN = "<[?]";
-my $TAG_CLOSE = "[?]>";
+my $TAG_OPEN = "<?";
+my $TAG_CLOSE = "?>";
 
 my $argCommentsType = "";
 my $argEval = "";
@@ -23,16 +23,25 @@ my $filename = "";
 my $outFilename = "";
 my $package = "";
 my $echoMode = 0;
+my $commandMode = 0;
 my $catching = 0;
 my $wasCatched = 0;
 my $code = "";
 my $plain = "";
 my $f;
 my $PerlPP_out;
+my $PerlPP_cGuard = "";
+my %PerlPP_prefixes = ();
 
 sub OutputPlain {
+	my $_;
+
+	foreach ( keys %PerlPP_prefixes ) {
+		$plain =~ s/(^|\W)\Q$_\E/$1$PerlPP_prefixes{ $_ }/g;
+	}
 	$plain =~ s/\\/\\\\/g;
 	$plain =~ s/'/\\'/g;
+
 	if ( $catching ) {
 		$code .= "'${plain}'";
 	} else {
@@ -58,6 +67,19 @@ sub OutputComments {
 	print $PerlPP_out "${prefix}   package: $package\n\n";
 }
 
+sub ProcessCommand {
+	my $cmd = shift;
+
+	if ( $cmd =~ /^prefix\s+(\S+)\s+(\S+)\s*$/ ) {
+		$PerlPP_prefixes{ $1 } = $2;
+	} elsif ( $cmd =~ /^c:guard\s*$/ ) {
+		$PerlPP_cGuard = "_PPP_CGUARD_" . uc( $package );
+		$plain .= "#ifndef ${PerlPP_cGuard}\n#define ${PerlPP_cGuard}\n"
+	} else {
+		die "Unknown command: ${cmd}";
+	}
+}
+
 while ( my $a = shift ) {
 	if ( $a eq "--eval" ) {
 		$argEval .= ( shift ) || "";
@@ -74,13 +96,15 @@ while ( my $a = shift ) {
 $package = $filename;
 $package =~ s/^([a-zA-Z_][a-zA-Z_0-9.]*).p$/$1/;
 $package =~ s/[.\/\\]/_/g;
-$code = "package PPP_${package}; use strict; use warnings; sub echo { print \$PerlPP_out shift; }\n${argEval}\n";
+$code = "package PPP_${package}; use strict; use warnings;\n";
+$code .= "sub echo { print \$PerlPP_out shift; }\n";
+$code .= "${argEval}\n";
 
 open $f, $filename or die $!;
 
 OPENING:
 while ( <$f> ) {
-	if ( /^(.*?)$TAG_OPEN(.*)$/ ) {
+	if ( /^(.*?)\Q$TAG_OPEN\E(.*)$/ ) {
 		my $after = $2;
 		my $inside = "";
 
@@ -100,15 +124,18 @@ while ( <$f> ) {
 			if ( $after =~ /^=/ ) {
 				$echoMode = 1;
 				$_ = substr( $after, 1 ) . "\n";
+			} elsif ( $after =~ /^:/ ) {
+				$commandMode = 1;
+				$_ = substr( $after, 1 ) . "\n";
 			} elsif ( $after =~ /^"/ ) {
-				die "Unexpected end of catching. It was not started.";
+				die "Unexpected end of catching, it was not started.";
 			} else {
 				$_ = $after . "\n";
 			}
 		}
 
 		CLOSING:
-		if ( /^(.*?)$TAG_CLOSE(.*)$/ ) {
+		if ( /^(.*?)\Q$TAG_CLOSE\E(.*)$/ ) {
 			$inside .= $1;
 			$_ = $2 . "\n";
 			if ( $inside =~ /"$/ ) {
@@ -120,6 +147,9 @@ while ( <$f> ) {
 					} else {
 						$code .= "print \$PerlPP_out ( ${inside}";	# the start of print() statement
 					}
+					# echoMode is transparent for catching
+				} elsif ( $commandMode ) {
+					die "Catching inside a command mode is not allowed.";
 				} else {
 					$code .= $inside;
 				}
@@ -131,6 +161,9 @@ while ( <$f> ) {
 						$code .= "print \$PerlPP_out ( ${inside} );\n";
 					}
 					$echoMode = 0;
+				} elsif ( $commandMode ) {
+					ProcessCommand( $inside );
+					$commandMode = 0;
 				} else {
 					$code .= $inside;
 				}
@@ -148,6 +181,9 @@ while ( <$f> ) {
 
 if ( $catching ) {
 	die "Unfinished catching.";
+}
+if ( $PerlPP_cGuard ) {
+	$plain .= "\n#endif		// ${PerlPP_cGuard}\n";
 }
 &OutputPlain;
 

@@ -6,6 +6,9 @@
 <?:prefix @_ bbb_sshot_file_ ?>
 <?:prefix @^ BBB_SSHOT_FILE_ ?>
 
+<? my $cleanup; ?>
+<? my $cleanup2; ?>
+
 static void		_ConstructHdr( @_hdr_t* const hdr );
 static int		_Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
 static int		_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
@@ -26,20 +29,24 @@ int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	}
 
 	_ConstructHdr( &hdr );
+    <? $cleanup = "?>@_Destroy_hdr( &hdr );<?"; ?>
 	if ( @_WriteToFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_PERR( "Cannot write a header to the snapshot file %s: %s\n", path, strerror( errno ) );
+		<?= $cleanup ?>
 		return 0;
 	}
 
 	hdrExt.takenFromMem = strlen( ss->takenFrom ) + 1;
 	if ( fwrite( &hdrExt, sizeof( hdrExt ), 1, f ) == 0 ) {
 		BBB_PERR( "Cannot write an extended header to the snapshot file %s: %s\n", path, strerror( errno ) );
+		<?= $cleanup ?>
 		return 0;
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
 	if ( fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
 		BBB_PERR( "Cannot write 'takenFrom' to the snapshot file %s: %s\n", path, strerror( errno ) );
+		<?= $cleanup ?>
 		return 0;
 	}
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
@@ -48,11 +55,13 @@ int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
 
 	if ( bbb_bio_WriteToFile_uint32( checksum, f, NULL ) == 0 ) {
 		BBB_PERR( "Cannot write a checksum to the snapshot file %s: %s\n", path, strerror( errno ) );
+		<?= $cleanup ?>
 		return 0;
 	}
 
 	if ( fclose( f ) != 0 ) {
 		BBB_PERR( "Cannot save a snapshot to %s: %s\n", path, strerror( errno ) );
+		<?= $cleanup ?>
 		return 0;
 	}
 
@@ -60,6 +69,7 @@ int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
 		unlink( path );
 	}
 
+    <?= $cleanup ?>
 	return res;
 }
 
@@ -77,7 +87,8 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	bbb_sshot_Init( ss ); <? my $cleanup = "?>bbb_sshot_Destroy( ss );<?"; ?>
+	bbb_sshot_Init( ss );
+    <? $cleanup = "?>bbb_sshot_Destroy( ss );<?"; ?>
 	ss->restored = 1;
 
 	f = fopen( path, "rb" );
@@ -92,10 +103,14 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 		<?= $cleanup ?>
 		return 0;
 	}
+	<? $cleanup2 = "?>@_Destroy_hdr( &hdr );<?"; ?>
+
 	_ConstructHdr( &hdrControl );
+    <? $cleanup2 .= "?>@_Destroy_hdr( &hdrControl );<?"; ?>
 	if ( !@_IsEqual_hdr( &hdr, &hdrControl ) ) {
 		BBB_PERR( "Header of the snapshot file %s is incorrect.\n", path );
 		<?= $cleanup ?>
+		<?= $cleanup2 ?>
 		return 0;
 	}
 
@@ -104,6 +119,7 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	if ( fread( &hdrExt, sizeof( hdrExt ), 1, f ) == 0 ) {
 		BBB_PERR( "Cannot read an extended header from a snapshot file: %s\n", strerror( errno ) );
 		<?= $cleanup ?>
+		<?= $cleanup2 ?>
 		return 0;
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
@@ -112,12 +128,14 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	if ( ss->takenFrom == NULL ) {
 		BBB_PERR( "Cannot allocate memory: %s\n", strerror( errno ) );
 		<?= $cleanup ?>
+		<?= $cleanup2 ?>
 		return 0;
 	}
 
 	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
 		BBB_PERR( "Cannot read 'takenFrom' from a snapshot file: %s\n", strerror( errno ) );
 		<?= $cleanup ?>
+		<?= $cleanup2 ?>
 		return 0;
 	}
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
@@ -128,24 +146,28 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	if ( fseek( f, 0 - sizeof( checksumRead ), SEEK_END ) != 0 ) {
 		BBB_PERR( "Cannot fseek() to a checksum of the file %s: %s\n", path, strerror( errno ) );
 		<?= $cleanup ?>
+		<?= $cleanup2 ?>
 		return 0;
 	}
 
 	if ( bbb_bio_ReadFromFile_uint32( &checksumRead, f, NULL ) == 0 ) {
 		BBB_PERR( "Cannot read a checksum from the snapshot file %s: %s\n", path, strerror( errno ) );
 		<?= $cleanup ?>
+		<?= $cleanup2 ?>
 		return 0;
 	}
 
 	if ( checksum != checksumRead ) {
 		BBB_PERR( "The snapshot file %s is corrupted (checksum failed): %s\n", path, strerror( errno ) );
 		<?= $cleanup ?>
+		<?= $cleanup2 ?>
 		return 0;
 	}
 
 	if ( fclose( f ) != 0 ) {
 		BBB_PERR( "Cannot close %s: %s\n", path, strerror( errno ) );
 		<?= $cleanup ?>
+		<?= $cleanup2 ?>
 		return 0;
 	}
 
@@ -153,6 +175,7 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 		<?= $cleanup ?>
 	}
 
+    <?= $cleanup2 ?>
 	return res;
 }
 

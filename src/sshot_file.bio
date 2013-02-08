@@ -1,7 +1,3 @@
-
-// WARNING: do not add any dynamically allocated fields (varbufs).
-// This fields are not destroyed properly in the code.
-
 #namespace		bbb_sshot_file
 
 hdr {

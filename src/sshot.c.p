@@ -1,37 +1,40 @@
 #include "sshot.h"
 #include "util_hash.h"
 
-static int	_ProcessDir( const char* const path, const size_t skip, bbb_sshot_t* const ss );
-static int	_ProcessEntry( const char* const path, const size_t skip, const char* const name, bbb_sshot_t* const ss );
-static int	_AddToSnapshot( bbb_sshot_entry_t* const entry, bbb_sshot_t* const ss );
+<?:prefix @_ bbb_sshot_ ?>
+<?:prefix @^ BBB_SSHOT_ ?>
 
-int bbb_sshot_Init( bbb_sshot_t* const ss ) {
+static int	_ProcessDir( const char* const path, const size_t skip, @_t* const ss );
+static int	_ProcessEntry( const char* const path, const size_t skip, const char* const name, @_t* const ss );
+static int	_AddToSnapshot( @_entry_t* const entry, @_t* const ss );
+
+int @_Init( @_t* const ss ) {
 	if ( ss == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
 		return 0;
 	}
 
-	ss->restored = 0;		// by default a snapshot is generated
+	ss->restored = 0;		// by default a snapshot is 'generated'
 	ss->takenFrom = NULL;
-	ss->ht = malloc( sizeof( bbb_sshot_ht_t ) * BBB_SSHOT_HASH_MAX );
+	ss->ht = malloc( sizeof( @_ht_t ) * @^HASH_MAX );
 
 	// assuming NULL == 0
-	memset( ss->ht, 0, sizeof( bbb_sshot_ht_t ) * BBB_SSHOT_HASH_MAX );
+	memset( ss->ht, 0, sizeof( @_ht_t ) * @^HASH_MAX );
 
 	return 1;
 }
 
-int bbb_sshot_Destroy( bbb_sshot_t* const ss ) {
-	bbb_sshot_hash_t	i;
-	bbb_sshot_entry_t*	entry = NULL;
-	void*				mustDie = NULL;
+int @_Destroy( @_t* const ss ) {
+	@_hash_t	i;
+	@_entry_t*	entry = NULL;
+	void*		mustDie = NULL;
 
 	if ( ss == NULL || ss->ht == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
 		return 0;
 	}
 
-	for ( i = 0; i < BBB_SSHOT_HASH_MAX; i++ ) {
+	for ( i = 0; i < @^HASH_MAX; i++ ) {
 		entry = ss->ht[ i ].first;
 
 		if ( ss->restored ) {
@@ -57,7 +60,7 @@ int bbb_sshot_Destroy( bbb_sshot_t* const ss ) {
 	return 1;
 }
 
-int bbb_sshot_Take( const char* const path, bbb_sshot_t* const ss ) {
+int @_Take( const char* const path, @_t* const ss ) {
 	int		len = 0;
 	char*	p;
 
@@ -66,7 +69,7 @@ int bbb_sshot_Take( const char* const path, bbb_sshot_t* const ss ) {
 		return 0;
 	}
 
-	bbb_sshot_Init( ss );
+	@_Init( ss );
 
 	p = strdup( path );
 	len = strlen( p );
@@ -78,7 +81,7 @@ int bbb_sshot_Take( const char* const path, bbb_sshot_t* const ss ) {
 	}
 
 	if ( !_ProcessDir( p, len, ss ) ) {
-		bbb_sshot_Destroy( ss );
+		@_Destroy( ss );
 		free( p );
 		return 0;
 	}
@@ -88,10 +91,10 @@ int bbb_sshot_Take( const char* const path, bbb_sshot_t* const ss ) {
 	return 1;
 }
 
-bbb_sshot_entry_t* bbb_sshot_Search( const char* const path, const bbb_sshot_t* const ss ) {
-	bbb_sshot_hash_t	hash;
-	bbb_sshot_entry_t*	entry = NULL;
-	size_t				pathLen;
+@_entry_t* @_Search( const char* const path, const @_t* const ss ) {
+	@_hash_t	hash;
+	@_entry_t*	entry = NULL;
+	size_t		pathLen;
 
 	if ( ss == NULL || ss->ht == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
@@ -103,7 +106,7 @@ bbb_sshot_entry_t* bbb_sshot_Search( const char* const path, const bbb_sshot_t* 
 
 	entry = ss->ht[ hash ].first;
 	while ( entry != NULL ) {
-		if ( strncmp( path, BBB_SSHOT_ENTRY_PATH( entry ), pathLen + 1 ) == 0 ) {
+		if ( strncmp( path, @^ENTRY_PATH( entry ), pathLen + 1 ) == 0 ) {
 			break;
 		}
 		entry = entry->next;
@@ -112,24 +115,24 @@ bbb_sshot_entry_t* bbb_sshot_Search( const char* const path, const bbb_sshot_t* 
 	return entry;
 }
 
-int bbb_sshot_Diff( const bbb_sshot_t* const ss0, const bbb_sshot_t* const ss1 ) {
-	bbb_sshot_hash_t	i;
-	bbb_sshot_entry_t*	entry = NULL;
-	bbb_sshot_entry_t*	found = NULL;
-	char*				path = NULL;
-	int					differs = 0;
+int @_Diff( const @_t* const ss0, const @_t* const ss1 ) {
+	@_hash_t	i;
+	@_entry_t*	entry = NULL;
+	@_entry_t*	found = NULL;
+	char*		path = NULL;
+	int			differs = 0;
 
 	if ( ss0 == NULL || ss0->ht == NULL || ss1 == NULL || ss1->ht == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
 		return 0;	// TODO what we need return?
 	}
 
-	for ( i = 0; i < BBB_SSHOT_HASH_MAX; i++ ) {
+	for ( i = 0; i < @^HASH_MAX; i++ ) {
 		entry = ss1->ht[ i ].first;
 
 		while ( entry != NULL ) {
-			path = BBB_SSHOT_ENTRY_PATH( entry );
-			found = bbb_sshot_Search( path, ss0 );
+			path = @^ENTRY_PATH( entry );
+			found = @_Search( path, ss0 );
 
 			if ( found == NULL ) {
 				if ( differs == 0 ) {
@@ -152,13 +155,13 @@ int bbb_sshot_Diff( const bbb_sshot_t* const ss0, const bbb_sshot_t* const ss1 )
 		}
 	}
 
-	for ( i = 0; i < BBB_SSHOT_HASH_MAX; i++ ) {
+	for ( i = 0; i < @^HASH_MAX; i++ ) {
 		entry = ss0->ht[ i ].first;
 
 		while ( entry != NULL ) {
 			if ( entry->custom == 0 ) {
-				path = BBB_SSHOT_ENTRY_PATH( entry );
-				found = bbb_sshot_Search( path, ss1 );
+				path = @^ENTRY_PATH( entry );
+				found = @_Search( path, ss1 );
 
 				if ( found == NULL ) {
 					if ( differs == 0 ) {
@@ -179,7 +182,7 @@ int bbb_sshot_Diff( const bbb_sshot_t* const ss0, const bbb_sshot_t* const ss1 )
 
 // ================= Static ===============
 
-static int _ProcessDir( const char* const path, const size_t skip, bbb_sshot_t* const ss ) {
+static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss ) {
 	DIR*			dir = NULL;
 	struct dirent*	entry = NULL;
 	int				res = 1;
@@ -219,21 +222,21 @@ static int _ProcessDir( const char* const path, const size_t skip, bbb_sshot_t* 
 	return res;
 }
 
-static int _ProcessEntry( const char* const path, const size_t skip, const char* const name, bbb_sshot_t* const ss ) {
-	struct stat			entryInfo;
-	bbb_sshot_entry_t*	entry = NULL;
-	size_t				pathMem = 0;
-	char*				fullPath = NULL;		// path with a root dir of this processing
-	size_t				pl = 0;
-	size_t				nl = 0;
+static int _ProcessEntry( const char* const path, const size_t skip, const char* const name, @_t* const ss ) {
+	struct stat		entryInfo;
+	@_entry_t*	    entry = NULL;
+	size_t			pathMem = 0;
+	char*			fullPath = NULL;		// path with a root dir of this processing
+	size_t			pl = 0;
+	size_t			nl = 0;
 
 	pl = strlen( path );
 	nl = strlen( name );
 
-	// allocating memory for bbb_sshot_entry_t + path, pathMem will be aligned to BBB_WORD_SIZE
+	// allocating memory for @_entry_t + path, pathMem will be aligned to BBB_WORD_SIZE
 	// in order to get properly aligned memory after loading this data from a file.
 	pathMem = ( pl - skip + nl + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
-	entry = malloc( sizeof( bbb_sshot_entry_t ) + pathMem );
+	entry = malloc( sizeof( @_entry_t ) + pathMem );
 
 	if ( entry == NULL ) {
 		BBB_PERR( "Cannot allocate memory for an entry: %s\n", strerror( errno ) );
@@ -248,7 +251,7 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	entry->status = 0;
 	entry->custom = 0;
 	entry->pathMem = pathMem;
-	strncpy( BBB_SSHOT_ENTRY_PATH( entry ), fullPath + skip + 1, pathMem );
+	strncpy( @^ENTRY_PATH( entry ), fullPath + skip + 1, pathMem );
 
 	if ( stat( fullPath, &entryInfo ) ) {
 		BBB_PERR( "Cannot get info about %s: %s\n", fullPath, strerror( errno ) );
@@ -261,10 +264,10 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	entry->content.mtime = entryInfo.st_mtime;
 
 	if ( S_ISDIR( entryInfo.st_mode ) ) {
-		entry->status |= BBB_SSHOT_ENTRY_STATUS_DIR;
+		entry->status |= @^ENTRY_STATUS_DIR;
 		_ProcessDir( fullPath, skip, ss );
 	} else if ( S_ISREG( entryInfo.st_mode ) ) {
-		entry->status &= ~BBB_SSHOT_ENTRY_STATUS_DIR;
+		entry->status &= ~@^ENTRY_STATUS_DIR;
 	} else {
 		BBB_PLOG( "Skipping irregular file: %s\n", fullPath );
 		free( entry );
@@ -276,20 +279,20 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	return _AddToSnapshot( entry, ss );
 }
 
-static int _AddToSnapshot( bbb_sshot_entry_t* const entry, bbb_sshot_t* const ss ) {
-	bbb_sshot_hash_t		hash;
+static int _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
+	@_hash_t	hash;
 
 	if ( ss->restored ) {
 		BBB_PERR( "Adding entries to a restored snapshot is denied." );
 		return 0;
 	}
 
-	hash = bbb_util_hash_Calc_uint16( BBB_SSHOT_ENTRY_PATH( entry ), strlen( BBB_SSHOT_ENTRY_PATH( entry ) ) );
+	hash = bbb_util_hash_Calc_uint16( @^ENTRY_PATH( entry ), strlen( @^ENTRY_PATH( entry ) ) );
 
 	// push to the beginning of the list
 	entry->next = ss->ht[ hash ].first;
 	ss->ht[ hash ].first = entry;
-	ss->ht[ hash ].size += sizeof( bbb_sshot_entry_t ) + entry->pathMem;
+	ss->ht[ hash ].size += sizeof( @_entry_t ) + entry->pathMem;
 
 	return 1;
 }

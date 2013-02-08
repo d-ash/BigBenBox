@@ -1,0 +1,11 @@
+#namespace		bbb_proto
+
+hdr {
+	uint8		reserved;		// 0x00
+	uint8		type;			// type of the message
+	uint32		length;			// length of the following payload
+};
+
+// Here goes a payload.
+// And at the end there is a
+// uint32 checksum of the whole message.

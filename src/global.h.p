@@ -1,9 +1,6 @@
 #ifndef _BBB_GLOBAL_H
 #define _BBB_GLOBAL_H
 
-#define BBB_VERSION				0x0001
-#define BBB_WORD_SIZE			sizeof( size_t )
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -15,6 +12,10 @@
 #include <netinet/in.h>
 
 // ===========================================
+
+#define BBB_VERSION				"0.1.0"     // J.N.PP (J - major, N - minor, PP - patch)
+#define BBB_VERNUM				0x0100      // 0xJNPP
+#define BBB_WORD_SIZE			sizeof( size_t )
 
 #undef BBB_PLATFORM_ID
 

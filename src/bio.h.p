@@ -1,5 +1,5 @@
 /**
- *  Portable binary I/O.
+ *	Portable binary I/O.
  */
 
 #ifndef _BBB_BIO_H
@@ -14,7 +14,7 @@ typedef struct {
 } bbb_varbuf_t;
 
 /**
- *  Read/Write functions return:
+ *	Read/Write functions return:
  *		on a success:	a number of BYTES read
  *		on a failure:	0 (values and position in a file are irrelevant)
  *

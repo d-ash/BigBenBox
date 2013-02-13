@@ -1,8 +1,7 @@
-#include "sshot.h"
-#include "util_hash.h"
+#include "repo.h"
 
-<?:prefix @_ bbb_sshot_ ?>
-<?:prefix @^ BBB_SSHOT_ ?>
+<?:prefix @_ bbb_repo_ ?>
+<?:prefix @^ BBB_REPO_ ?>
 
 static int	_ProcessDir( const char* const path, const size_t skip, @_t* const ss );
 static int	_ProcessEntry( const char* const path, const size_t skip, const char* const name, @_t* const ss );

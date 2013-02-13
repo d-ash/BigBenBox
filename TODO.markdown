@@ -6,6 +6,7 @@ Competitors:
 Files are complex!
 https://www.dropbox.com/help/145/en
 + file permissions.
++ UTF8/16
 
 config (exclude like .gitignore!)
 access permissions (LDAP auth)

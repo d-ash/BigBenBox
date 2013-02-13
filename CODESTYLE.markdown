@@ -1,3 +1,7 @@
+Code style rules
+================
+
+
 Indentation
 -----------
 
@@ -62,6 +66,7 @@ If comments are at the end of a line. Align them with tabs appropriately.
 			return 0;		// the second comment
 		}
 
+
 Vertical separation
 -------------------
 
@@ -87,6 +92,7 @@ In particular blocks declaring variables or functions have to be standalone.
 				return '?';
 			}
 		}
+
 
 Naming
 ------
@@ -142,8 +148,29 @@ Place `const` each time if this variable or an argument will not be modified.
 Do not use: `int const * ptr;`
 
 
-Order
------
+Labels and `goto` operator
+--------------------------
+
+Names of labels should start with `L_` followed by a lower case "camelled" identifier.
+
+		int func() {
+			int	retVal = 0;
+			
+			for ( i = 0; i < n; i++ ) {
+				if ( i == 3 ) {
+					goto L_endFailed;
+				}
+			}
+			retVal = 1;
+		L_endFailed:
+			return retVal;
+		}
+
+The `goto` operator can be used for cleaning up variables before returning from functions.
+
+
+Order in files
+--------------
 
 Sequence of functions in the `.c` file should be equivalent to the order of corresponding `.h` file.
 
@@ -170,3 +197,10 @@ Use only lower characters, except preprocessor definitions (in that case use all
 Each namespace should be stored in a separate couple of files (`ns1_ns2.c` and `ns1_ns2.h`).
 Libraries and project should have their own namespaces (root namespace).
 Root namespace is not obliged to be presented in filenames.
+
+
+Preprocessing and code generation
+---------------------------------
+
+_TODO_
+

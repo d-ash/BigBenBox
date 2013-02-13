@@ -29,15 +29,15 @@
 
 // In the following structs we use platform dependant types!
 typedef struct {
-	size_t	takenFromMem;			// strlen( bbb_sshot_t.takenFrom ) + 1
-} @_hdr2_t;			                // second (extended) header, machine specific
+	size_t	takenFromMem;		// strlen( bbb_sshot_t.takenFrom ) + 1
+} @_hdr2_t;						// second (extended) header, machine specific
 /**
- *  bbb_sshot_t.takenFrom will be stored here, just after the struct.
+ *	bbb_sshot_t.takenFrom will be stored here, just after the struct.
  */
 
 typedef struct {
 	bbb_sshot_hash_t	hash;
-	size_t				size;		// memory size used by the following list of entries
+	size_t				size;	// memory size used by the following list of entries
 } @_ht_t;
 
 

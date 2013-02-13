@@ -17,8 +17,8 @@ static int		_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* check
 
 int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	FILE*			f;
-	@_hdr_t	        hdr;
-	@_hdr2_t	    hdrExt;
+	@_hdr_t			hdr;
+	@_hdr2_t		hdrExt;
 	int				res = 0;
 	bbb_checksum_t	checksum = 0;
 
@@ -29,7 +29,7 @@ int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	}
 
 	_ConstructHdr( &hdr );
-    <? $cleanup = "?>@_Destroy_hdr( &hdr );<?"; ?>
+	<? $cleanup = "?>@_Destroy_hdr( &hdr );<?"; ?>
 	if ( @_WriteToFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_PERR( "Cannot write a header to the snapshot file %s: %s\n", path, strerror( errno ) );
 		<?= $cleanup ?>
@@ -69,15 +69,15 @@ int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
 		unlink( path );
 	}
 
-    <?= $cleanup ?>
+	<?= $cleanup ?>
 	return res;
 }
 
 int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	FILE*			f = NULL;
-	@_hdr_t         hdr;
-	@_hdr_t         hdrControl;
-	@_hdr2_t	    hdrExt;
+	@_hdr_t			hdr;
+	@_hdr_t			hdrControl;
+	@_hdr2_t		hdrExt;
 	int				res = 0;
 	bbb_checksum_t	checksum = 0;
 	bbb_checksum_t	checksumRead = 0;
@@ -88,7 +88,7 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	}
 
 	bbb_sshot_Init( ss );
-    <? $cleanup = "?>bbb_sshot_Destroy( ss );<?"; ?>
+	<? $cleanup = "?>bbb_sshot_Destroy( ss );<?"; ?>
 	ss->restored = 1;
 
 	f = fopen( path, "rb" );
@@ -106,7 +106,7 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	<? $cleanup2 = "?>@_Destroy_hdr( &hdr );<?"; ?>
 
 	_ConstructHdr( &hdrControl );
-    <? $cleanup2 .= "?>@_Destroy_hdr( &hdrControl );<?"; ?>
+	<? $cleanup2 .= "?>@_Destroy_hdr( &hdrControl );<?"; ?>
 	if ( !@_IsEqual_hdr( &hdr, &hdrControl ) ) {
 		BBB_PERR( "Header of the snapshot file %s is incorrect.\n", path );
 		<?= $cleanup ?>
@@ -175,22 +175,22 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 		<?= $cleanup ?>
 	}
 
-    <?= $cleanup2 ?>
+	<?= $cleanup2 ?>
 	return res;
 }
 
 static void _ConstructHdr( @_hdr_t* const hdr ) {
-	hdr->magic      = @^MAGIC;
-	hdr->runtime    = ( bbb_util_IsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
-	hdr->platform   = BBB_PLATFORM_ID;
-	hdr->format     = @^FORMAT;
+	hdr->magic		= @^MAGIC;
+	hdr->runtime	= ( bbb_util_IsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
+	hdr->platform	= BBB_PLATFORM_ID;
+	hdr->format		= @^FORMAT;
 }
 
 static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 	bbb_sshot_hash_t	i;
 	bbb_sshot_entry_t*	entry = NULL;
 	bbb_sshot_ht_t*		hashHdr = NULL;
-	@_ht_t		        fileHashHdr;
+	@_ht_t				fileHashHdr;
 
 	for ( i = 0; i < BBB_SSHOT_HASH_MAX; i++ ) {
 		hashHdr = & ss->ht[ i ];
@@ -223,7 +223,7 @@ static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* ch
 }
 
 static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
-	@_ht_t		        fileHashHdr;
+	@_ht_t				fileHashHdr;
 	bbb_sshot_entry_t*	entry = NULL;
 	bbb_sshot_ht_t*		hashHdr = NULL;
 	bbb_byte_t*			maxPtr = NULL;

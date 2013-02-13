@@ -36,32 +36,32 @@ void bbb_util_hash_UpdateChecksum( const void* const buf, const size_t len, bbb_
 }
 
 int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA256_DIGEST_LENGTH ] ) {
-    FILE*				f;
-    SHA256_CTX			sha;
+	FILE*				f;
+	SHA256_CTX			sha;
 	char*				buf = NULL;
-    static const size_t len = 32768;
+	static const size_t len = 32768;
 	size_t				wasRead = 0;
 	
 	f = fopen( path, "rb" );
-    if ( f == NULL ) {
+	if ( f == NULL ) {
 		BBB_PERR( "Cannot open file %s in %s: %s\n", path, __FUNCTION__, strerror( errno ) );
 		return 0;
 	}
 
-    SHA256_Init( &sha );
+	SHA256_Init( &sha );
 
-    buf = malloc( len );
-    if ( buf == NULL ) {
+	buf = malloc( len );
+	if ( buf == NULL ) {
 		BBB_PERR( "Cannot allocate memory for SHA256 buffer: %s\n", strerror( errno ) );
 		fclose( f );
 		return 0;
 	}
 
-    while ( ( wasRead = fread( buf, 1, len, f ) ) ) {
-        SHA256_Update( &sha, buf, wasRead );
-    }
+	while ( ( wasRead = fread( buf, 1, len, f ) ) ) {
+		SHA256_Update( &sha, buf, wasRead );
+	}
 
-    SHA256_Final( hash, &sha );
+	SHA256_Final( hash, &sha );
 
 	if ( ferror( f ) ) {
 		BBB_PERR( "Cannot read the file %s: %s\n", path, strerror( errno ) );
@@ -70,7 +70,7 @@ int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA2
 		return 0;
 	}
 
-    free( buf );
-    fclose( f );
-    return 1;
+	free( buf );
+	fclose( f );
+	return 1;
 }

@@ -13,8 +13,8 @@
 
 // ===========================================
 
-#define BBB_VERSION				"0.1.0"     // J.N.PP (J - major, N - minor, PP - patch)
-#define BBB_VERNUM				0x0100      // 0xJNPP
+#define BBB_VERSION				"0.1.0"		// J.N.PP (J - major, N - minor, PP - patch)
+#define BBB_VERNUM				0x0100		// 0xJNPP
 #define BBB_WORD_SIZE			sizeof( size_t )
 
 #undef BBB_PLATFORM_ID

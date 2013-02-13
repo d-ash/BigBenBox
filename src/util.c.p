@@ -31,9 +31,9 @@ uint64_t bbb_util_ConvertBinary_ntoh64( const uint64_t x ) {
 }
 
 void bbb_util_PrintHex( const void* const b, const size_t len ) {
-    size_t	i;
+	size_t	i;
 
-    for ( i = 0; i < len; i++ ) {
+	for ( i = 0; i < len; i++ ) {
 		printf( "%02x", ( ( bbb_byte_t* ) b )[ i ] );
-    }
+	}
 }

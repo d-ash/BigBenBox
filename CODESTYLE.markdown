@@ -71,6 +71,7 @@ Vertical separation
 -------------------
 
 Write code as a book. Devide the contents by logical blocks.
+Add blank lines or even "// =========" separators between chunks that do different things.
 
 		prepareX();
 		prepareY();

@@ -15,6 +15,7 @@ file encryption (on server and on clients, current user can be EXCLUDED from the
 banding and customization
 backups
 hooks (events), API
+data storage deduplication: http://pdos.csail.mit.edu/papers/lbfs:sosp01/lbfs.pdf
 
 TODO:
 0. How to treat directories, trees?

@@ -15,7 +15,7 @@ int @_Init( @_t* const ss ) {
 
 	ss->restored = 0;		// by default a snapshot is 'generated'
 	ss->takenFrom = NULL;
-	ss->ht = malloc( sizeof( @_ht_t ) * @^HASH_MAX );
+	ss->ht = BBB_UTIL_MALLOC( sizeof( @_ht_t ) * @^HASH_MAX );
 
 	// assuming NULL == 0
 	memset( ss->ht, 0, sizeof( @_ht_t ) * @^HASH_MAX );
@@ -235,14 +235,8 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	// allocating memory for @_entry_t + path, pathMem will be aligned to BBB_WORD_SIZE
 	// in order to get properly aligned memory after loading this data from a file.
 	pathMem = ( pl - skip + nl + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
-	entry = malloc( sizeof( @_entry_t ) + pathMem );
-
-	if ( entry == NULL ) {
-		BBB_PERR( "Cannot allocate memory for an entry: %s\n", strerror( errno ) );
-		return 0;
-	}
-
-	fullPath = malloc( pathMem + skip + 1 );
+	entry = BBB_UTIL_MALLOC( sizeof( @_entry_t ) + pathMem );
+	fullPath = BBB_UTIL_MALLOC( pathMem + skip + 1 );
 	strncpy( fullPath, path, pl + 1 );
 	strncat( fullPath, "/", 2 );
 	strncat( fullPath, name, nl + 1 );

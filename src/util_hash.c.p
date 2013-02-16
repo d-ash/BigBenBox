@@ -1,4 +1,5 @@
 #include "util_hash.h"
+#include "util.h"
 
 uint32_t bbb_util_hash_Calc_uint32( const void* const buf, const size_t len ) {
 	uint32_t	hash = 0;
@@ -50,13 +51,7 @@ int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA2
 
 	SHA256_Init( &sha );
 
-	buf = malloc( len );
-	if ( buf == NULL ) {
-		BBB_PERR( "Cannot allocate memory for SHA256 buffer: %s\n", strerror( errno ) );
-		fclose( f );
-		return 0;
-	}
-
+	buf = BBB_UTIL_MALLOC( len );
 	while ( ( wasRead = fread( buf, 1, len, f ) ) ) {
 		SHA256_Update( &sha, buf, wasRead );
 	}

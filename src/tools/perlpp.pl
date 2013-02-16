@@ -12,8 +12,10 @@ package PerlPP;
 use strict;
 use warnings;
 
-my $TAG_OPEN = "<?";
-my $TAG_CLOSE = "?>";
+use constant TAG_OPEN => "<?";
+use constant TAG_CLOSE => "?>";
+use constant OPENING_RE => qr/^(.*?)\Q${\(TAG_OPEN)}\E(.*)$/;
+use constant CLOSING_RE => qr/^(.*?)\Q${\(TAG_CLOSE)}\E(.*)$/;
 
 my $argCommentsType = "";
 my $argEval = "";
@@ -28,7 +30,6 @@ my $command = "";
 my $catching = 0;
 my $wasCatched = 0;
 my $code = "";
-my $plain = "";
 my $f;
 my @PerlPP_ob = ();				# sequence of output buffers
 my $rootSTDOUT;
@@ -60,6 +61,14 @@ sub EndOB {
 	return $s;
 }
 
+sub ReadOB {
+	my $s;
+
+	$s = $PerlPP_ob[ $#PerlPP_ob ];
+	$PerlPP_ob[ $#PerlPP_ob ] = "";
+	return $s;
+}
+
 #	print "start " .
 #		eval { &StartOB; print "X" .
 #			eval { &StartOB; print "Y"; return &EndOB; } .
@@ -68,7 +77,9 @@ sub EndOB {
 
 sub OutputPlain {
 	my $_;
+	my $plain;
 
+	$plain = &ReadOB;
 	foreach ( keys %PerlPP_prefixes ) {
 		$plain =~ s/(^|\W)\Q$_\E/$1$PerlPP_prefixes{ $_ }/g;
 	}
@@ -84,7 +95,6 @@ sub OutputPlain {
 	} else {
 		$code .= "print '${plain}';\n";
 	}
-	$plain = "";
 }
 
 sub OutputComments {
@@ -111,7 +121,7 @@ sub ProcessCommand {
 		$PerlPP_prefixes{ $1 } = $2;
 	} elsif ( $cmd =~ /^c:guard\s*$/i ) {
 		$PerlPP_cGuard = "_PPP_CGUARD_" . uc( $package );
-		$plain .= "#ifndef ${PerlPP_cGuard}\n#define ${PerlPP_cGuard}\n"
+		print "#ifndef ${PerlPP_cGuard}\n#define ${PerlPP_cGuard}\n"
 	} elsif ( $cmd =~ /^c:onCleanup\s+([a-zA-Z_][a-zA-Z_0-9]*)\s+(.*)$/is ) {
 		print STDERR "c:onCleanup $1 $2\n";
 	} elsif ( $cmd =~ /^c:gotoCleanup\s*$/i ) {
@@ -148,11 +158,11 @@ open( $f, "<", $filename ) or die $!;
 OPENING:
 while ( <$f> ) {
 	# 'redo OPENING' jumps in here
-	if ( /^(.*?)\Q$TAG_OPEN\E(.*)$/ ) {
+	if ( $_ =~ OPENING_RE ) {
 		my $after = $2;
 		my $inside = "";
 
-		$plain .= $1;
+		print $1;
 		&OutputPlain;
 
 		$wasCatched = 0;
@@ -162,7 +172,7 @@ while ( <$f> ) {
 				&EndOB;
 				$wasCatched = 1;
 				$_ = substr( $after, 1 ) . "\n";
-			} else {												# code execution inside catching
+			} else {												# code execution within catching
 				die "Unfinished catching.";
 			}
 		} else {
@@ -180,7 +190,7 @@ while ( <$f> ) {
 		}
 
 		CLOSING:
-		if ( /^(.*?)\Q$TAG_CLOSE\E(.*)$/ ) {
+		if ( $_ =~ CLOSING_RE ) {
 			$inside .= $1;
 			$_ = $2 . "\n";				# it will be processed after 'redo OPENING'
 			if ( $inside =~ /"$/ ) {
@@ -224,7 +234,7 @@ while ( <$f> ) {
 			goto CLOSING;
 		};
 	} else {
-		$plain .= $_;
+		print $_;
 	}
 }
 
@@ -232,7 +242,7 @@ if ( $catching ) {
 	die "Unfinished catching.";
 }
 if ( $PerlPP_cGuard ) {
-	$plain .= "\n#endif		// ${PerlPP_cGuard}\n";
+	print "\n#endif		// ${PerlPP_cGuard}\n";
 }
 &OutputPlain;
 close $f or die $!;

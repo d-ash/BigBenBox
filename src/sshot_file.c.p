@@ -124,13 +124,7 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
-	ss->takenFrom = malloc( hdrExt.takenFromMem );
-	if ( ss->takenFrom == NULL ) {
-		BBB_PERR( "Cannot allocate memory: %s\n", strerror( errno ) );
-		<?= $cleanup ?>
-		<?= $cleanup2 ?>
-		return 0;
-	}
+	ss->takenFrom = BBB_UTIL_MALLOC( hdrExt.takenFromMem );
 
 	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
 		BBB_PERR( "Cannot read 'takenFrom' from a snapshot file: %s\n", strerror( errno ) );
@@ -235,12 +229,7 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 		// allocating memory for all entries with this hash
 		hashHdr = & ss->ht[ fileHashHdr.hash ];
 		hashHdr->size = fileHashHdr.size;
-		hashHdr->first = malloc( fileHashHdr.size );
-
-		if ( hashHdr->first == NULL ) {
-			BBB_PERR( "Cannot allocate memory for a entries list: %s\n", strerror( errno ) );
-			return 0;
-		}
+		hashHdr->first = BBB_UTIL_MALLOC( fileHashHdr.size );
 
 		// The highest possible pointer value (counting not empty string).
 		maxPtr = ( bbb_byte_t* ) hashHdr->first + fileHashHdr.size - sizeof( bbb_sshot_entry_t ) - 2;

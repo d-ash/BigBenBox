@@ -7,7 +7,8 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <inttypes.h>			// portable printf() identifiers
+#include <inttypes.h>			// portable printf() types, use ("%" PRIuPTR "\n") for size_t
+
 #include <sys/stat.h>
 #include <netinet/in.h>
 

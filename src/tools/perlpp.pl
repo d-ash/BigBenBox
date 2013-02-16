@@ -37,11 +37,12 @@ my %CCleanups = ();
 
 sub StartOB {
 	if ( scalar @OutputBuffers == 0 ) {
+		$| = 1;					# flush a contents of STDOUT
 		open( $RootSTDOUT, ">&STDOUT" ) or die $!;		# dup filehandle
 	}
 	push( @OutputBuffers, "" );
 	close( STDOUT );			# must be closed before redirecting it to a variable
-	open( STDOUT, ">", \$OutputBuffers[ $#OutputBuffers ] ) or die $!;
+	open( STDOUT, ">>", \$OutputBuffers[ $#OutputBuffers ] ) or die $!;
 	$| = 1;						# do not use output buffering
 }
 
@@ -54,7 +55,7 @@ sub EndOB {
 		open( STDOUT, ">&", $RootSTDOUT ) or die $!;	# dup filehandle
 		$| = 0;					# return output buffering to the default state
 	} else {
-		open( STDOUT, ">", \$OutputBuffers[ $#OutputBuffers ] ) or die $!;
+		open( STDOUT, ">>", \$OutputBuffers[ $#OutputBuffers ] ) or die $!;
 	}
 	return $s;
 }
@@ -67,11 +68,13 @@ sub ReadOB {
 	return $s;
 }
 
-#	print "start " .
-#		eval { StartOB(); print "X" .
-#			eval { StartOB(); print "Y"; return EndOB(); } .
-#		"Z"; return EndOB(); } .
-#	" end\n";
+=pod
+	print "start " .
+		do { StartOB(); print "X" .
+			do { StartOB(); print "very long text"; StartOB(); print "internal"; print EndOB(); print "much more"; EndOB(); } .
+		"Z"; EndOB(); } .
+	" end\n";
+=cut
 
 sub OutputPlain {
 	my $_;
@@ -88,7 +91,7 @@ sub OutputPlain {
 		if ( $commandMode ) {
 			$command .= "'${plain}'";
 		} else {
-			$code .= "'${plain}'";
+			print "'${plain}'";
 		}
 	} else {
 		$code .= "print '${plain}';\n";
@@ -104,11 +107,11 @@ sub ProcessCommand {
 		$CGuard = "_PPP_CGUARD_" . uc( $package );
 		print "#ifndef ${CGuard}\n#define ${CGuard}\n"
 	} elsif ( $cmd =~ /^c:onCleanup\s+([a-zA-Z_][a-zA-Z_0-9]*)\s+(.*)$/is ) {
-		print STDERR "c:onCleanup $1 $2\n";
+		#print STDERR "c:onCleanup $1 $2\n";
 	} elsif ( $cmd =~ /^c:gotoCleanup\s*$/i ) {
-		print STDERR "c:gotoCleanup\n";
+		#print STDERR "c:gotoCleanup\n";
 	} elsif ( $cmd =~ /^c:cleanup\s*$/i ) {
-		print STDERR "c:cleanup\n";
+		#print STDERR "c:cleanup\n";
 	} else {
 		die "Unknown command: ${cmd}";
 	}
@@ -133,14 +136,14 @@ OPENING:
 
 			$wasCatched = 0;
 			if ( $catching ) {
-				if ( $after =~ /^"/ ) {									# end of catching
+				if ( $after =~ /^"/ ) {								# end of catching
 					$catching = 0;
-				EndOB();
-				$wasCatched = 1;
-				$_ = substr( $after, 1 ) . "\n";
-			} else {												# code execution within catching
-				die "Unfinished catching.";
-			}
+					$code .= EndOB();
+					$wasCatched = 1;
+					$_ = substr( $after, 1 ) . "\n";
+				} else {											# code execution within catching
+					die "Unfinished catching.";
+				}
 			} else {
 				if ( $after =~ /^=/ ) {
 					$echoMode = 1;
@@ -149,55 +152,55 @@ OPENING:
 					$commandMode = 1;
 					$_ = substr( $after, 1 ) . "\n";
 				} elsif ( $after =~ /^"/ ) {
-				die "Unexpected end of catching, it was not started.";
-			} else {
-				$_ = $after . "\n";
-			}
+					die "Unexpected end of catching, it was not started.";
+				} else {
+					$_ = $after . "\n";
+				}
 			}
 
 CLOSING:
 			if ( $_ =~ CLOSING_RE ) {
 				$inside .= $1;
 				$_ = $2 . "\n";				# it will be processed after 'redo OPENING'
-					if ( $inside =~ /"$/ ) {
-						$inside = substr( $inside, 0, -1 );
-				if ( $echoMode ) {
-					# echoMode is transparent for catching
-					if ( $wasCatched ) {
-						$code .= $inside;							# middle part of print() statement
+				if ( $inside =~ /"$/ ) {
+					$inside = substr( $inside, 0, -1 );
+					if ( $echoMode ) {
+						# echoMode is transparent for catching
+						if ( $wasCatched ) {
+							$code .= $inside;						# middle part of print() statement
+						} else {
+							$code .= "print( ${inside}";			# start of print() statement
+						}
+					} elsif ( $commandMode ) {
+						# commandMode is transparent for catching also
+						$command .= $inside;
 					} else {
-						$code .= "print( ${inside}";				# start of print() statement
+						$code .= $inside;
 					}
-				} elsif ( $commandMode ) {
-					# commandMode is transparent for catching also
-					$command .= $inside;
-				} else {
-					$code .= $inside;
-				}
-				$catching = 1;										# catching is started or continued
+					$catching = 1;									# catching is started or continued
 					StartOB();
-			} else {
-				if ( $echoMode ) {
-					if ( $wasCatched ) {
-						$code .= " );\n";							# end of print() statement
-					} else {
-						$code .= "print( ${inside} );\n";
-					}
-					$echoMode = 0;
-				} elsif ( $commandMode ) {
-					$command .= $inside;
-					ProcessCommand( $command );
-					$commandMode = 0;
-					$command = "";
 				} else {
-					$code .= $inside;
+					if ( $echoMode ) {
+						if ( $wasCatched ) {
+							$code .= " );\n";						# end of print() statement
+						} else {
+							$code .= "print( ${inside} );\n";
+						}
+						$echoMode = 0;
+					} elsif ( $commandMode ) {
+						$command .= $inside;
+						ProcessCommand( $command );
+						$commandMode = 0;
+						$command = "";
+					} else {
+						$code .= $inside;
+					}
 				}
-			}
-			redo OPENING;				# NB: redo jumps to the beginning of the inner block
+				redo OPENING;				# NB: redo jumps to the beginning of the inner block
 			} else {
 				$inside .= $_;
 				$_ = <$f>;					# continue looking for $TAG_CLOSE
-					goto CLOSING;
+				goto CLOSING;
 			};
 		} else {
 			print $_;
@@ -209,6 +212,7 @@ CLOSING:
 	if ( $CGuard ) {
 		print "\n#endif		// ${CGuard}\n";
 	}
+
 	OutputPlain();
 	EndOB();
 	close( $f ) or die $!;

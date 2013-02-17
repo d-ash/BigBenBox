@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 =pod
-	PerlPP (PPP): Perl preprocessor
+	PerlPP: Perl preprocessor
 	by d-ash <andrey.shubin@gmail.com>
 
 	Usage: ./perlpp.pl [options] filename
@@ -27,7 +27,6 @@ my $commandMode = 0;
 my $command = "";
 my $catching = 0;
 my $wasCatched = 0;
-my $code = "";
 my $inside = "";
 
 my $RootSTDOUT;
@@ -121,7 +120,7 @@ sub OnOpening {
 			if ( $commandMode ) {
 				$command .= "'${escaped}'";
 			} else {
-				$code .= "'${escaped}'";
+				print "'${escaped}'";
 			}
 			$wasCatched = 1;
 			$after = substr( $after, 1 ) . "\n";
@@ -129,7 +128,7 @@ sub OnOpening {
 			die "Unfinished catching.";
 		}
 	} else {
-		$code .= "print '${escaped}';\n";
+		print "print '${escaped}';\n";
 		if ( $after =~ /^=/ ) {
 			$echoMode = 1;
 			$after = substr( $after, 1 ) . "\n";
@@ -153,22 +152,22 @@ sub OnClosing {
 		$inside = substr( $inside, 0, -1 );
 		if ( $echoMode ) {
 			if ( $wasCatched ) {
-				$code .= $inside;						# middle part of print() statement
+				print $inside;						# middle part of print() statement
 			} else {
-				$code .= "print( ${inside}";			# start of print() statement
+				print "print( ${inside}";			# start of print() statement
 			}
 		} elsif ( $commandMode ) {
 			$command .= $inside;
 		} else {
-			$code .= $inside;
+			print $inside;
 		}
 		$catching = 1;									# catching is started or continued
 	} else {
 		if ( $echoMode ) {
 			if ( $wasCatched ) {
-				$code .= " );\n";						# end of print() statement
+				print " );\n";						# end of print() statement
 			} else {
-				$code .= "print( ${inside} );\n";
+				print "print( ${inside} );\n";
 			}
 			$echoMode = 0;
 		} elsif ( $commandMode ) {
@@ -177,7 +176,7 @@ sub OnClosing {
 			$commandMode = 0;
 			$command = "";
 		} else {
-			$code .= $inside;
+			print $inside;
 		}
 	}
 	StartOB();
@@ -221,7 +220,7 @@ sub ParseFile {
 		print "\n#endif		// ${CGuard}\n";
 	}
 
-	$code .= "print '" . EscapeString( EndOB() ) . "';\n";
+	print "print '" . EscapeString( EndOB() ) . "';\n";
 	close( $f ) or die $!;
 }
 
@@ -231,6 +230,7 @@ sub Main {
 	my $argDebug = 0;
 	my $inputFilename = "";
 	my $outputFilename = "";
+	my $script;
 
 	while ( my $a = shift ) {
 		if ( $a eq "--eval" ) {
@@ -249,10 +249,12 @@ sub Main {
 	$package =~ s/^([a-zA-Z_][a-zA-Z_0-9.]*).p$/$1/;
 	$package =~ s/[.\/\\]/_/g;
 
-	$code = "package PPP_${package}; use strict; use warnings;\n${argEval}\n";
+	StartOB();		# catching the produced Perl script
+	print "package PPP_${package}; use strict; use warnings;\n${argEval}\n";
 	ParseFile( $inputFilename );
+	$script = EndOB();
 	if ( $argDebug ) {
-		print STDERR $code;
+		print STDERR $script;
 	} else {
 		if ( $outputFilename ) {
 			open( $f, ">", $outputFilename ) or die $!;
@@ -260,7 +262,7 @@ sub Main {
 			open( $f, ">&STDOUT" ) or die $!;
 		}
 		StartOB();
-		eval( $code ); warn $@ if $@;
+		eval( $script );warn $@ if $@;
 		print $f EndOB();
 		close( $f ) or die $!;
 	}

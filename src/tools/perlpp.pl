@@ -28,6 +28,7 @@ my $command = "";
 my $catching = 0;
 my $wasCatched = 0;
 my $code = "";
+my $inside = "";
 
 my $RootSTDOUT;
 my @OutputBuffers = ();
@@ -76,26 +77,16 @@ sub ReadOB {
 	" end\n";
 =cut
 
-sub OutputPlain {
+sub EscapeString {
+	my $s = shift;
 	my $_;
-	my $plain;
 
-	$plain = ReadOB();
 	foreach ( keys %Prefixes ) {
-		$plain =~ s/(^|\W)\Q$_\E/$1$Prefixes{ $_ }/g;
+		$s =~ s/(^|\W)\Q$_\E/$1$Prefixes{ $_ }/g;
 	}
-	$plain =~ s/\\/\\\\/g;
-	$plain =~ s/'/\\'/g;
-
-	if ( $catching ) {
-		if ( $commandMode ) {
-			$command .= "'${plain}'";
-		} else {
-			print "'${plain}'";
-		}
-	} else {
-		$code .= "print '${plain}';\n";
-	}
+	$s =~ s/\\/\\\\/g;
+	$s =~ s/'/\\'/g;
+	return $s;
 }
 
 sub ProcessCommand {
@@ -113,98 +104,115 @@ sub ProcessCommand {
 	} elsif ( $cmd =~ /^c:cleanup\s*$/i ) {
 		#print STDERR "c:cleanup\n";
 	} else {
-		die "Unknown command: ${cmd}";
+		die "Unknown PerlPP command: ${cmd}";
 	}
+}
+
+sub OnOpening {
+	my $after = shift;
+	my $escaped;
+	
+	$escaped = EscapeString( EndOB() );
+	$inside = "";
+	$wasCatched = 0;
+	if ( $catching ) {
+		if ( $after =~ /^"/ ) {						# end of catching
+			$catching = 0;
+			if ( $commandMode ) {
+				$command .= "'${escaped}'";
+			} else {
+				$code .= "'${escaped}'";
+			}
+			$wasCatched = 1;
+			$after = substr( $after, 1 ) . "\n";
+		} else {									# code execution within catching
+			die "Unfinished catching.";
+		}
+	} else {
+		$code .= "print '${escaped}';\n";
+		if ( $after =~ /^=/ ) {
+			$echoMode = 1;
+			$after = substr( $after, 1 ) . "\n";
+		} elsif ( $after =~ /^:/ ) {
+			$commandMode = 1;
+			$after = substr( $after, 1 ) . "\n";
+		} elsif ( $after =~ /^"/ ) {
+			die "Unexpected end of catching, it was not started.";
+		} else {
+			$after = $after . "\n";
+		}
+	}
+	return $after;
+}
+
+sub OnClosing {
+	my $before = shift;
+
+	$inside .= $before;
+	if ( $inside =~ /"$/ ) {
+		$inside = substr( $inside, 0, -1 );
+		if ( $echoMode ) {
+			if ( $wasCatched ) {
+				$code .= $inside;						# middle part of print() statement
+			} else {
+				$code .= "print( ${inside}";			# start of print() statement
+			}
+		} elsif ( $commandMode ) {
+			$command .= $inside;
+		} else {
+			$code .= $inside;
+		}
+		$catching = 1;									# catching is started or continued
+	} else {
+		if ( $echoMode ) {
+			if ( $wasCatched ) {
+				$code .= " );\n";						# end of print() statement
+			} else {
+				$code .= "print( ${inside} );\n";
+			}
+			$echoMode = 0;
+		} elsif ( $commandMode ) {
+			$command .= $inside;
+			ProcessCommand( $command );
+			$commandMode = 0;
+			$command = "";
+		} else {
+			$code .= $inside;
+		}
+	}
+	StartOB();
 }
 
 sub ParseFile {
 	my $fname = shift;
+	my $withinTag = 0;
 	my $f;
 	
 	open( $f, "<", $fname ) or die $!;
 	StartOB();
 
-OPENING:
 	while ( <$f> ) {
-		# 'redo OPENING' jumps in here
-		if ( $_ =~ OPENING_RE ) {
-			my $after = $2;
-			my $inside = "";
-
-			print $1;
-			OutputPlain();
-
-			$wasCatched = 0;
-			if ( $catching ) {
-				if ( $after =~ /^"/ ) {								# end of catching
-					$catching = 0;
-					$code .= EndOB();
-					$wasCatched = 1;
-					$_ = substr( $after, 1 ) . "\n";
-				} else {											# code execution within catching
-					die "Unfinished catching.";
-				}
-			} else {
-				if ( $after =~ /^=/ ) {
-					$echoMode = 1;
-					$_ = substr( $after, 1 ) . "\n";
-				} elsif ( $after =~ /^:/ ) {
-					$commandMode = 1;
-					$_ = substr( $after, 1 ) . "\n";
-				} elsif ( $after =~ /^"/ ) {
-					die "Unexpected end of catching, it was not started.";
-				} else {
-					$_ = $after . "\n";
-				}
-			}
-
-CLOSING:
+		if ( $withinTag ) {
 			if ( $_ =~ CLOSING_RE ) {
-				$inside .= $1;
-				$_ = $2 . "\n";				# it will be processed after 'redo OPENING'
-				if ( $inside =~ /"$/ ) {
-					$inside = substr( $inside, 0, -1 );
-					if ( $echoMode ) {
-						# echoMode is transparent for catching
-						if ( $wasCatched ) {
-							$code .= $inside;						# middle part of print() statement
-						} else {
-							$code .= "print( ${inside}";			# start of print() statement
-						}
-					} elsif ( $commandMode ) {
-						# commandMode is transparent for catching also
-						$command .= $inside;
-					} else {
-						$code .= $inside;
-					}
-					$catching = 1;									# catching is started or continued
-					StartOB();
-				} else {
-					if ( $echoMode ) {
-						if ( $wasCatched ) {
-							$code .= " );\n";						# end of print() statement
-						} else {
-							$code .= "print( ${inside} );\n";
-						}
-						$echoMode = 0;
-					} elsif ( $commandMode ) {
-						$command .= $inside;
-						ProcessCommand( $command );
-						$commandMode = 0;
-						$command = "";
-					} else {
-						$code .= $inside;
-					}
-				}
-				redo OPENING;				# NB: redo jumps to the beginning of the inner block
-			} else {
-				$inside .= $_;
-				$_ = <$f>;					# continue looking for $TAG_CLOSE
-				goto CLOSING;
+				$_ = $2 . "\n";
+				OnClosing( $1 );
+				$withinTag = 0;
+				redo;
 			};
+			$inside .= $_;
 		} else {
+			if ( $_ =~ OPENING_RE ) {
+				print $1;
+				$_ = OnOpening( $2 );
+				$withinTag = 1;
+				redo;
+			}
 			print $_;
 		}
+	}
+
+	if ( $withinTag ) {
+		die "Unfinished Perl inset.";
 	}
 	if ( $catching ) {
 		die "Unfinished catching.";
@@ -213,8 +221,7 @@ CLOSING:
 		print "\n#endif		// ${CGuard}\n";
 	}
 
-	OutputPlain();
-	EndOB();
+	$code .= "print '" . EscapeString( EndOB() ) . "';\n";
 	close( $f ) or die $!;
 }
 
@@ -235,7 +242,7 @@ sub Main {
 		} else {
 			$inputFilename = $a;
 		}
-		# TODO parameters to the processed script
+		# TODO parameters of the processed file
 	}
 
 	$package = $inputFilename;

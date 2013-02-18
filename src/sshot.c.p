@@ -95,19 +95,17 @@ int @_Take( const char* const path, @_t* const ss ) {
 @_entry_t* @_Search( const char* const path, const @_t* const ss ) {
 	@_hash_t	hash;
 	@_entry_t*	entry = NULL;
-	size_t		pathLen;
 
 	if ( ss == NULL || ss->ht == NULL ) {
 		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
 		return NULL;
 	}
 
-	pathLen = strlen( path );
-	hash = bbb_util_hash_Calc_uint16( path, pathLen );
+	hash = bbb_util_hash_Calc_uint16( path, strlen( path ) );
 
 	entry = ss->ht[ hash ].first;
 	while ( entry != NULL ) {
-		if ( strncmp( path, @^ENTRY_PATH( entry ), pathLen + 1 ) == 0 ) {
+		if ( strcmp( path, @^ENTRY_PATH( entry ) ) == 0 ) {
 			break;
 		}
 		entry = entry->next;
@@ -204,9 +202,13 @@ static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss
 			break;
 		}
 
-		if ( ( strncmp( entry->d_name, ".", 2 ) == 0 ) || 
-			( strncmp( entry->d_name, "..", 3 ) == 0 ) ) {
-			continue;
+		// skipping "." and ".."
+		if ( entry->d_name[ 0 ] == '.' ) {
+			if ( entry->d_name[ 1 ] == '\0' ||
+					( entry->d_name[ 1 ] == '.' &&
+						entry->d_name[ 2 ] == '\0' ) ) {
+				continue;
+			}
 		}
 
 		if ( !_ProcessEntry( path, skip, entry->d_name, ss ) ) {
@@ -228,25 +230,20 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	@_entry_t*		entry = NULL;
 	size_t			pathMem = 0;
 	char*			fullPath = NULL;		// path with a root dir of this processing
-	size_t			pl = 0;
-	size_t			nl = 0;
-
-	pl = strlen( path );
-	nl = strlen( name );
 
 	// allocating memory for @_entry_t + path, pathMem will be aligned to BBB_WORD_SIZE
 	// in order to get properly aligned memory after loading this data from a file.
-	pathMem = ( pl - skip + nl + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
+	pathMem = ( strlen( path ) - skip + strlen( name ) + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
 	entry = BBB_UTIL_MALLOC( sizeof( @_entry_t ) + pathMem );
 	fullPath = BBB_UTIL_MALLOC( pathMem + skip + 1 );
-	strncpy( fullPath, path, pl + 1 );
-	strncat( fullPath, "/", 2 );
-	strncat( fullPath, name, nl + 1 );
+	strcpy( fullPath, path );
+	strcat( fullPath, "/" );
+	strcat( fullPath, name );
 
 	entry->status = 0;
 	entry->custom = 0;
 	entry->pathMem = pathMem;
-	strncpy( @^ENTRY_PATH( entry ), fullPath + skip + 1, pathMem );
+	strcpy( @^ENTRY_PATH( entry ), fullPath + skip + 1 );
 
 	if ( stat( fullPath, &entryInfo ) ) {
 		BBB_PERR( "Cannot get info about %s: %s\n", fullPath, strerror( errno ) );

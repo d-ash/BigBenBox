@@ -478,7 +478,11 @@ sub WriteC {
 
 while ( my $a = shift ) {
 	if ( $a eq "--output-dir" ) {
-		$outputDir .= ( shift ) || ".";
+        if ( @ARGV ) {
+            $outputDir .= shift;
+        } else {
+            $outputDir .= ".";
+        }
 	} else {
 		$filename = $a;
 	}

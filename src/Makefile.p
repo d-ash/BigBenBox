@@ -4,7 +4,7 @@
 
     my $LIB_NAME = "bigbenbox";
     my $RELEASE = 0;
-    my $DEBUG = 0;
+    my $DEBUG = 1;
 
     my @LIB_SOURCE_FILES = qw(
         bio
@@ -64,7 +64,7 @@
         return ( "${BUILD_DIR}/" . shift . $extExe );
     }
 
-	sub perlppCmd { ?>perl tools/perlpp.pl --comments "doubleslash" $< $@<? }
+	sub perlppCmd { ?>perlpp -o $@ $<<? }
 
 	sub bioCmd { ?>perl tools/bio.pl --output-dir <?= $CODEGEN_DIR ?> $<<? }
 
@@ -81,14 +81,14 @@
 
 <?= hDst( $_ ) ?>: <?= cDst( $_ ) ?>
 <?= cDst( $_ ) ?>: <?= $_ ?>
-	<? &bioCmd; ?>
+	<? bioCmd(); ?>
 
     <? } else { ?>
 
 <?= cDst( $_ ) ?>: <?= cpSrc( $_ ) ?>
-	<? &perlppCmd; ?>
+	<? perlppCmd(); ?>
 <?= hDst( $_ ) ?>: <?= hpSrc( $_ ) ?>
-	<? &perlppCmd; ?>
+	<? perlppCmd(); ?>
 
     <? } ?>
 
@@ -136,9 +136,9 @@
 all: delimiter clean directories includes library client tests
 
 makefiles:
-	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "LINUX";' Makefile.p Makefile_linux
-	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "WINDOWS";' Makefile.p Makefile_windows
-	perl tools/perlpp.pl --comments "hash" --eval 'my $$PLATFORM = "OSX";' Makefile.p Makefile_osx
+	perlpp -e 'my $$PLATFORM = "LINUX";' -o Makefile_linux Makefile.p
+	perlpp -e 'my $$PLATFORM = "WINDOWS";' -o Makefile_windows Makefile.p
+	perlpp -e 'my $$PLATFORM = "OSX";' -o Makefile_osx Makefile.p
 
 delimiter:
 	@echo "========================"
@@ -175,10 +175,10 @@ library: <?= $LIB_FILENAME ?>
 <? PreprocessAndCompile( @LIB_SOURCE_FILES ); ?>
 
 <?= hDst( "global" ) ?>: <?= hpSrc( "global" ) ?>
-	<? &perlppCmd; ?>
+	<? perlppCmd(); ?>
 
 <?= hDst( "bigbenbox" ) ?>: <?= hpSrc( "bigbenbox" ) ?>
-	<? &perlppCmd; ?>
+	<? perlppCmd(); ?>
 
 #
 # ========== Client ==========
@@ -206,9 +206,9 @@ tests: <?= $TST_RUNNER ?> <?= $TST_FILENAMES ?>
 <? PreprocessAndCompile( @TST_SOURCE_FILES ); ?>
 
 <?= hDst( "tests/minunit" ) ?>: <?= hpSrc( "tests/minunit" ) ?>
-	<? &perlppCmd; ?>
+	<? perlppCmd(); ?>
 
 <?= hDst( "tests/test_bio.bio" ) ?>: <?= cDst( "tests/test_bio.bio" ) ?>
 <?= cDst( "tests/test_bio.bio" ) ?>: <?= "tests/test_bio.bio" ?>
-	<? &bioCmd; ?>
+	<? bioCmd(); ?>
 

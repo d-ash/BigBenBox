@@ -1,10 +1,11 @@
-<?:c:guard ?>
+<?:prefix @_ bbb_sshot_file_ ?>
+<?:prefix @^ BBB_SSHOT_FILE_ ?>
+
+#ifndef @^H_FILE
+#define @^H_FILE
 
 #include "sshot.h"
 #include "sshot_file.bio.h"
-
-<?:prefix @_ bbb_sshot_file_ ?>
-<?:prefix @^ BBB_SSHOT_FILE_ ?>
 
 #define @^MAGIC		0x8D
 #define @^FORMAT	0x01
@@ -40,9 +41,9 @@ typedef struct {
 	size_t				size;	// memory size used by the following list of entries
 } @_ht_t;
 
-
 // =================== Exported functions ===================
 
 int		@_Save( const char* const path, const bbb_sshot_t* const ss );
-
 int		@_Load( const char* const path, bbb_sshot_t* const ss );
+
+#endif

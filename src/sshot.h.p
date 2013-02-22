@@ -1,9 +1,10 @@
-<?:c:guard ?>
-
-#include "global.h"
-
 <?:prefix @_ bbb_sshot_ ?>
 <?:prefix @^ BBB_SSHOT_ ?>
+
+#ifndef @^H_FILE
+#define @^H_FILE
+
+#include "global.h"
 
 /**
  *	Snapshot can be one of two types: restored or generated manually.
@@ -66,3 +67,5 @@ int				@_Take( const char* const path, @_t* const ss );
 @_entry_t*		@_Search( const char* const path, const @_t* const ss );
 
 int				@_Diff( const @_t* const ss0, const @_t* const ss1 );
+
+#endif

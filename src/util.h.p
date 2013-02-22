@@ -1,9 +1,10 @@
-<?:c:guard ?>
-
-#include "global.h"
-
 <?:prefix @_ bbb_util_ ?>
 <?:prefix @^ BBB_UTIL_ ?>
+
+#ifndef @^H_FILE
+#define @^H_FILE
+
+#include "global.h"
 
 #define @^MALLOC( size )	@_Malloc( __FILE__, __LINE__, ( size ) )
 
@@ -17,3 +18,5 @@ uint64_t	@_ConvertBinary_ntoh64( const uint64_t x );
 
 			// Prints in a network order (big-endian)
 void		@_PrintHex( const void* const b, const size_t len );
+
+#endif

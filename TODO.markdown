@@ -1,3 +1,6 @@
+READ
+  https://github.com/joyent/libuv
+
 Competitors:
  * box.net
  * powerfolder.com (?)

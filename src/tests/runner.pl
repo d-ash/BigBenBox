@@ -1,3 +1,6 @@
+#!/usr/bin/env perl
+
+use v5.10;
 use strict;
 use warnings;
 
@@ -19,12 +22,12 @@ sub test_bio_After {
 
 if ( $arg && $arg eq "run" ) {
 	foreach ( @TESTS ) {
-		no strict "refs";	# is valid in a local scope only
+		no strict "refs";			# is valid in a local scope only
 
 		my $before = $_ . "_Before";
 		my $after = $_ . "_After";
 
-		print "--------------------------------------------- $_\n";
+		say "--------------------------------------------- $_";
 		if ( exists( &{ $before } ) ) {
 			&{ $before };
 		}
@@ -34,5 +37,5 @@ if ( $arg && $arg eq "run" ) {
 		}
 	}
 } else {
-	print join( "\n", @TESTS ) . "\n";
+	say join( "\n", @TESTS );
 }

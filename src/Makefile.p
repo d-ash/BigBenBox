@@ -66,7 +66,15 @@
 
 	sub perlppCmd { ?>perlpp -o $@ $<<? }
 
-	sub bioCmd { ?>perl tools/bio.pl --output-dir <?= $CODEGEN_DIR ?> $<<? }
+	sub bioCmd {
+		my $file = shift;
+		my $base = $file;
+
+		$base =~ s/^(.+)\.p$/$1/;
+		?>	perlpp -e '$$DEF{ "isHeader" } = 1;' -o <?= $CODEGEN_DIR . "/" . $base ?>.h <?= $file ?>
+	perlpp -e '$$DEF{ "isHeader" } = 0; $$DEF{ "hFilename" } = "<?= $base ?>.h";' -o <?= $CODEGEN_DIR . "/" . $base ?>.c <?= $file ?>
+		<?
+	}
 
     sub PreprocessAndCompile {
 		my $_;
@@ -77,11 +85,14 @@
 <?= oDst( $_ ) ?>: <?= cDst( $_ ) ?> <?= hDst( "global" ) ?> <?= hDst( "bigbenbox" ) ?>
 	gcc -c <?= $COMPILER_FLAGS ?> $< -o $@
 
-    <? if ( m/\.bio$/ ) { ?>
+    <?
+		if ( m/^(.+)\.bio\.p$/ ) {
+			$_ = "$1.bio";
+	?>
 
 <?= hDst( $_ ) ?>: <?= cDst( $_ ) ?>
 <?= cDst( $_ ) ?>: <?= $_ ?>
-	<? bioCmd(); ?>
+	<? bioCmd( $_ ); ?>
 
     <? } else { ?>
 
@@ -209,6 +220,6 @@ tests: <?= $TST_RUNNER ?> <?= $TST_FILENAMES ?>
 	<? perlppCmd(); ?>
 
 <?= hDst( "tests/test_bio.bio" ) ?>: <?= cDst( "tests/test_bio.bio" ) ?>
-<?= cDst( "tests/test_bio.bio" ) ?>: <?= "tests/test_bio.bio" ?>
-	<? bioCmd(); ?>
+<?= cDst( "tests/test_bio.bio" ) ?>: <?= "tests/test_bio.bio.p" ?>
+	<? bioCmd( "tests/test_bio.bio.p" ); ?>
 

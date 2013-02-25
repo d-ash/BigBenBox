@@ -53,6 +53,8 @@
 
 // ===========================================
 
+#define BBB_MALLOC( size )		bbb_util_Malloc( __FILE__, __LINE__, ( size ) )
+
 typedef unsigned char			bbb_byte_t;
 
 #endif

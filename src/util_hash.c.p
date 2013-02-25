@@ -51,7 +51,7 @@ int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA2
 
 	SHA256_Init( &sha );
 
-	buf = BBB_UTIL_MALLOC( len );
+	buf = BBB_MALLOC( len );
 	while ( ( wasRead = fread( buf, 1, len, f ) ) ) {
 		SHA256_Update( &sha, buf, wasRead );
 	}

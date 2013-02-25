@@ -6,8 +6,6 @@
 
 #include "global.h"
 
-#define @^MALLOC( size )	@_Malloc( __FILE__, __LINE__, ( size ) )
-
 // ================ Exported functions =============
 
 void*		@_Malloc( const char* const file, const int line, const size_t size );

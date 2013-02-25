@@ -1,8 +1,0 @@
-#namespace		bbb_sshot_file
-
-hdr {
-	uint8		magic;
-	uint8		runtime;		// ( endianess | WORD_SIZE )
-	uint8		platform;
-	uint8		format;			// version of a file format
-};

@@ -136,7 +136,7 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
 	// takenFrom is freed in bbb_sshot_Destroy() if is not NULL
-	ss->takenFrom = BBB_UTIL_MALLOC( hdrExt.takenFromMem );
+	ss->takenFrom = BBB_MALLOC( hdrExt.takenFromMem );
 
 	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
 		<? PathError( "Cannot read 'takenFrom' from a snapshot file" ); ?>
@@ -225,7 +225,7 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 		// allocating memory for all entries with this hash
 		hashHdr = & ss->ht[ fileHashHdr.hash ];
 		hashHdr->size = fileHashHdr.size;
-		hashHdr->first = BBB_UTIL_MALLOC( fileHashHdr.size );
+		hashHdr->first = BBB_MALLOC( fileHashHdr.size );
 
 		// The highest possible pointer value (counting not empty string).
 		maxPtr = ( bbb_byte_t* ) hashHdr->first + fileHashHdr.size - sizeof( bbb_sshot_entry_t ) - 2;

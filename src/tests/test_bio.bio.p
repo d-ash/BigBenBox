@@ -1,4 +1,4 @@
-<?:include bio.p ?>
+<?:include ../bio.p ?>
 <?
 	$DEF{ "namespace" } = "test_bio";
 	bio_Start();

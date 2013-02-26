@@ -36,7 +36,7 @@ static char* _TestSsSaveLoad() {
 	MU_ASSERT( "Restored snapshot differs from original", bbb_sshot_Diff( &ss1, &ss2 ) == 0 );
 	MU_ASSERT( "Different values of 'takenFrom'", strcmp( ss1.takenFrom, ss2.takenFrom ) == 0 );
 
-	//unlink( "_test_packfile" );
+	unlink( "_test_packfile" );
 	bbb_sshot_Destroy( &ss2 );
 	bbb_sshot_Destroy( &ss1 );
 	return 0;

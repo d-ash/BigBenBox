@@ -1,3 +1,15 @@
+	BBB_RESULT and Exceptions
+	BBB_RESULT fname( ... );
+	BBB_CALL( fname( ... ) );
+		|
+		|
+		v
+	if ( ( _bbb_result = fname( ... ) ) != BBB_SUCCESS ) {
+		BBB_PERR( _bbb_result );
+		reVal = ...;
+		goto cleanup;
+	}
+
 READ
   https://github.com/joyent/libuv
 

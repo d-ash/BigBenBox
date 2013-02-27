@@ -25,9 +25,18 @@ READ
   using libuv: http://vimeo.com/24713213
 
 Competitors:
- * box.net
+ * box.net (.com, enterprise version)
  * powerfolder.com (?)
  * filosync.com (?)
+ * http://www.druva.com/insync/  (?)
+ * www.sugarsync.com (?)
+ * https://pogoplug.com/business (?)
+ * https://www.egnyte.com/corp/ (?)
+ * https://oxygencloud.com/
+ * http://www.tonido.com/ ( http://www.techrepublic.com/blog/itdojo/tonido-a-dropbox-alternative-for-smbs/3966 )
+ * http://www.accellion.com/
+ * http://betanews.com/2012/06/30/four-self-hosted-dropbox-like-services-businesses-can-use/
+ * http://community.spiceworks.com/topic/260697-anyone-using-a-good-self-hosted-dropbox-alternative?page=2
 
 Files are complex!
 https://www.dropbox.com/help/145/en

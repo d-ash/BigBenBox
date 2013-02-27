@@ -9,9 +9,20 @@
 		reVal = ...;
 		goto cleanup;
 	}
+	The same with BBB_MALLOC
+	BBB_MALLOC( buf, len );
+	If the only possible errors are programmer errors, don't return an error code, use asserts inside the function.
+	It would be nice if application programmer can set an global error-callback. That way they will be able to put a breakpoint into the callback during bug-hunt sessions.
+
+	For multithreading: There is something called "Thread Local Storage" in Windows and "Thread Specific Storage" in POSIX
+
+	SLA parameters!!!
+	Tags (like in Git).
+	Command and control synchronization manually (lib, web, CLI).
 
 READ
   https://github.com/joyent/libuv
+  using libuv: http://vimeo.com/24713213
 
 Competitors:
  * box.net

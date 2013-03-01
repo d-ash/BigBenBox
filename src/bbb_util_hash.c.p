@@ -1,5 +1,5 @@
-#include "util_hash.h"
-#include "util.h"
+#include "bbb_util_hash.h"
+#include "bbb_util.h"
 
 uint32_t bbb_util_hash_Calc_uint32( const void* const buf, const size_t len ) {
 	uint32_t	hash = 0;

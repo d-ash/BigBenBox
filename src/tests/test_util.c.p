@@ -1,5 +1,4 @@
 #include "test_util.h"
-#include "util.h"
 
 static int	_testsRun = 0;
 

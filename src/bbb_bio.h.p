@@ -5,8 +5,7 @@
 #ifndef _BBB_BIO_H
 #define _BBB_BIO_H
 
-#include "global.h"
-#include "util_hash.h"
+#include "bbb.h"
 
 typedef struct {
 	uint32_t	len;

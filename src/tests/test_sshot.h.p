@@ -2,5 +2,6 @@
 #define _TEST_SSHOT_H
 
 #include "minunit.h"
+#include "bbb.h"
 
 #endif

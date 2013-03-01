@@ -1,5 +1,5 @@
-#ifndef _BBB_GLOBAL_H
-#define _BBB_GLOBAL_H
+#ifndef _BBB_H
+#define _BBB_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +43,7 @@
 
 // ===========================================
 
-#ifdef BBB_DEBUG
+#ifdef BBB_VERBOSE
   #define BBB_PLOG( ... )		do { fprintf( stderr, __VA_ARGS__ ); } while ( 0 );
 #else
   #define BBB_PLOG( ... )		do {} while ( 0 );
@@ -56,5 +56,14 @@
 #define BBB_MALLOC( size )		bbb_util_Malloc( __FILE__, __LINE__, ( size ) )
 
 typedef unsigned char			bbb_byte_t;
+typedef uint32_t				bbb_checksum_t;
+
+#ifndef BBB_INSIDE_LIB
+  #include "bbb_sshot.h"
+  #include "bbb_sshot_file.h"
+  #include "bbb_util.h"
+  #include "bbb_util_hash.h"
+  #include "bbb_bio.h"
+#endif
 
 #endif

@@ -4,7 +4,7 @@
 #ifndef @^H_FILE
 #define @^H_FILE
 
-#include "global.h"
+#include "bbb.h"
 
 #define @^_DIR	"s/repos"
 

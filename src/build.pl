@@ -107,9 +107,9 @@ sub TargetPhony {
 #$_debug = 1;
 #$_simulated = 1;
 
-my $LIB_NAME	= "bigbenbox";
+my $LIB_NAME	= "bbb";
 my $RELEASE		= 0;
-my $DEBUG		= 1;
+my $VERBOSE		= 1;
 my $PLATFORM	= "LINUX";
 
 my $BUILD_DIR;
@@ -149,14 +149,20 @@ sub BioC {
 
 sub Compile {
 	my $basename = shift;
+	my $insideLib = shift || 0;
 	my $cFile = "${GEN_DIR}/${basename}.c";
 	my $oFile = "${BUILD_DIR}/${basename}.o";
 	my $flags = "-Wall -Wextra -I${GEN_DIR} -DBBB_PLATFORM_${PLATFORM} -c";
 
-	if ( $DEBUG ) {
-		$flags .= " -DBBB_DEBUG";
+	if ( $insideLib ) {
+		$flags .= " -DBBB_INSIDE_LIB";
 	}
-	if ( !$RELEASE ) {
+	if ( $VERBOSE ) {
+		$flags .= " -DBBB_VERBOSE";
+	}
+	if ( $RELEASE ) {
+		$flags .= " -DBBB_RELEASE";
+	} else {
 		$flags .= " -ggdb";
 	}
 	return ( [ $cFile ], [ $oFile ], "gcc ${flags} -o ${oFile} $cFile" );
@@ -177,17 +183,16 @@ sub Link {
 # ============= Library ==============
 
 my @libraryObjFiles = map { "${BUILD_DIR}/$_" } qw(
-	bio.o
-	sshot.o
-	sshot_file.o
-	sshot_file.bio.o
-	util.o
-	util_hash.o
+	bbb_bio.o
+	bbb_sshot.o
+	bbb_sshot_file.o
+	bbb_sshot_file.bio.o
+	bbb_util.o
+	bbb_util_hash.o
 );
 my @libraryHdrFiles =
 	map { my $i = $_; $i =~ s/^\Q${BUILD_DIR}\E\/(.+).o$/$GEN_DIR\/$1.h/; $i; } @libraryObjFiles;
-push( @libraryHdrFiles, "${GEN_DIR}/global.h" );
-push( @libraryHdrFiles, "${GEN_DIR}/bigbenbox.h" );
+push( @libraryHdrFiles, "${GEN_DIR}/bbb.h" );
 
 SetPhony( "library", AddAction(
 	\@libraryObjFiles,
@@ -198,7 +203,7 @@ SetPhony( "libraryHeaders", AddAction( \@libraryHdrFiles, [], "" ) );
 foreach ( @libraryObjFiles ) {
 	my $i = $_;
 	$i =~ s/^\Q${BUILD_DIR}\/\E(.+)\.o$/$1/;
-	AddAction( Compile( $i ) );
+	AddAction( Compile( $i, 1 ) );
 	if ( $i =~ m/^(.+\.bio)$/ ) {
 		AddAction( BioH( "$1.p" ) );
 		AddAction( BioC( "$1.p" ) );
@@ -208,8 +213,7 @@ foreach ( @libraryObjFiles ) {
 	}
 }
 
-AddAction( PerlPP( "global.h.p" ) );
-AddAction( PerlPP( "bigbenbox.h.p" ) );
+AddAction( PerlPP( "bbb.h.p" ) );
 
 # ============== Client ===============
 

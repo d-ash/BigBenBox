@@ -1,4 +1,4 @@
-#include "util.h"
+#include "bbb_util.h"
 
 <?:prefix @_ bbb_util_ ?>
 <?:prefix @^ BBB_UTIL_ ?>

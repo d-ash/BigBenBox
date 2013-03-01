@@ -1,5 +1,7 @@
-// Minimal unit testing "framework".
-// Got it from: http://www.jera.com/techinfo/jtns/jtn002.html
+/*
+ * Minimal unit testing "framework".
+ * Got it from: http://www.jera.com/techinfo/jtns/jtn002.html
+ */
 
 #ifndef _TESTS_MINUNIT_H
 #define _TESTS_MINUNIT_H

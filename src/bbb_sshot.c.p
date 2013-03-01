@@ -1,6 +1,6 @@
-#include "sshot.h"
-#include "util.h"
-#include "util_hash.h"
+#include "bbb_sshot.h"
+#include "bbb_util.h"
+#include "bbb_util_hash.h"
 
 <?:prefix @_ bbb_sshot_ ?>
 <?:prefix @^ BBB_SSHOT_ ?>

@@ -4,8 +4,8 @@
 #ifndef @^H_FILE
 #define @^H_FILE
 
-#include "sshot.h"
-#include "sshot_file.bio.h"
+#include "bbb_sshot.h"
+#include "bbb_sshot_file.bio.h"
 
 #define @^MAGIC		0x8D
 #define @^FORMAT	0x01

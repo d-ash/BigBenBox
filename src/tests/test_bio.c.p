@@ -1,6 +1,4 @@
 #include "test_bio.h"
-#include "bio.h"
-#include "util.h"
 
 // WARNING: Including .c file here because it will be easier to build an executable.
 #include "test_bio.bio.c"

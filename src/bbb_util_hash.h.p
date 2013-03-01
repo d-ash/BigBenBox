@@ -3,9 +3,7 @@
 
 #include <openssl/sha.h>
 
-#include "global.h"
-
-typedef uint32_t	bbb_checksum_t;
+#include "bbb.h"
 
 // ================= Exported functions ==================
 

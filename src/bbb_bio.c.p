@@ -1,5 +1,6 @@
-#include "bio.h"
-#include "util.h"
+#include "bbb_bio.h"
+#include "bbb_util.h"
+#include "bbb_util_hash.h"
 
 // ============== Writing to a buffer =============
 

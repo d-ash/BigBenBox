@@ -4,7 +4,7 @@
 #ifndef @^H_FILE
 #define @^H_FILE
 
-#include "global.h"
+#include "bbb.h"
 
 /**
  *	Snapshot can be one of two types: restored or generated manually.

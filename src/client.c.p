@@ -1,4 +1,4 @@
-#include "bigbenbox.h"
+#include "bbb.h"
 
 #define DATA_DIR	"../../test_data"
 

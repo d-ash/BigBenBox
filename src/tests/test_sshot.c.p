@@ -1,6 +1,4 @@
 #include "test_sshot.h"
-#include "sshot.h"
-#include "sshot_file.h"
 
 static int	_testsRun = 0;
 

@@ -384,12 +384,12 @@ sub bio_Start {
 		?>
 #ifndef _<?= uc( $bio_ns ) ?>_BIO_H_FILE
 #define _<?= uc( $bio_ns ) ?>_BIO_H_FILE
-#include "global.h"
-#include "bio.h"
+#include "bbb_bio.h"
 		<?
 	} else {
 		?>
 #include "<?= $DEF{ "hFilename" } ?>"
+#include "bbb_util_hash.h"
 		<?
 	}
 }

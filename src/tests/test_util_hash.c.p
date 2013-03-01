@@ -1,5 +1,4 @@
 #include "test_util_hash.h"
-#include "util_hash.h"
 
 static int	_testsRun = 0;
 

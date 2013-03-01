@@ -1,9 +1,8 @@
 <?:include c_lang.p ?>
 
-#include "sshot_file.h"
-#include "util.h"
-#include "util_hash.h"
-#include "bio.h"
+#include "bbb_sshot_file.h"
+#include "bbb_util.h"
+#include "bbb_util_hash.h"
 
 <?:prefix @_ bbb_sshot_file_ ?>
 <?:prefix @^ BBB_SSHOT_FILE_ ?>

@@ -45,13 +45,15 @@ int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA2
 	
 	f = fopen( path, "rb" );
 	if ( f == NULL ) {
-		BBB_PERR( "Cannot open file %s in %s: %s\n", path, __FUNCTION__, strerror( errno ) );
+		BBB_LOG_ERR( "Cannot open the file %s: %s", path, strerror( errno ) );
 		return 0;
 	}
 
 	SHA256_Init( &sha );
 
-	buf = BBB_MALLOC( len );
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&buf, len ) ) ) {
+		exit( 1 );
+	}
 	while ( ( wasRead = fread( buf, 1, len, f ) ) ) {
 		SHA256_Update( &sha, buf, wasRead );
 	}
@@ -59,7 +61,7 @@ int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA2
 	SHA256_Final( hash, &sha );
 
 	if ( ferror( f ) ) {
-		BBB_PERR( "Cannot read the file %s: %s\n", path, strerror( errno ) );
+		BBB_LOG_ERR( "Cannot read the file %s: %s", path, strerror( errno ) );
 		free( buf );
 		fclose( f );
 		return 0;

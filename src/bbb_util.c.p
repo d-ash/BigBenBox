@@ -3,14 +3,14 @@
 <?:prefix @_ bbb_util_ ?>
 <?:prefix @^ BBB_UTIL_ ?>
 
-void* @_Malloc( const char* const file, const int line, const size_t size ) {
-	void* p = malloc( size );
+bbb_result_t @_Malloc( void** const ptr, const size_t size ) {
+	*ptr = malloc( size );
 
-	if ( p == NULL ) {
-		BBB_PERR( "Cannot allocate %" PRIuPTR " bytes in memory at %s:%d\n", size, file, line );
-		exit( EXIT_FAILURE );
+	if ( *ptr == NULL ) {
+		BBB_LOG_ERR( "Cannot allocate %" PRIuPTR " bytes in heap", size );
+		return BBB_ERROR_NOMEMORY;
 	}
-	return p;
+	return BBB_SUCCESS;
 }
 
 int @_IsLittleEndian() {

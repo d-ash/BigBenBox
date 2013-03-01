@@ -91,7 +91,9 @@ size_t bbb_bio_ReadFromBuf_varbuf( bbb_varbuf_t* const vb, const bbb_byte_t* con
 		return 0;
 	}
 
-	vb->buf = BBB_MALLOC( vb->len );
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( vb->buf ), vb->len ) ) ) {
+		exit( 1 );
+	}
 	memcpy( vb->buf, buf + sizeof( vb->len ), vb->len );
 	return ( sizeof( vb->len ) + vb->len );
 }
@@ -178,7 +180,9 @@ size_t bbb_bio_ReadFromFile_varbuf( bbb_varbuf_t* const vb, FILE* const f, bbb_c
 		return 0;
 	}
 
-	vb->buf = BBB_MALLOC( vb->len );
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( vb->buf ), vb->len ) ) ) {
+		exit( 1 );
+	}
 	if ( fread( vb->buf, vb->len, 1, f ) == 0 ) {
 		free( vb->buf );
 		return 0;

@@ -270,7 +270,9 @@ sub WriteRecordToC {
 			} elsif ( $type eq "varbuf" ) {
 				?>
 				len = dst-><?= $name ?>.len = src-><?= $name ?>.len;
-				dst-><?= $name ?>.buf = BBB_MALLOC( len );
+				if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( dst-><?= $name ?>.buf ), len ) ) ) {
+					exit( 1 );
+				}
 				memcpy( dst-><?= $name ?>.buf, src-><?= $name ?>.buf, len );
 				<?
 			} else {

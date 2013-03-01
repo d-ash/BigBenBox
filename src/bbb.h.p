@@ -43,18 +43,29 @@
 
 // ===========================================
 
-#ifdef BBB_VERBOSE
-  #define BBB_PLOG( ... )		do { fprintf( stderr, __VA_ARGS__ ); } while ( 0 );
+#ifdef BBB_RELEASE
 #else
-  #define BBB_PLOG( ... )		do {} while ( 0 );
 #endif
 
-#define BBB_PERR( ... )			do { fprintf( stderr, "ERROR: " ); fprintf( stderr, __VA_ARGS__ ); } while ( 0 );
+#ifdef BBB_VERBOSE
+  #define BBB_LOG( ... )		do { \
+									fprintf( stderr, __VA_ARGS__ ); \
+									fprintf( stderr, "\n" ); \
+								} while ( 0 );
+#else
+  #define BBB_LOG( ... )		do {} while ( 0 );
+#endif
+
+#define BBB_LOG_ERR( ... )		do { \
+									fprintf( stderr, "BigBenBox error: " __VA_ARGS__ ); \
+									fprintf( stderr, " ( %s:%d )\n", __FILE__, __LINE__ ); \
+								} while ( 0 );
+
+#include "bbb_errors.h"
 
 // ===========================================
 
-#define BBB_MALLOC( size )		bbb_util_Malloc( __FILE__, __LINE__, ( size ) )
-
+typedef int32_t					bbb_result_t;
 typedef unsigned char			bbb_byte_t;
 typedef uint32_t				bbb_checksum_t;
 

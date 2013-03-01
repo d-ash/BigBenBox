@@ -13,7 +13,7 @@ static int		_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* check
 
 // ============================================
 
-<? sub PathError { print "?>BBB_PERR( "<?" . @_ . "?>: %s\n%s\n", path, strerror( errno ) );<?"; } ?>
+<? sub PathError { print "?>BBB_LOG_ERR( "<?" . @_ . "?>: %s, %s", path, strerror( errno ) );<?"; } ?>
 
 int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	int				retVal = 0;
@@ -83,11 +83,6 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	bbb_checksum_t	checksum = 0;
 	bbb_checksum_t	checksumRead = 0;
 
-	if ( ss == NULL ) {
-		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
-		<? c_GotoCleanup(); ?>
-	}
-
 	bbb_sshot_Init( ss );
 	<? c_OnCleanup( "ss", "?>
 		if ( retVal == 0 ) {
@@ -122,7 +117,7 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	<?"); ?>
 
 	if ( !@_IsEqual_hdr( &hdr, &hdrControl ) ) {
-		BBB_PERR( "Header of the snapshot file %s is incorrect.\n", path );
+		BBB_LOG_ERR( "Header of the snapshot file %s is incorrect.", path );
 		<? c_GotoCleanup(); ?>
 	}
 
@@ -134,8 +129,10 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
-	// takenFrom is freed in bbb_sshot_Destroy() if is not NULL
-	ss->takenFrom = BBB_MALLOC( hdrExt.takenFromMem );
+	// takenFrom will be released in bbb_sshot_Destroy() if is not NULL
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( ss->takenFrom ), hdrExt.takenFromMem ) ) ) {
+		exit( 1 );
+	}
 
 	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
 		<? PathError( "Cannot read 'takenFrom' from a snapshot file" ); ?>
@@ -224,13 +221,15 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 		// allocating memory for all entries with this hash
 		hashHdr = & ss->ht[ fileHashHdr.hash ];
 		hashHdr->size = fileHashHdr.size;
-		hashHdr->first = BBB_MALLOC( fileHashHdr.size );
+		if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( hashHdr->first ), fileHashHdr.size ) ) ) {
+			exit( 1 );
+		}
 
 		// The highest possible pointer value (counting not empty string).
 		maxPtr = ( bbb_byte_t* ) hashHdr->first + fileHashHdr.size - sizeof( bbb_sshot_entry_t ) - 2;
 
 		if ( fread( hashHdr->first, fileHashHdr.size, 1, f ) == 0 ) {
-			BBB_PERR( "Cannot read from a snapshot file: %s\n", strerror( errno ) );
+			BBB_LOG_ERR( "Cannot read from a snapshot file: %s", strerror( errno ) );
 			return 0;
 		}
 		bbb_util_hash_UpdateChecksum( hashHdr->first, fileHashHdr.size, checksum_p );
@@ -242,7 +241,7 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 			entry->next = ( bbb_byte_t* ) entry + sizeof( bbb_sshot_entry_t ) + entry->pathMem;
 
 			if ( ( bbb_byte_t* ) entry->next > maxPtr ) {
-				BBB_PERR( "Snapshot file is corrupted!\n" );
+				BBB_LOG_ERR( "Snapshot file is corrupted!" );
 				return 0;
 			}
 
@@ -251,7 +250,7 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 	}
 
 	if ( !feof( f ) ) {
-		BBB_PERR( "Cannot read from a snapshot file: %s\n", strerror( errno ) );
+		BBB_LOG_ERR( "Cannot read from a snapshot file: %s", strerror( errno ) );
 		return 0;
 	}
 

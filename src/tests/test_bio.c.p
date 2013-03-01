@@ -25,7 +25,9 @@ static char* _TestBioBufTypes() {
 	uint64_t		x64;
 
 	vb.len = 16;
-	vb.buf = BBB_MALLOC( vb.len );
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( vb.buf ), vb.len ) ) ) {
+		exit( 1 );
+	}
 	memcpy( vb.buf, data + 4, vb.len );
 
 	// Testing of writing.
@@ -128,7 +130,9 @@ static char* _TestBioFileTypes() {
 	bbb_checksum_t	xchk = 0;
 
 	vb.len = 16;
-	vb.buf = BBB_MALLOC( vb.len );
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( vb.buf ), vb.len ) ) ) {
+		exit( 1 );
+	}
 	memcpy( vb.buf, data + 4, vb.len );
 
 	// Testing of writing.
@@ -188,7 +192,9 @@ static char* _TestBioFileRecords() {
 	hdr.var_buf_777.buf = ( bbb_byte_t* ) strdup( path );
 
 	ext[ 0 ].v1.len = 4;
-	ext[ 0 ].v1.buf = ( bbb_byte_t* ) BBB_MALLOC( 4 );
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( ext[ 0 ].v1.buf ), 4 ) ) ) {
+		exit( 1 );
+	}
 	memcpy( ext[ 0 ].v1.buf, &( hdr.theThird ), 4 );
 	ext[ 0 ].v2.len = pathlen + 1;
 	ext[ 0 ].v2.buf = ( bbb_byte_t* ) strdup( path );

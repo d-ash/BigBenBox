@@ -10,14 +10,11 @@ static int	_ProcessEntry( const char* const path, const size_t skip, const char*
 static int	_AddToSnapshot( @_entry_t* const entry, @_t* const ss );
 
 int @_Init( @_t* const ss ) {
-	if ( ss == NULL ) {
-		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
-		return 0;
-	}
-
 	ss->restored = 0;		// by default a snapshot is 'generated'
 	ss->takenFrom = NULL;
-	ss->ht = BBB_MALLOC( sizeof( @_ht_t ) * @^HASH_MAX );
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( ss->ht ), sizeof( @_ht_t ) * @^HASH_MAX ) ) ) {
+		exit( 1 );
+	}
 
 	// assuming NULL == 0
 	memset( ss->ht, 0, sizeof( @_ht_t ) * @^HASH_MAX );
@@ -29,11 +26,6 @@ int @_Destroy( @_t* const ss ) {
 	@_hash_t	i;
 	@_entry_t*	entry = NULL;
 	void*		mustDie = NULL;
-
-	if ( ss == NULL || ss->ht == NULL ) {
-		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
-		return 0;
-	}
 
 	for ( i = 0; i < @^HASH_MAX; i++ ) {
 		entry = ss->ht[ i ].first;
@@ -65,13 +57,7 @@ int @_Take( const char* const path, @_t* const ss ) {
 	int		len = 0;
 	char*	p;
 
-	if ( ss == NULL ) {
-		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
-		return 0;
-	}
-
 	@_Init( ss );
-
 	p = strdup( path );
 	len = strlen( p );
 
@@ -96,13 +82,7 @@ int @_Take( const char* const path, @_t* const ss ) {
 	@_hash_t	hash;
 	@_entry_t*	entry = NULL;
 
-	if ( ss == NULL || ss->ht == NULL ) {
-		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
-		return NULL;
-	}
-
 	hash = bbb_util_hash_Calc_uint16( path, strlen( path ) );
-
 	entry = ss->ht[ hash ].first;
 	while ( entry != NULL ) {
 		if ( strcmp( path, @^ENTRY_PATH( entry ) ) == 0 ) {
@@ -120,11 +100,6 @@ int @_Diff( const @_t* const ss0, const @_t* const ss1 ) {
 	@_entry_t*	found = NULL;
 	char*		path = NULL;
 	int			differs = 0;
-
-	if ( ss0 == NULL || ss0->ht == NULL || ss1 == NULL || ss1->ht == NULL ) {
-		BBB_PERR( "NULL value in %s()\n", __FUNCTION__ );
-		return 0;	// TODO what we need return?
-	}
 
 	for ( i = 0; i < @^HASH_MAX; i++ ) {
 		entry = ss1->ht[ i ].first;
@@ -186,10 +161,10 @@ static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss
 	struct dirent*	entry = NULL;
 	int				res = 1;
 
-	BBB_PLOG( "Processing dir: %s\n", path );
+	BBB_LOG( "Processing dir: %s", path );
 	dir = opendir( path );
 	if ( dir == NULL ) {
-		BBB_PERR( "Cannot open dir %s: %s\n", path, strerror( errno ) );
+		BBB_LOG_ERR( "Cannot open dir %s: %s", path, strerror( errno ) );
 		return 0;
 	}
 
@@ -218,7 +193,7 @@ static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss
 	}
 
 	if ( closedir( dir ) < 0 ) {
-		BBB_PERR( "Cannot close dir %s: %s\n", path, strerror( errno ) );
+		BBB_LOG_ERR( "Cannot close dir %s: %s", path, strerror( errno ) );
 		return 0;
 	}
 
@@ -234,8 +209,12 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	// allocating memory for @_entry_t + path, pathMem will be aligned to BBB_WORD_SIZE
 	// in order to get properly aligned memory after loading this data from a file.
 	pathMem = ( strlen( path ) - skip + strlen( name ) + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
-	entry = BBB_MALLOC( sizeof( @_entry_t ) + pathMem );
-	fullPath = BBB_MALLOC( pathMem + skip + 1 );
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&entry, sizeof( @_entry_t ) + pathMem ) ) ) {
+		exit( 1 );
+	}
+	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&fullPath, pathMem + skip + 1 ) ) ) {
+		exit( 1 );
+	}
 	strcpy( fullPath, path );
 	strcat( fullPath, "/" );
 	strcat( fullPath, name );
@@ -246,7 +225,7 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	strcpy( @^ENTRY_PATH( entry ), fullPath + skip + 1 );
 
 	if ( stat( fullPath, &entryInfo ) ) {
-		BBB_PERR( "Cannot get info about %s: %s\n", fullPath, strerror( errno ) );
+		BBB_LOG_ERR( "Cannot get info about %s: %s", fullPath, strerror( errno ) );
 		free( entry );
 		free( fullPath );
 		return 0;
@@ -261,7 +240,7 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	} else if ( S_ISREG( entryInfo.st_mode ) ) {
 		entry->status &= ~@^ENTRY_STATUS_DIR;
 	} else {
-		BBB_PLOG( "Skipping irregular file: %s\n", fullPath );
+		BBB_LOG( "Skipping irregular file: %s", fullPath );
 		free( entry );
 		free( fullPath );
 		return 1;		// it is a successful operation
@@ -275,7 +254,7 @@ static int _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
 	@_hash_t	hash;
 
 	if ( ss->restored ) {
-		BBB_PERR( "Adding entries to a restored snapshot is denied." );
+		BBB_LOG_ERR( "Adding entries to a restored snapshot is denied" );
 		return 0;
 	}
 

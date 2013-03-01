@@ -8,9 +8,9 @@
 
 // ================ Exported functions =============
 
-void*		@_Malloc( const char* const file, const int line, const size_t size );
-int			@_IsLittleEndian();
+bbb_result_t	@_Malloc( void** const ptr, const size_t size );
 
+int			@_IsLittleEndian();
 uint64_t	@_ConvertBinary_hton64( const uint64_t x );
 uint64_t	@_ConvertBinary_ntoh64( const uint64_t x );
 

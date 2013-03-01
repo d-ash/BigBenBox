@@ -193,6 +193,7 @@ my @libraryObjFiles = map { "${BUILD_DIR}/$_" } qw(
 my @libraryHdrFiles =
 	map { my $i = $_; $i =~ s/^\Q${BUILD_DIR}\E\/(.+).o$/$GEN_DIR\/$1.h/; $i; } @libraryObjFiles;
 push( @libraryHdrFiles, "${GEN_DIR}/bbb.h" );
+push( @libraryHdrFiles, "${GEN_DIR}/bbb_errors.h" );
 
 SetPhony( "library", AddAction(
 	\@libraryObjFiles,
@@ -214,6 +215,7 @@ foreach ( @libraryObjFiles ) {
 }
 
 AddAction( PerlPP( "bbb.h.p" ) );
+AddAction( PerlPP( "bbb_errors.h.p" ) );
 
 # ============== Client ===============
 

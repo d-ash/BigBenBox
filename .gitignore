@@ -1,4 +1,4 @@
 build
-src/generated
+src/.gen
 *~
 .*.swp

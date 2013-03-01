@@ -118,7 +118,7 @@ if ( $RELEASE ) {
 } else {
 	$BUILD_DIR	= "../build/dev";
 }
-my $GEN_DIR		= "generated";
+my $GEN_DIR		= ".gen";
 my $LIB_FILENAME	= "${BUILD_DIR}/lib${LIB_NAME}.a";
 
 sub PerlPP {
@@ -217,12 +217,12 @@ AddAction( PerlPP( "bbb.h.p" ) );
 
 # ============== Client ===============
 
-SetPhony( "r", AddAction( [], [], "cd ${BUILD_DIR} && ./client" ) );
-SetPhony( "client", AddAction( Link( "client" ) ) );
-SetPhony( "clientHeaders", AddAction( [ "${GEN_DIR}/client.h" ], [], "" ) );
-AddAction( Compile( "client" ) );
-AddAction( PerlPP( "client.h.p" ) );
-AddAction( PerlPP( "client.c.p" ) );
+SetPhony( "r", AddAction( [], [], "cd ${BUILD_DIR}/client && ./client" ) );
+SetPhony( "client", AddAction( Link( "client/client" ) ) );
+SetPhony( "clientHeaders", AddAction( [ "${GEN_DIR}/client/client.h" ], [], "" ) );
+AddAction( Compile( "client/client" ) );
+AddAction( PerlPP( "client/client.h.p" ) );
+AddAction( PerlPP( "client/client.c.p" ) );
 
 # =============== Tests ===============
 
@@ -253,10 +253,12 @@ AddAction( PerlPP( "tests/minunit.h.p" ) );
 # ====================================================================================
 
 SetPhony( "clean", AddAction( [], [], "rm -rf ${BUILD_DIR}/* && rm -rf ${GEN_DIR}/*" ) );
-SetPhony( "makeDirs", AddAction( [], [], "mkdir -p ${BUILD_DIR}/tests && mkdir -p ${GEN_DIR}/tests" ) );
+SetPhony( "makeTestsDirs", AddAction( [], [], "mkdir -p ${BUILD_DIR}/tests && mkdir -p ${GEN_DIR}/tests" ) );
+SetPhony( "makeClientDirs", AddAction( [], [], "mkdir -p ${BUILD_DIR}/client && mkdir -p ${GEN_DIR}/client" ) );
 
 TargetPhony( "clean" );
-TargetPhony( "makeDirs" );
+TargetPhony( "makeTestsDirs" );
+TargetPhony( "makeClientDirs" );
 
 TargetPhony( "libraryHeaders" );
 TargetPhony( "library" );

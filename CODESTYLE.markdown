@@ -56,7 +56,9 @@ Align variable and function declarations by sutable number of tabs.
 
 		int		x = 2;
 		char*	str;
-		size_t	func( int A );
+
+		size_t	        func1( int A );
+        bbb_result_t    func2();
 
 If comments are at the end of a line. Align them with tabs appropriately.
 
@@ -81,11 +83,11 @@ Add blank lines or even "// =========" separators between chunks that do differe
 		destroyX();
 		destroyY();
 
-In particular blocks declaring variables or functions have to be standalone.
+Variable declarations must be delimited from the rest of the code by line break.
 
 		void function() {
-			int var1;
-			char var2;
+			int     var1;
+			char    var2;
 
 			if ( var1 ) {
 				return var2;
@@ -93,6 +95,13 @@ In particular blocks declaring variables or functions have to be standalone.
 				return '?';
 			}
 		}
+
+Return-types of functions in `.c` files should be placed on separate lines.
+
+        bbb_result_t
+        SomeFunction( const int x ) {
+            ...
+        }
 
 
 Naming

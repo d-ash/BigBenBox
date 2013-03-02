@@ -45,7 +45,7 @@ int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA2
 	
 	f = fopen( path, "rb" );
 	if ( f == NULL ) {
-		BBB_ERR( "Cannot open the file %s: %s", path, strerror( errno ) );
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot open the file %s: %s", path, strerror( errno ) );
 		return 0;
 	}
 
@@ -61,7 +61,7 @@ int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA2
 	SHA256_Final( hash, &sha );
 
 	if ( ferror( f ) ) {
-		BBB_ERR( "Cannot read the file %s: %s", path, strerror( errno ) );
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot read the file %s: %s", path, strerror( errno ) );
 		free( buf );
 		fclose( f );
 		return 0;

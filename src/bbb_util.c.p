@@ -3,23 +3,40 @@
 <?:prefix @_ bbb_util_ ?>
 <?:prefix @^ BBB_UTIL_ ?>
 
-bbb_result_t @_Malloc( void** const ptr, const size_t size ) {
+bbb_result_t
+@_Malloc( void** const ptr, const size_t size ) {
 	*ptr = malloc( size );
 
 	if ( *ptr == NULL ) {
-		BBB_ERR( "Cannot allocate %" PRIuPTR " bytes in heap", size );
+		BBB_ERR_CODE( BBB_ERROR_NOMEMORY, "%" PRIuPTR " bytes", size );
 		return BBB_ERROR_NOMEMORY;
 	}
 	return BBB_SUCCESS;
 }
 
-int @_IsLittleEndian() {
+/*
+bbb_result_t
+@_ReadFromFile( void** const ptr, const size_t size ) {
+	*ptr = malloc( size );
+
+	// TODO FIXME
+	if ( *ptr == NULL ) {
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "" );
+		return BBB_ERROR_FILESYSTEMIO;
+	}
+	return BBB_SUCCESS;
+}
+*/
+
+int
+@_IsLittleEndian() {
 	static const int	i = 1;
 
 	return ( * ( char* ) &i == 1 );
 }
 
-uint64_t @_ConvertBinary_hton64( const uint64_t x ) {
+uint64_t
+@_ConvertBinary_hton64( const uint64_t x ) {
 	uint64_t	res = 1;
 	char*		src;
 	char*		dst;
@@ -39,11 +56,13 @@ uint64_t @_ConvertBinary_hton64( const uint64_t x ) {
 	return res;
 }
 
-uint64_t @_ConvertBinary_ntoh64( const uint64_t x ) {
+uint64_t
+@_ConvertBinary_ntoh64( const uint64_t x ) {
 	return @_ConvertBinary_hton64( x );
 }
 
-void @_PrintHex( const void* const b, const size_t len ) {
+void
+@_PrintHex( const void* const b, const size_t len ) {
 	size_t	i;
 
 	for ( i = 0; i < len; i++ ) {

@@ -85,12 +85,18 @@ sub Output_Assert {
 	my $ifexp = shift;
 	my $fields = shift;
 
-	print "	if ( ${ifexp} ) {\n";
-	foreach ( @{$fields} ) {
-		print "		free( r->$_.buf ); r->$_.buf = NULL; r->$_.len = 0;\n";
+	?> if ( <?= $ifexp ?> ) { <?/
+		foreach ( @$fields ) {
+			?>
+			free( r-><?= $_ ?>.buf );
+			r-><?= $_ ?>.buf = NULL;
+			r-><?= $_ ?>.len = 0;
+			<?
+		}
+		?>
+		return 0;
 	}
-	print "		return 0;\n";
-	print "	}\n";
+	<?
 }
 
 sub Output_ReadImpl {
@@ -124,11 +130,14 @@ sub Output_ReadImpl {
 				?> cur++; <?/
 			} else {
 				if ( $mode eq "Buf" ) {
-					?> red = bbb_bio_ReadFrom<?= $mode ?>_<?= $type ?>( &( r-><?= $name ?> ), buf + cur, len - cur ); <?/
+					Output_Assert( "?> BBB_FAILED(
+						bbb_bio_ReadFrom<?= $mode ?>_<?= $type ?>(
+							&( r-><?= $name ?> ), buf + cur, len - cur, &red ) ) <?", \@allocated );
 				} else {
-					?> red = bbb_bio_ReadFrom<?= $mode ?>_<?= $type ?>( &( r-><?= $name ?> ), f, chk ); <?/
+					Output_Assert( "?> BBB_FAILED(
+						bbb_bio_ReadFrom<?= $mode ?>_<?= $type ?>(
+							&( r-><?= $name ?> ), f, chk, &red ) ) <?", \@allocated );
 				}
-				Output_Assert( "red == 0", \@allocated );
 				?> cur += red; <?/
 				if ( $type eq "varbuf" ) {
 					push( @allocated, $name );
@@ -206,9 +215,9 @@ sub Output_WriteImpl {
 				?> cur++; <?/
 			} else {
 				if ( $mode eq "Buf" ) {
-					?> wtn = bbb_bio_WriteTo<?= $mode ?>_<?= $type ?>( r-><?= $name ?>, buf + cur, len - cur ); <?/
+					?> bbb_bio_WriteTo<?= $mode ?>_<?= $type ?>( r-><?= $name ?>, buf + cur, len - cur, &wtn ); <?/
 				} else {
-					?> wtn = bbb_bio_WriteToFile_<?= $type ?>( r-><?= $name ?>, f, chk ); <?/
+					?> bbb_bio_WriteToFile_<?= $type ?>( r-><?= $name ?>, f, chk, &wtn ); <?/
 				}
 				?>
 				if ( wtn == 0 ) { return 0; }

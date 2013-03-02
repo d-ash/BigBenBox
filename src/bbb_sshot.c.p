@@ -164,7 +164,7 @@ static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss
 	BBB_LOG( "Processing dir: %s", path );
 	dir = opendir( path );
 	if ( dir == NULL ) {
-		BBB_ERR( "Cannot open dir %s: %s", path, strerror( errno ) );
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot open dir %s: %s", path, strerror( errno ) );
 		return 0;
 	}
 
@@ -193,7 +193,7 @@ static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss
 	}
 
 	if ( closedir( dir ) < 0 ) {
-		BBB_ERR( "Cannot close dir %s: %s", path, strerror( errno ) );
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot close dir %s: %s", path, strerror( errno ) );
 		return 0;
 	}
 
@@ -225,7 +225,7 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	strcpy( @^ENTRY_PATH( entry ), fullPath + skip + 1 );
 
 	if ( stat( fullPath, &entryInfo ) ) {
-		BBB_ERR( "Cannot get info about %s: %s", fullPath, strerror( errno ) );
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot get info about %s: %s", fullPath, strerror( errno ) );
 		free( entry );
 		free( fullPath );
 		return 0;
@@ -254,7 +254,7 @@ static int _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
 	@_hash_t	hash;
 
 	if ( ss->restored ) {
-		BBB_ERR( "Adding entries to a restored snapshot is denied" );
+		BBB_ERR_CODE( BBB_ERROR_DEVELOPER, "Adding entries to a restored snapshot is denied" );
 		return 0;
 	}
 

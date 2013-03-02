@@ -1,24 +1,28 @@
-#ifndef _BBB_ERRORS_H
-#define _BBB_ERRORS_H
+<?:include bbb_errors.p ?>
 
-#define BBB_ERROR_NOMEMORY				1
-#define BBB_ERROR_FILESYSTEMIO			2
-#define BBB_ERROR_DATAISBAD				3
+<?:prefix @_ bbb_errors_ ?>
+<?:prefix @^ BBB_ERRORS_ ?>
+
+#ifndef @^H
+#define @^H
+
+#include <stdint.h>
+
+<? for my $i ( 0 .. $#bbb_errors ) { ?>
+#define <?= $bbb_errors[ $i ] ?>		<?= $i ?>
+<? } ?>
 
 
-// ================================================================================
-
-#define BBB_SUCCESS						0
 #define BBB_FAILED( call )				( ( call ) != BBB_SUCCESS )
 
-#define BBB_ERR( ... )					do { \
-											fprintf( stderr, "BigBenBox error: " __VA_ARGS__ ); \
-											fprintf( stderr, " ( %s:%u )\n", __FILE__, __LINE__ ); \
+#define BBB_ERR_CODE( code, ... )		do { \
+											fprintf( stderr, "%s at %s:%u - ", @_GetText( code ), __FILE__, __LINE__ ); \
+											fprintf( stderr, " " __VA_ARGS__ ); \
+											fprintf( stderr, "\n" ); \
 										} while ( 0 );
 
-#define BBB_ERR_STR( code, str )		do { \
-											fprintf( stderr, "BigBenBox error # %u: %s", ( code ), ( str ) ); \
-											fprintf( stderr, " ( %s:%d )\n", __FILE__, __LINE__ ); \
-										} while ( 0 );
+typedef uint32_t	bbb_result_t;
+
+const char*			@_GetText( const bbb_result_t code );
 
 #endif

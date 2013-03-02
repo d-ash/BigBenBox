@@ -56,13 +56,12 @@
   #define BBB_LOG( ... )		do {} while ( 0 );
 #endif
 
-#include "bbb_errors.h"
-
 // ===========================================
 
-typedef int32_t					bbb_result_t;
 typedef unsigned char			bbb_byte_t;
 typedef uint32_t				bbb_checksum_t;
+
+#include "bbb_errors.h"
 
 #ifndef BBB_INSIDE_LIB
   #include "bbb_sshot.h"

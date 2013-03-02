@@ -7,32 +7,33 @@
 <?:prefix @_ bbb_sshot_file_ ?>
 <?:prefix @^ BBB_SSHOT_FILE_ ?>
 
-static void		_ConstructHdr( @_hdr_t* const hdr );
-static int		_Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
-static int		_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
+static void				_ConstructHdr( @_hdr_t* const hdr );
+static bbb_result_t		_Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
+static bbb_result_t		_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p );
 
 // ============================================
 
-<? sub PathError { print "?>BBB_LOG_ERR( "<?" . @_ . "?>: %s, %s", path, strerror( errno ) );<?"; } ?>
-
-int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
-	int				retVal = 0;
+bbb_result_t
+@_Save( const char* const path, const bbb_sshot_t* const ss ) {
+	bbb_result_t	result = BBB_SUCCESS;
 	FILE*			f;
 	@_hdr_t			hdr;
 	@_hdr2_t		hdrExt;
 	bbb_checksum_t	checksum = 0;
+	bbb_result_t	packRes;
 
 	f = fopen( path, "wb" );
 	if ( f == NULL ) {
-		<? PathError( "Cannot write a snapshot" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 	<? c_OnCleanup( "f", "?>
 		if ( fclose( f ) != 0 ) {
-			<? PathError( "Cannot save a snapshot" ); ?>
-			retVal = 0;
+			BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+			result = BBB_ERROR_FILESYSTEMIO;
 		}
-		if ( retVal == 0 ) {
+		if ( BBB_FAILED( result ) ) {
 			unlink( path );
 		}
 	<?"); ?>
@@ -43,49 +44,55 @@ int @_Save( const char* const path, const bbb_sshot_t* const ss ) {
 	<?"); ?>
 
 	if ( @_WriteToFile_hdr( &hdr, f, &checksum ) == 0 ) {
-		<? PathError( "Cannot write a header to the snapshot file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 
 	hdrExt.takenFromMem = strlen( ss->takenFrom ) + 1;
 	if ( fwrite( &hdrExt, sizeof( hdrExt ), 1, f ) == 0 ) {
-		<? PathError( "Cannot write an extended header to the snapshot file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
 	if ( fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
-		<? PathError( "Cannot write 'takenFrom' to the snapshot file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
 
-	if ( _Pack( f, ss, &checksum ) == 0 ) {
+	if ( BBB_FAILED( packRes = _Pack( f, ss, &checksum ) ) ) {
+		result = packRes;
 		<? c_GotoCleanup(); ?>
 	}
 
 	if ( bbb_bio_WriteToFile_uint32( checksum, f, NULL ) == 0 ) {
-		<? PathError( "Cannot write a checksum to the snapshot file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 
-	retVal = 1;
 	<? c_Cleanup(); ?>
-	return retVal;
+	return result;
 }
 
-int @_Load( const char* const path, bbb_sshot_t* const ss ) {
-	int				retVal = 0;
+bbb_result_t
+@_Load( const char* const path, bbb_sshot_t* const ss ) {
+	bbb_result_t	result = BBB_SUCCESS;
 	FILE*			f = NULL;
 	@_hdr_t			hdr;
 	@_hdr_t			hdrControl;
 	@_hdr2_t		hdrExt;
 	bbb_checksum_t	checksum = 0;
 	bbb_checksum_t	checksumRead = 0;
+	bbb_result_t	unpackRes;
 
 	bbb_sshot_Init( ss );
 	<? c_OnCleanup( "ss", "?>
-		if ( retVal == 0 ) {
+		if ( BBB_FAILED( result ) ) {
 			bbb_sshot_Destroy( ss );
 		}
 	<?"); ?>
@@ -93,18 +100,20 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 
 	f = fopen( path, "rb" );
 	if ( f == NULL ) {
-		<? PathError( "Cannot open the file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 	<? c_OnCleanup( "f", "?>
 		if ( fclose( f ) != 0 ) {
-			<? PathError( "Cannot close the file" ); ?>
-			retVal = 0;
+			BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+			result = BBB_ERROR_FILESYSTEMIO;
 		}
 	<?"); ?>
 
 	if ( @_ReadFromFile_hdr( &hdr, f, &checksum ) == 0 ) {
-		<? PathError( "Cannot read from the file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 	<? c_OnCleanup( "hdr", "?>
@@ -117,14 +126,16 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	<?"); ?>
 
 	if ( !@_IsEqual_hdr( &hdr, &hdrControl ) ) {
-		BBB_LOG_ERR( "Header of the snapshot file %s is incorrect.", path );
+		BBB_ERR( "Header of the snapshot file %s is incorrect", path );
+		result = BBB_ERROR_DATAISBAD;
 		<? c_GotoCleanup(); ?>
 	}
 
 	// Reading extended header. Platform dependent types are already in use!
 	// We can correctly read files only created with this same program on this machine.
 	if ( fread( &hdrExt, sizeof( hdrExt ), 1, f ) == 0 ) {
-		<? PathError( "Cannot read an extended header from the snapshot file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
@@ -135,44 +146,53 @@ int @_Load( const char* const path, bbb_sshot_t* const ss ) {
 	}
 
 	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
-		<? PathError( "Cannot read 'takenFrom' from a snapshot file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
 
-	if ( _Unpack( f, ss, &checksum ) == 0 ) {
+	if ( BBB_FAILED( unpackRes = _Unpack( f, ss, &checksum ) ) ) {
+		if ( unpackRes == BBB_ERROR_DATAISBAD ) {
+			BBB_ERR( "Contents of the snapshot file %s cannot be unpacked", path );
+		}
+		result = unpackRes;
 		<? c_GotoCleanup(); ?>
 	}
 
 	// checksum will be read over by the previous fread()
 	if ( fseek( f, 0 - sizeof( checksumRead ), SEEK_END ) != 0 ) {
-		<? PathError( "Cannot fseek() to a checksum of the file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 
 	if ( bbb_bio_ReadFromFile_uint32( &checksumRead, f, NULL ) == 0 ) {
-		<? PathError( "Cannot read a checksum from the snapshot file" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 
 	if ( checksum != checksumRead ) {
-		<? PathError( "The snapshot file is corrupted (checksum failed)" ); ?>
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 
-	retVal = 1;
 	<? c_Cleanup(); ?>
-	return retVal;
+	return result;
 }
 
-static void _ConstructHdr( @_hdr_t* const hdr ) {
+static void
+_ConstructHdr( @_hdr_t* const hdr ) {
 	hdr->magic		= @^MAGIC;
 	hdr->runtime	= ( bbb_util_IsLittleEndian() ? 1 : 0 ) | BBB_WORD_SIZE;
 	hdr->platform	= BBB_PLATFORM_ID;
 	hdr->format		= @^FORMAT;
 }
 
-static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
+static bbb_result_t
+_Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 	bbb_sshot_hash_t	i;
 	bbb_sshot_entry_t*	entry = NULL;
 	bbb_sshot_ht_t*		hashHdr = NULL;
@@ -190,14 +210,16 @@ static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* ch
 		fileHashHdr.size = hashHdr->size;
 
 		if ( fwrite( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) == 0 ) {
-			return 0;
+			BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+			return BBB_ERROR_FILESYSTEMIO;
 		}
 		bbb_util_hash_UpdateChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
 
 		entry = hashHdr->first;
 		do {
 			if ( fwrite( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, 1, f ) == 0 ) {
-				return 0;
+				BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+				return BBB_ERROR_FILESYSTEMIO;
 			}
 			bbb_util_hash_UpdateChecksum( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, checksum_p );
 
@@ -205,10 +227,11 @@ static int _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* ch
 		} while ( entry != NULL );
 	}
 
-	return 1;
+	return BBB_SUCCESS;
 }
 
-static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
+static bbb_result_t
+_Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 	@_ht_t				fileHashHdr;
 	bbb_sshot_entry_t*	entry = NULL;
 	bbb_sshot_ht_t*		hashHdr = NULL;
@@ -229,8 +252,8 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 		maxPtr = ( bbb_byte_t* ) hashHdr->first + fileHashHdr.size - sizeof( bbb_sshot_entry_t ) - 2;
 
 		if ( fread( hashHdr->first, fileHashHdr.size, 1, f ) == 0 ) {
-			BBB_LOG_ERR( "Cannot read from a snapshot file: %s", strerror( errno ) );
-			return 0;
+			BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+			return BBB_ERROR_FILESYSTEMIO;
 		}
 		bbb_util_hash_UpdateChecksum( hashHdr->first, fileHashHdr.size, checksum_p );
 
@@ -241,8 +264,8 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 			entry->next = ( bbb_byte_t* ) entry + sizeof( bbb_sshot_entry_t ) + entry->pathMem;
 
 			if ( ( bbb_byte_t* ) entry->next > maxPtr ) {
-				BBB_LOG_ERR( "Snapshot file is corrupted!" );
-				return 0;
+				BBB_ERR_STR( BBB_ERROR_DATAISBAD, "Snapshot file is damaged!" );
+				return BBB_ERROR_DATAISBAD;
 			}
 
 			entry = entry->next;
@@ -250,9 +273,9 @@ static int _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checks
 	}
 
 	if ( !feof( f ) ) {
-		BBB_LOG_ERR( "Cannot read from a snapshot file: %s", strerror( errno ) );
-		return 0;
+		BBB_ERR_STR( BBB_ERROR_FILESYSTEMIO, strerror( errno ) );
+		return BBB_ERROR_FILESYSTEMIO;
 	}
 
-	return 1;
+	return BBB_SUCCESS;
 }

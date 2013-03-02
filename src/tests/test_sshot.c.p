@@ -21,16 +21,16 @@ static char* _TestSsSaveLoad() {
 	//bbb_sshot_Take( "C:/Windows", &ss1 );
 #endif
 #ifdef BBB_PLATFORM_LINUX
-	bbb_sshot_Take( "/home/d-ash/Dropbox", &ss1 );
-	//bbb_sshot_Take( "/home/d-ash/2IOMEGA/", &ss1 );
+	//bbb_sshot_Take( "/home/d-ash/Dropbox", &ss1 );
+	bbb_sshot_Take( "/home/d-ash/projects/", &ss1 );
 #endif
 #ifdef BBB_PLATFORM_OSX
 	bbb_sshot_Take( "/Users/User/Projects/bbb", &ss1 );
 	//bbb_sshot_Take( "/home/d-ash/2IOMEGA/", &ss1 );
 #endif
 
-	MU_ASSERT( "bbb_sshot_file_Save", bbb_sshot_file_Save( "_test_packfile", &ss1 ) );
-	MU_ASSERT( "bbb_sshot_file_Load", bbb_sshot_file_Load( "_test_packfile", &ss2 ) );
+	MU_ASSERT( "bbb_sshot_file_Save", !BBB_FAILED( bbb_sshot_file_Save( "_test_packfile", &ss1 ) ) );
+	MU_ASSERT( "bbb_sshot_file_Load", !BBB_FAILED( bbb_sshot_file_Load( "_test_packfile", &ss2 ) ) );
 	MU_ASSERT( "Restored snapshot differs from original", bbb_sshot_Diff( &ss1, &ss2 ) == 0 );
 	MU_ASSERT( "Different values of 'takenFrom'", strcmp( ss1.takenFrom, ss2.takenFrom ) == 0 );
 

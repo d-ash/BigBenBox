@@ -7,7 +7,7 @@ bbb_result_t @_Malloc( void** const ptr, const size_t size ) {
 	*ptr = malloc( size );
 
 	if ( *ptr == NULL ) {
-		BBB_LOG_ERR( "Cannot allocate %" PRIuPTR " bytes in heap", size );
+		BBB_ERR( "Cannot allocate %" PRIuPTR " bytes in heap", size );
 		return BBB_ERROR_NOMEMORY;
 	}
 	return BBB_SUCCESS;

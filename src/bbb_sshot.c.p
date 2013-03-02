@@ -10,7 +10,7 @@ static int	_ProcessEntry( const char* const path, const size_t skip, const char*
 static int	_AddToSnapshot( @_entry_t* const entry, @_t* const ss );
 
 int @_Init( @_t* const ss ) {
-	ss->restored = 0;		// by default a snapshot is 'generated'
+	ss->restored = 0;				// by default a snapshot is 'generated'
 	ss->takenFrom = NULL;
 	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( ss->ht ), sizeof( @_ht_t ) * @^HASH_MAX ) ) ) {
 		exit( 1 );
@@ -54,7 +54,7 @@ int @_Destroy( @_t* const ss ) {
 }
 
 int @_Take( const char* const path, @_t* const ss ) {
-	int		len = 0;
+	size_t	len = 0;
 	char*	p;
 
 	@_Init( ss );
@@ -62,7 +62,7 @@ int @_Take( const char* const path, @_t* const ss ) {
 	len = strlen( p );
 
 	// trim slash at the end if necessary
-	if ( len > 1 && ( p[ len ] == '/' || p[ len ] == '\\' ) ) {
+	if ( len > 1 && ( p[ len - 1 ] == '/' || p[ len - 1 ] == '\\' ) ) {
 		len--;
 		p[ len ] = 0;
 	}
@@ -164,7 +164,7 @@ static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss
 	BBB_LOG( "Processing dir: %s", path );
 	dir = opendir( path );
 	if ( dir == NULL ) {
-		BBB_LOG_ERR( "Cannot open dir %s: %s", path, strerror( errno ) );
+		BBB_ERR( "Cannot open dir %s: %s", path, strerror( errno ) );
 		return 0;
 	}
 
@@ -193,7 +193,7 @@ static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss
 	}
 
 	if ( closedir( dir ) < 0 ) {
-		BBB_LOG_ERR( "Cannot close dir %s: %s", path, strerror( errno ) );
+		BBB_ERR( "Cannot close dir %s: %s", path, strerror( errno ) );
 		return 0;
 	}
 
@@ -225,7 +225,7 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	strcpy( @^ENTRY_PATH( entry ), fullPath + skip + 1 );
 
 	if ( stat( fullPath, &entryInfo ) ) {
-		BBB_LOG_ERR( "Cannot get info about %s: %s", fullPath, strerror( errno ) );
+		BBB_ERR( "Cannot get info about %s: %s", fullPath, strerror( errno ) );
 		free( entry );
 		free( fullPath );
 		return 0;
@@ -254,7 +254,7 @@ static int _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
 	@_hash_t	hash;
 
 	if ( ss->restored ) {
-		BBB_LOG_ERR( "Adding entries to a restored snapshot is denied" );
+		BBB_ERR( "Adding entries to a restored snapshot is denied" );
 		return 0;
 	}
 

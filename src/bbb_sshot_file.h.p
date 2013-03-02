@@ -43,7 +43,7 @@ typedef struct {
 
 // =================== Exported functions ===================
 
-int		@_Save( const char* const path, const bbb_sshot_t* const ss );
-int		@_Load( const char* const path, bbb_sshot_t* const ss );
+bbb_result_t	@_Save( const char* const path, const bbb_sshot_t* const ss );
+bbb_result_t	@_Load( const char* const path, bbb_sshot_t* const ss );
 
 #endif

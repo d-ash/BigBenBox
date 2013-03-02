@@ -56,11 +56,6 @@
   #define BBB_LOG( ... )		do {} while ( 0 );
 #endif
 
-#define BBB_LOG_ERR( ... )		do { \
-									fprintf( stderr, "BigBenBox error: " __VA_ARGS__ ); \
-									fprintf( stderr, " ( %s:%d )\n", __FILE__, __LINE__ ); \
-								} while ( 0 );
-
 #include "bbb_errors.h"
 
 // ===========================================

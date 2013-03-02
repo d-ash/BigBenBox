@@ -21,8 +21,8 @@ static char* _TestSsSaveLoad() {
 	//bbb_sshot_Take( "C:/Windows", &ss1 );
 #endif
 #ifdef BBB_PLATFORM_LINUX
-	//bbb_sshot_Take( "/home/d-ash/Dropbox", &ss1 );
-	bbb_sshot_Take( "/home/d-ash/projects/", &ss1 );
+	bbb_sshot_Take( "/home/d-ash/Dropbox", &ss1 );
+	//bbb_sshot_Take( "/home/d-ash/projects/", &ss1 );
 #endif
 #ifdef BBB_PLATFORM_OSX
 	bbb_sshot_Take( "/Users/User/Projects/bbb", &ss1 );

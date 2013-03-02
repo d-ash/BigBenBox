@@ -69,7 +69,11 @@ sub TargetFile {
 sub System {
 	my $cmd = shift;
 
-	say "${cmd}";
+	if ( substr( $cmd, 0, 1 ) eq "\@" ) {
+		$cmd = substr( $cmd, 1 );
+	} else {
+		say "${cmd}";
+	}
 	if ( !$_simulated ) {
 		if ( system( $cmd ) != 0 ) {
 			die "system() failed";
@@ -219,7 +223,7 @@ AddAction( PerlPP( "bbb_errors.h.p" ) );
 
 # ============== Client ===============
 
-SetPhony( "r", AddAction( [], [], "cd ${BUILD_DIR}/client && ./client" ) );
+SetPhony( "clientRun", AddAction( [], [], "\@cd ${BUILD_DIR}/client && ./client" ) );
 SetPhony( "client", AddAction( Link( "client/client" ) ) );
 SetPhony( "clientHeaders", AddAction( [ "${GEN_DIR}/client/client.h" ], [], "" ) );
 AddAction( Compile( "client/client" ) );
@@ -237,7 +241,7 @@ push( @testsHdrFiles, "${GEN_DIR}/${biotest}.h" );
 push( @testsHdrFiles, "${GEN_DIR}/${biotest}.c" );
 push( @testsHdrFiles, "${GEN_DIR}/tests/minunit.h" );
 
-SetPhony( "rt", AddAction( [], [], "cd ${BUILD_DIR}/tests && perl runner.pl run" ) );
+SetPhony( "testsRun", AddAction( [], [], "\@cd ${BUILD_DIR}/tests && perl runner.pl run" ) );
 SetPhony( "tests", AddAction( \@testsExeFiles, [], "cp tests/runner.pl ${BUILD_DIR}/tests/runner.pl" ) );
 SetPhony( "testsHeaders", AddAction( \@testsHdrFiles, [], "" ) );
 
@@ -271,5 +275,5 @@ TargetPhony( "client" );
 TargetPhony( "testsHeaders" );
 TargetPhony( "tests" );
 
-TargetPhony( "r" );
-TargetPhony( "rt" );
+TargetPhony( "clientRun" );
+TargetPhony( "testsRun" );

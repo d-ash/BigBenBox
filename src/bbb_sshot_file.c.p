@@ -142,7 +142,8 @@ bbb_result_t
 
 	// takenFrom will be released in bbb_sshot_Destroy() if is not NULL
 	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( ss->takenFrom ), hdrExt.takenFromMem ) ) ) {
-		exit( 1 );
+		result = BBB_ERROR_NOMEMORY;
+		<? c_GotoCleanup(); ?>
 	}
 
 	if ( fread( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
@@ -241,11 +242,12 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 	while ( fread( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) == 1 ) {
 		bbb_util_hash_UpdateChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
 
-		// allocating memory for all entries with this hash
-		hashHdr = & ss->ht[ fileHashHdr.hash ];
+		// Allocating memory for all entries with this hash.
+		// In case of error this will be released at snapshot's Destroy().
+		hashHdr = &( ss->ht[ fileHashHdr.hash ] );
 		hashHdr->size = fileHashHdr.size;
 		if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( hashHdr->first ), fileHashHdr.size ) ) ) {
-			exit( 1 );
+			return BBB_ERROR_NOMEMORY;
 		}
 
 		// The highest possible pointer value (counting not empty string).

@@ -28,7 +28,7 @@ bbb_result_t
 		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
-	<? c_OnCleanup( "f", "?>
+	<? c_OnCleanup( "?>
 		if ( fclose( f ) != 0 ) {
 			BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 			result = BBB_ERROR_FILESYSTEMIO;
@@ -36,12 +36,12 @@ bbb_result_t
 		if ( BBB_FAILED( result ) ) {
 			unlink( path );
 		}
-	<?"); ?>
+	<?" ); ?>
 
 	_ConstructHdr( &hdr );
-	<? c_OnCleanup( "hdr", "?>
+	<? c_OnCleanup( "?>
 		@_Destroy_hdr( &hdr );
-	<?"); ?>
+	<?" ); ?>
 
 	if ( @_WriteToFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
@@ -50,16 +50,12 @@ bbb_result_t
 	}
 
 	hdrExt.takenFromMem = strlen( ss->takenFrom ) + 1;
-	if ( fwrite( &hdrExt, sizeof( hdrExt ), 1, f ) == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		result = BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fwrite( &hdrExt, sizeof( hdrExt ), 1, f, &dummy ) ) ) {
 		<? c_GotoCleanup(); ?>
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
-	if ( fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f ) == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		result = BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f, &dummy ) ) ) {
 		<? c_GotoCleanup(); ?>
 	}
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
@@ -88,11 +84,11 @@ bbb_result_t
 	size_t			dummy;
 
 	bbb_sshot_Init( ss );
-	<? c_OnCleanup( "ss", "?>
+	<? c_OnCleanup( "?>
 		if ( BBB_FAILED( result ) ) {
 			bbb_sshot_Destroy( ss );
 		}
-	<?"); ?>
+	<?" ); ?>
 	ss->restored = 1;
 
 	f = fopen( path, "rb" );
@@ -101,26 +97,26 @@ bbb_result_t
 		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
-	<? c_OnCleanup( "f", "?>
+	<? c_OnCleanup( "?>
 		if ( fclose( f ) != 0 ) {
 			BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 			result = BBB_ERROR_FILESYSTEMIO;
 		}
-	<?"); ?>
+	<?" ); ?>
 
 	if ( @_ReadFromFile_hdr( &hdr, f, &checksum ) == 0 ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
-	<? c_OnCleanup( "hdr", "?>
+	<? c_OnCleanup( "?>
 		@_Destroy_hdr( &hdr );
-	<?"); ?>
+	<?" ); ?>
 
 	_ConstructHdr( &hdrControl );
-	<? c_OnCleanup( "hdrControl", "?>
+	<? c_OnCleanup( "?>
 		@_Destroy_hdr( &hdrControl );
-	<?"); ?>
+	<?" ); ?>
 
 	if ( !@_IsEqual_hdr( &hdr, &hdrControl ) ) {
 		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "Header of the snapshot file %s is incorrect", path );
@@ -189,10 +185,12 @@ _ConstructHdr( @_hdr_t* const hdr ) {
 
 static bbb_result_t
 _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
+	bbb_result_t		result = BBB_SUCCESS;
 	bbb_sshot_hash_t	i;
 	bbb_sshot_entry_t*	entry = NULL;
 	bbb_sshot_ht_t*		hashHdr = NULL;
 	@_ht_t				fileHashHdr;
+	size_t				dummy;
 
 	for ( i = 0; i < BBB_SSHOT_HASH_MAX; i++ ) {
 		hashHdr = & ss->ht[ i ];
@@ -205,17 +203,15 @@ _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) 
 		fileHashHdr.hash = i;
 		fileHashHdr.size = hashHdr->size;
 
-		if ( fwrite( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) == 0 ) {
-			BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-			return BBB_ERROR_FILESYSTEMIO;
+		if ( BBB_FAILED( result = bbb_util_Fwrite( &fileHashHdr, sizeof( fileHashHdr ), 1, f, &dummy ) ) ) {
+			goto L_end;
 		}
 		bbb_util_hash_UpdateChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
 
 		entry = hashHdr->first;
 		do {
-			if ( fwrite( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, 1, f ) == 0 ) {
-				BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-				return BBB_ERROR_FILESYSTEMIO;
+			if ( BBB_FAILED( result = bbb_util_Fwrite( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, 1, f, &dummy ) ) ) {
+				goto L_end;
 			}
 			bbb_util_hash_UpdateChecksum( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, checksum_p );
 
@@ -223,7 +219,8 @@ _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) 
 		} while ( entry != NULL );
 	}
 
-	return BBB_SUCCESS;
+L_end:
+	return result;
 }
 
 static bbb_result_t

@@ -1,3 +1,5 @@
+<?:include c_lang.p ?>
+
 #include "bbb_bio.h"
 #include "bbb_util.h"
 #include "bbb_util_hash.h"
@@ -196,49 +198,55 @@ L_end:
 
 bbb_result_t
 bbb_bio_WriteToFile_uint16( const uint16_t v, FILE* const f, bbb_checksum_t* const chk, size_t* const written ) {
-	uint16_t	t;
+	bbb_result_t	result = BBB_SUCCESS;
+	uint16_t		t;
 
 	t = htons( v );
 	bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
 
-	*written = fwrite( &t, sizeof( t ), 1, f ) * sizeof( t );
-	if ( *written == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		return BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f, written ) ) ) {
+		goto L_end;
 	}
-	return BBB_SUCCESS;
+	*written = sizeof( t );
+
+L_end:
+	return result;
 }
 
 bbb_result_t
 bbb_bio_WriteToFile_uint32( const uint32_t v, FILE* const f, bbb_checksum_t* const chk, size_t* const written ) {
-	uint32_t	t;
+	bbb_result_t	result = BBB_SUCCESS;
+	uint32_t		t;
 
 	t = htonl( v );
 	if ( chk != NULL ) {	// special case for a trailing checksum in files
 		bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
 	}
 
-	*written = fwrite( &t, sizeof( t ), 1, f ) * sizeof( t );
-	if ( *written == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		return BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f, written ) ) ) {
+		goto L_end;
 	}
-	return BBB_SUCCESS;
+	*written = sizeof( t );
+
+L_end:
+	return result;
 }
 
 bbb_result_t
 bbb_bio_WriteToFile_uint64( const uint64_t v, FILE* const f, bbb_checksum_t* const chk, size_t* const written ) {
-	uint64_t	t;
+	bbb_result_t	result = BBB_SUCCESS;
+	uint64_t		t;
 
 	t = bbb_util_ConvertBinary_hton64( v );
 	bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
 
-	*written = fwrite( &t, sizeof( t ), 1, f ) * sizeof( t );
-	if ( *written == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		return BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f, written ) ) ) {
+		goto L_end;
 	}
-	return BBB_SUCCESS;
+	*written = sizeof( t );
+
+L_end:
+	return result;
 }
 
 bbb_result_t
@@ -251,12 +259,10 @@ bbb_bio_WriteToFile_varbuf( const bbb_varbuf_t vb, FILE* const f, bbb_checksum_t
 
 	bbb_util_hash_UpdateChecksum( vb.buf, vb.len, chk );
 
-	*written = fwrite( vb.buf, vb.len, 1, f ) * ( sizeof( vb.len ) + vb.len );
-	if ( *written == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		result = BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fwrite( vb.buf, vb.len, 1, f, written ) ) ) {
 		goto L_end;
 	}
+	*written = sizeof( vb.len ) + vb.len;
 
 L_end:
 	return result;
@@ -268,10 +274,9 @@ bbb_result_t
 bbb_bio_ReadFromFile_uint16( uint16_t* const v, FILE* const f, bbb_checksum_t* const chk, size_t* const read ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint16_t		t;
+	size_t			dummy;
 
-	if ( fread( &t, sizeof( t ), 1, f ) == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		result = BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &dummy ) ) ) {
 		goto L_end;
 	}
 
@@ -291,10 +296,9 @@ bbb_result_t
 bbb_bio_ReadFromFile_uint32( uint32_t* const v, FILE* const f, bbb_checksum_t* const chk, size_t* const read ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint32_t		t;
+	size_t			dummy;
 
-	if ( fread( &t, sizeof( t ), 1, f ) == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		result = BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &dummy ) ) ) {
 		goto L_end;
 	}
 
@@ -316,10 +320,9 @@ bbb_result_t
 bbb_bio_ReadFromFile_uint64( uint64_t* const v, FILE* const f, bbb_checksum_t* const chk, size_t* const read ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint64_t		t;
+	size_t			dummy;
 
-	if ( fread( &t, sizeof( t ), 1, f ) == 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		result = BBB_ERROR_FILESYSTEMIO;
+	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &dummy ) ) ) {
 		goto L_end;
 	}
 
@@ -338,24 +341,28 @@ L_end:
 bbb_result_t
 bbb_bio_ReadFromFile_varbuf( bbb_varbuf_t* const vb, FILE* const f, bbb_checksum_t* const chk, size_t* const read ) {
 	bbb_result_t	result = BBB_SUCCESS;
+	size_t			dummy;
 
 	if ( BBB_FAILED( result = bbb_bio_ReadFromFile_uint32( &( vb->len ), f, chk, read ) ) ) {
-		goto L_end;
+		<? c_GotoCleanup(); ?>
 	}
 
 	if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&( vb->buf ), vb->len ) ) ) {
-		goto L_end;
+		<? c_GotoCleanup(); ?>
 	}
-	if ( fread( vb->buf, vb->len, 1, f ) == 0 ) {
-		free( vb->buf );
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
-		result = BBB_ERROR_FILESYSTEMIO;
-		goto L_end;
+	<? c_OnCleanup( "?>
+		if ( BBB_FAILED( result ) ) {
+			free( vb->buf );
+		}
+	<?" ); ?>
+
+	if ( BBB_FAILED( result = bbb_util_Fread( vb->buf, vb->len, 1, f, &dummy ) ) ) {
+		<? c_GotoCleanup(); ?>
 	}
 
 	bbb_util_hash_UpdateChecksum( vb->buf, vb->len, chk );
 
-L_end:
+	<? c_Cleanup(); ?>
 	if ( BBB_FAILED( result ) ) {
 		*read = 0;
 	} else {

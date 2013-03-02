@@ -14,19 +14,25 @@ bbb_result_t
 	return BBB_SUCCESS;
 }
 
-/*
 bbb_result_t
-@_ReadFromFile( void** const ptr, const size_t size ) {
-	*ptr = malloc( size );
-
-	// TODO FIXME
-	if ( *ptr == NULL ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "" );
+@_Fread( void* const ptr, const size_t size, const size_t nmemb, FILE* stream, size_t* const read ) {
+	*read = fread( ptr, size, nmemb, stream );
+	if ( *read == 0 ) {
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		return BBB_ERROR_FILESYSTEMIO;
 	}
 	return BBB_SUCCESS;
 }
-*/
+
+bbb_result_t
+@_Fwrite( const void* const ptr, const size_t size, const size_t nmemb, FILE* stream, size_t* const written ) {
+	*written = fwrite( ptr, size, nmemb, stream );
+	if ( *written == 0 ) {
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
+		return BBB_ERROR_FILESYSTEMIO;
+	}
+	return BBB_SUCCESS;
+}
 
 int
 @_IsLittleEndian() {

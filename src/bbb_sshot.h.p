@@ -57,12 +57,12 @@ typedef struct {
 // ================= Exported functions =================
 
 				// does not allocate memory for @_t
-int				@_Init( @_t* const ss );
+bbb_result_t	@_Init( @_t* const ss );
 
 				// does not free @_t itself
-int				@_Destroy( @_t* const ss );
+void			@_Destroy( @_t* const ss );
 
-int				@_Take( const char* const path, @_t* const ss );
+bbb_result_t	@_Take( const char* const path, @_t* const ss );
 
 @_entry_t*		@_Search( const char* const path, const @_t* const ss );
 

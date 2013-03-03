@@ -36,7 +36,7 @@ static char* _TestSha256() {
 		0xe0, 0x7d, 0xdb, 0x6d, 0xce, 0x4f, 0x6e, 0xeb
 	};
 	
-	MU_ASSERT( "Cannot calc SHA256 on a file", bbb_util_hash_ReadFile_sha256( DATA_DIR "/tmp0/sha.hash", hash ) != 0 );
+	MU_ASSERT( "Cannot calc SHA256 on a file", !BBB_FAILED( bbb_util_hash_ReadFile_sha256( DATA_DIR "/tmp0/sha.hash", hash ) ) );
 	MU_ASSERT( "SHA256 do not match", memcmp( hash, ctrl, SHA256_DIGEST_LENGTH ) == 0 );
 	return 0;
 }

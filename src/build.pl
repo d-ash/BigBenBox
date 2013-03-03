@@ -113,7 +113,7 @@ sub TargetPhony {
 
 my $LIB_NAME	= "bbb";
 my $RELEASE		= 0;
-my $VERBOSE		= 0;
+my $VERBOSE		= 1;
 my $PLATFORM	= "LINUX";
 
 my $BUILD_DIR;
@@ -274,5 +274,5 @@ TargetPhony( "client" );
 TargetPhony( "testsHeaders" );
 TargetPhony( "tests" );
 
-TargetPhony( "clientRun" );
 TargetPhony( "testsRun" );
+TargetPhony( "clientRun" );

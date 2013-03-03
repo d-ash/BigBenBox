@@ -1,3 +1,5 @@
+<?:include c_lang.p ?>
+
 #include "bbb_sshot.h"
 #include "bbb_util.h"
 #include "bbb_util_hash.h"
@@ -5,40 +7,44 @@
 <?:prefix @_ bbb_sshot_ ?>
 <?:prefix @^ BBB_SSHOT_ ?>
 
-static int	_ProcessDir( const char* const path, const size_t skip, @_t* const ss );
-static int	_ProcessEntry( const char* const path, const size_t skip, const char* const name, @_t* const ss );
-static int	_AddToSnapshot( @_entry_t* const entry, @_t* const ss );
+static bbb_result_t		_ProcessDir( const char* const path, const size_t skip, @_t* const ss );
+static bbb_result_t		_ProcessEntry( const char* const path, const size_t skip, const char* const name, @_t* const ss );
+static bbb_result_t		_AddToSnapshot( @_entry_t* const entry, @_t* const ss );
 
-int @_Init( @_t* const ss ) {
+bbb_result_t
+@_Init( @_t* const ss ) {
+	bbb_result_t	result = BBB_SUCCESS;
+
 	ss->restored = 0;				// by default a snapshot is 'generated'
 	ss->takenFrom = NULL;
-	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( ss->ht ), sizeof( @_ht_t ) * @^HASH_MAX ) ) ) {
-		exit( 1 );
+	if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&( ss->ht ), sizeof( @_ht_t ) * @^HASH_MAX ) ) ) {
+		goto L_end;
 	}
 
 	// assuming NULL == 0
 	memset( ss->ht, 0, sizeof( @_ht_t ) * @^HASH_MAX );
 
-	return 1;
+L_end:
+	return result;
 }
 
-int @_Destroy( @_t* const ss ) {
+void
+@_Destroy( @_t* const ss ) {
 	@_hash_t	i;
 	@_entry_t*	entry = NULL;
 	void*		mustDie = NULL;
 
 	for ( i = 0; i < @^HASH_MAX; i++ ) {
 		entry = ss->ht[ i ].first;
-
-		if ( ss->restored ) {
-			if ( entry != NULL ) {
+		if ( entry != NULL ) {
+			if ( ss->restored ) {
 				free( entry );		// all entries at once
-			}
-		} else {
-			while ( entry != NULL ) {
-				mustDie = entry;
-				entry = entry->next;
-				free( mustDie );
+			} else {
+				do {
+					mustDie = entry;
+					entry = entry->next;
+					free( mustDie );
+				} while ( entry != NULL );
 			}
 		}
 	}
@@ -49,36 +55,48 @@ int @_Destroy( @_t* const ss ) {
 	if ( ss->takenFrom != NULL ) {
 		free( ss->takenFrom );
 	}
-
-	return 1;
 }
 
-int @_Take( const char* const path, @_t* const ss ) {
-	size_t	len = 0;
-	char*	p;
+bbb_result_t
+@_Take( const char* const path, @_t* const ss ) {
+	bbb_result_t	result = BBB_SUCCESS;
+	size_t			len = 0;
 
-	@_Init( ss );
-	p = strdup( path );
-	len = strlen( p );
+	if ( BBB_FAILED( result = @_Init( ss ) ) ) {
+		<? c_GotoCleanup(); ?>
+	}
+	<? c_OnCleanup( "?>
+		if ( BBB_FAILED( result ) ) {
+			@_Destroy( ss );
+		}
+	<?" ); ?>
+
+	// this memory will be released in @_Destroy() if not NULL
+	len = strlen( path );
+	ss->takenFrom = strdup( path );
+	if ( ss->takenFrom == NULL ) {
+		BBB_ERR_CODE( BBB_ERROR_NOMEMORY, "strdup()" );
+		result = BBB_ERROR_NOMEMORY;
+		<? c_GotoCleanup(); ?>
+	}
 
 	// trim slash at the end if necessary
-	if ( len > 1 && ( p[ len - 1 ] == '/' || p[ len - 1 ] == '\\' ) ) {
+	if ( len > 1 &&
+			( ss->takenFrom[ len - 1 ] == '/' || ss->takenFrom[ len - 1 ] == '\\' ) ) {
 		len--;
-		p[ len ] = 0;
+		ss->takenFrom[ len ] = 0;
 	}
 
-	if ( !_ProcessDir( p, len, ss ) ) {
-		@_Destroy( ss );
-		free( p );
-		return 0;
+	if ( BBB_FAILED( result = _ProcessDir( ss->takenFrom, len, ss ) ) ) {
+		<? c_GotoCleanup(); ?>
 	}
 
-	ss->takenFrom = p;
-
-	return 1;
+	<? c_Cleanup(); ?>
+	return result;
 }
 
-@_entry_t* @_Search( const char* const path, const @_t* const ss ) {
+@_entry_t*
+@_Search( const char* const path, const @_t* const ss ) {
 	@_hash_t	hash;
 	@_entry_t*	entry = NULL;
 
@@ -94,7 +112,8 @@ int @_Take( const char* const path, @_t* const ss ) {
 	return entry;
 }
 
-int @_Diff( const @_t* const ss0, const @_t* const ss1 ) {
+int
+@_Diff( const @_t* const ss0, const @_t* const ss1 ) {
 	@_hash_t	i;
 	@_entry_t*	entry = NULL;
 	@_entry_t*	found = NULL;
@@ -144,7 +163,7 @@ int @_Diff( const @_t* const ss0, const @_t* const ss1 ) {
 					printf( "CHANGE_3: %s\n", path );
 				}
 			} else {
-				entry->custom = 0;	// resetting to a default value
+				entry->custom = 0;		// resetting to a default value
 			}
 
 			entry = entry->next;
@@ -156,21 +175,23 @@ int @_Diff( const @_t* const ss0, const @_t* const ss1 ) {
 
 // ================= Static ===============
 
-static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss ) {
+static bbb_result_t
+_ProcessDir( const char* const path, const size_t skip, @_t* const ss ) {
+	bbb_result_t	result = BBB_SUCCESS;
 	DIR*			dir = NULL;
 	struct dirent*	entry = NULL;
-	int				res = 1;
 
 	BBB_LOG( "Processing dir: %s", path );
 	dir = opendir( path );
 	if ( dir == NULL ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot open dir %s: %s", path, strerror( errno ) );
-		return 0;
+		result = BBB_ERROR_FILESYSTEMIO;
+		goto L_end;
 	}
 
 	while ( 1 ) {
 		// Windows port dirent.h does not have readdir_r().
-		// BTW we don't need it here.
+		// Fortunately we don't need it here.
 		entry = readdir( dir );
 		if ( entry == NULL ) {
 			// an error or the end of the directory
@@ -186,21 +207,24 @@ static int _ProcessDir( const char* const path, const size_t skip, @_t* const ss
 			}
 		}
 
-		if ( !_ProcessEntry( path, skip, entry->d_name, ss ) ) {
-			res = 0;
+		if ( BBB_FAILED( result = _ProcessEntry( path, skip, entry->d_name, ss ) ) ) {
 			break;
 		}
 	}
 
 	if ( closedir( dir ) < 0 ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot close dir %s: %s", path, strerror( errno ) );
-		return 0;
+		result = BBB_ERROR_FILESYSTEMIO;
+		goto L_end;
 	}
 
-	return res;
+L_end:
+	return result;
 }
 
-static int _ProcessEntry( const char* const path, const size_t skip, const char* const name, @_t* const ss ) {
+static bbb_result_t
+_ProcessEntry( const char* const path, const size_t skip, const char* const name, @_t* const ss ) {
+	bbb_result_t	result = BBB_SUCCESS;
 	struct stat		entryInfo;
 	@_entry_t*		entry = NULL;
 	size_t			pathMem = 0;
@@ -209,12 +233,23 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 	// allocating memory for @_entry_t + path, pathMem will be aligned to BBB_WORD_SIZE
 	// in order to get properly aligned memory after loading this data from a file.
 	pathMem = ( strlen( path ) - skip + strlen( name ) + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
-	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&entry, sizeof( @_entry_t ) + pathMem ) ) ) {
-		exit( 1 );
+
+	if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&entry, sizeof( @_entry_t ) + pathMem ) ) ) {
+		<? c_GotoCleanup(); ?>
 	}
-	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&fullPath, pathMem + skip + 1 ) ) ) {
-		exit( 1 );
+	<? c_OnCleanup( "?>
+		if ( BBB_FAILED( result ) ) {
+			free( entry );
+		}
+	<?" ); ?>
+
+	if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&fullPath, pathMem + skip + 1 ) ) ) {
+		<? c_GotoCleanup(); ?>
 	}
+	<? c_OnCleanup( "?>
+		free( fullPath );
+	<?" ); ?>
+
 	strcpy( fullPath, path );
 	strcat( fullPath, "/" );
 	strcat( fullPath, name );
@@ -226,9 +261,8 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 
 	if ( stat( fullPath, &entryInfo ) ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot get info about %s: %s", fullPath, strerror( errno ) );
-		free( entry );
-		free( fullPath );
-		return 0;
+		result = BBB_ERROR_FILESYSTEMIO;
+		<? c_GotoCleanup(); ?>
 	}
 
 	entry->content.size = entryInfo.st_size;
@@ -236,26 +270,33 @@ static int _ProcessEntry( const char* const path, const size_t skip, const char*
 
 	if ( S_ISDIR( entryInfo.st_mode ) ) {
 		entry->status |= @^ENTRY_STATUS_DIR;
-		_ProcessDir( fullPath, skip, ss );
+		if ( BBB_FAILED( result = _AddToSnapshot( entry, ss ) ) ) {
+			<? c_GotoCleanup(); ?>
+		}
+		if ( BBB_FAILED( result = _ProcessDir( fullPath, skip, ss ) ) ) {
+			<? c_GotoCleanup(); ?>
+		}
 	} else if ( S_ISREG( entryInfo.st_mode ) ) {
 		entry->status &= ~@^ENTRY_STATUS_DIR;
+		if ( BBB_FAILED( result = _AddToSnapshot( entry, ss ) ) ) {
+			<? c_GotoCleanup(); ?>
+		}
 	} else {
 		BBB_LOG( "Skipping irregular file: %s", fullPath );
-		free( entry );
-		free( fullPath );
-		return 1;		// it is a successful operation
+		<? c_GotoCleanup(); ?>
 	}
 
-	free( fullPath );
-	return _AddToSnapshot( entry, ss );
+	<? c_Cleanup(); ?>
+	return result;
 }
 
-static int _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
+static bbb_result_t
+_AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
 	@_hash_t	hash;
 
 	if ( ss->restored ) {
-		BBB_ERR_CODE( BBB_ERROR_DEVELOPER, "Adding entries to a restored snapshot is denied" );
-		return 0;
+		BBB_ERR_CODE( BBB_ERROR_DEVELOPER, "Adding entries to restored snapshots is prohibited" );
+		return BBB_ERROR_DEVELOPER;
 	}
 
 	hash = bbb_util_hash_Calc_uint16( @^ENTRY_PATH( entry ), strlen( @^ENTRY_PATH( entry ) ) );
@@ -265,5 +306,5 @@ static int _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
 	ss->ht[ hash ].first = entry;
 	ss->ht[ hash ].size += sizeof( @_entry_t ) + entry->pathMem;
 
-	return 1;
+	return BBB_SUCCESS;
 }

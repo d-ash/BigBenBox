@@ -4,10 +4,13 @@
 #include "bbb_util.h"
 #include "bbb_util_hash.h"
 
+<?:prefix @_ bbb_bio_ ?>
+<?:prefix @^ BBB_BIO_ ?>
+
 // ============== Writing to a buffer =============
 
 bbb_result_t
-bbb_bio_WriteToBuf_uint16( const uint16_t v, bbb_byte_t* const buf, const size_t len, size_t* const written ) {
+@_WriteToBuf_uint16( const uint16_t v, bbb_byte_t* const buf, const size_t len ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint16_t		t;
 
@@ -21,16 +24,11 @@ bbb_bio_WriteToBuf_uint16( const uint16_t v, bbb_byte_t* const buf, const size_t
 	memcpy( buf, &t, sizeof ( t ) );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*written = 0;
-	} else {
-		*written = sizeof( t );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_WriteToBuf_uint32( const uint32_t v, bbb_byte_t* const buf, const size_t len, size_t* const written ) {
+@_WriteToBuf_uint32( const uint32_t v, bbb_byte_t* const buf, const size_t len ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint32_t		t;
 
@@ -44,16 +42,11 @@ bbb_bio_WriteToBuf_uint32( const uint32_t v, bbb_byte_t* const buf, const size_t
 	memcpy( buf, &t, sizeof( t ) );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*written = 0;
-	} else {
-		*written = sizeof( t );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_WriteToBuf_uint64( const uint64_t v, bbb_byte_t* const buf, const size_t len, size_t* const written ) {
+@_WriteToBuf_uint64( const uint64_t v, bbb_byte_t* const buf, const size_t len ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint64_t		t;
 
@@ -67,16 +60,11 @@ bbb_bio_WriteToBuf_uint64( const uint64_t v, bbb_byte_t* const buf, const size_t
 	memcpy( buf, &t, sizeof( t ) );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*written = 0;
-	} else {
-		*written = sizeof( t );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_WriteToBuf_varbuf( const bbb_varbuf_t vb, bbb_byte_t* const buf, const size_t len, size_t* const written ) {
+@_WriteToBuf_varbuf( const bbb_varbuf_t vb, bbb_byte_t* const buf, const size_t len ) {
 	bbb_result_t	result = BBB_SUCCESS;
 
 	if ( len < ( sizeof( vb.len ) + vb.len ) ) {
@@ -85,25 +73,20 @@ bbb_bio_WriteToBuf_varbuf( const bbb_varbuf_t vb, bbb_byte_t* const buf, const s
 		goto L_end;
 	}
 
-	if ( BBB_FAILED( result = bbb_bio_WriteToBuf_uint32( vb.len, buf, sizeof( vb.len ), written ) ) ) {
+	if ( BBB_FAILED( result = @_WriteToBuf_uint32( vb.len, buf, sizeof( vb.len ) ) ) ) {
 		goto L_end;
 	}
 
 	memcpy( buf + sizeof( vb.len ), vb.buf, vb.len );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*written = 0;
-	} else {
-		*written = sizeof( vb.len ) + vb.len;
-	}
 	return result;
 }
 
 // ============== Reading from a buffer =============
 
 bbb_result_t
-bbb_bio_ReadFromBuf_uint16( uint16_t* const v, const bbb_byte_t* const buf, const size_t len, size_t* const read ) {
+@_ReadFromBuf_uint16( uint16_t* const v, const bbb_byte_t* const buf, const size_t len ) {
 	bbb_result_t	result = BBB_SUCCESS;
 
 	if ( len < sizeof( *v ) ) {
@@ -115,16 +98,11 @@ bbb_bio_ReadFromBuf_uint16( uint16_t* const v, const bbb_byte_t* const buf, cons
 	*v = ntohs( *( uint16_t* ) buf );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*read = 0;
-	} else {
-		*read = sizeof( *v );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_ReadFromBuf_uint32( uint32_t* const v, const bbb_byte_t* const buf, const size_t len, size_t* const read ) {
+@_ReadFromBuf_uint32( uint32_t* const v, const bbb_byte_t* const buf, const size_t len ) {
 	bbb_result_t	result = BBB_SUCCESS;
 
 	if ( len < sizeof( *v ) ) {
@@ -136,16 +114,11 @@ bbb_bio_ReadFromBuf_uint32( uint32_t* const v, const bbb_byte_t* const buf, cons
 	*v = ntohl( *( uint32_t* ) buf );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*read = 0;
-	} else {
-		*read = sizeof( *v );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_ReadFromBuf_uint64( uint64_t* const v, const bbb_byte_t* const buf, const size_t len, size_t* const read ) {
+@_ReadFromBuf_uint64( uint64_t* const v, const bbb_byte_t* const buf, const size_t len ) {
 	bbb_result_t	result = BBB_SUCCESS;
 
 	if ( len < sizeof( *v ) ) {
@@ -157,19 +130,14 @@ bbb_bio_ReadFromBuf_uint64( uint64_t* const v, const bbb_byte_t* const buf, cons
 	*v = bbb_util_ConvertBinary_ntoh64( *( uint64_t* ) buf );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*read = 0;
-	} else {
-		*read = sizeof( *v );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_ReadFromBuf_varbuf( bbb_varbuf_t* const vb, const bbb_byte_t* const buf, const size_t len, size_t* const read ) {
+@_ReadFromBuf_varbuf( bbb_varbuf_t* const vb, const bbb_byte_t* const buf, const size_t len ) {
 	bbb_result_t	result = BBB_SUCCESS;
 
-	if ( BBB_FAILED( result = bbb_bio_ReadFromBuf_uint32( &( vb->len ), buf, len, read ) ) ) {
+	if ( BBB_FAILED( result = @_ReadFromBuf_uint32( &( vb->len ), buf, len ) ) ) {
 		goto L_end;
 	}
 
@@ -186,35 +154,29 @@ bbb_bio_ReadFromBuf_varbuf( bbb_varbuf_t* const vb, const bbb_byte_t* const buf,
 	memcpy( vb->buf, buf + sizeof( vb->len ), vb->len );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*read = 0;
-	} else {
-		*read = sizeof( vb->len ) + vb->len;
-	}
 	return result;
 }
 
 // ============== Writing to a file =============
 
 bbb_result_t
-bbb_bio_WriteToFile_uint16( const uint16_t v, FILE* const f, bbb_checksum_t* const chk, size_t* const written ) {
+@_WriteToFile_uint16( const uint16_t v, FILE* const f, bbb_checksum_t* const chk ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint16_t		t;
 
 	t = htons( v );
 	bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
 
-	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f, written ) ) ) {
+	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f ) ) ) {
 		goto L_end;
 	}
-	*written = sizeof( t );
 
 L_end:
 	return result;
 }
 
 bbb_result_t
-bbb_bio_WriteToFile_uint32( const uint32_t v, FILE* const f, bbb_checksum_t* const chk, size_t* const written ) {
+@_WriteToFile_uint32( const uint32_t v, FILE* const f, bbb_checksum_t* const chk ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint32_t		t;
 
@@ -223,46 +185,43 @@ bbb_bio_WriteToFile_uint32( const uint32_t v, FILE* const f, bbb_checksum_t* con
 		bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
 	}
 
-	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f, written ) ) ) {
+	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f ) ) ) {
 		goto L_end;
 	}
-	*written = sizeof( t );
 
 L_end:
 	return result;
 }
 
 bbb_result_t
-bbb_bio_WriteToFile_uint64( const uint64_t v, FILE* const f, bbb_checksum_t* const chk, size_t* const written ) {
+@_WriteToFile_uint64( const uint64_t v, FILE* const f, bbb_checksum_t* const chk ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint64_t		t;
 
 	t = bbb_util_ConvertBinary_hton64( v );
 	bbb_util_hash_UpdateChecksum( &t, sizeof( t ), chk );
 
-	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f, written ) ) ) {
+	if ( BBB_FAILED( result = bbb_util_Fwrite( &t, sizeof( t ), 1, f ) ) ) {
 		goto L_end;
 	}
-	*written = sizeof( t );
 
 L_end:
 	return result;
 }
 
 bbb_result_t
-bbb_bio_WriteToFile_varbuf( const bbb_varbuf_t vb, FILE* const f, bbb_checksum_t* const chk, size_t* const written ) {
+@_WriteToFile_varbuf( const bbb_varbuf_t vb, FILE* const f, bbb_checksum_t* const chk ) {
 	bbb_result_t	result = BBB_SUCCESS;
 
-	if ( BBB_FAILED( result = bbb_bio_WriteToFile_uint32( vb.len, f, chk, written ) ) ) {
+	if ( BBB_FAILED( result = @_WriteToFile_uint32( vb.len, f, chk ) ) ) {
 		goto L_end;
 	}
 
 	bbb_util_hash_UpdateChecksum( vb.buf, vb.len, chk );
 
-	if ( BBB_FAILED( result = bbb_util_Fwrite( vb.buf, vb.len, 1, f, written ) ) ) {
+	if ( BBB_FAILED( result = bbb_util_Fwrite( vb.buf, vb.len, 1, f ) ) ) {
 		goto L_end;
 	}
-	*written = sizeof( vb.len ) + vb.len;
 
 L_end:
 	return result;
@@ -271,12 +230,17 @@ L_end:
 // ============== Reading from a file =============
 
 bbb_result_t
-bbb_bio_ReadFromFile_uint16( uint16_t* const v, FILE* const f, bbb_checksum_t* const chk, size_t* const read ) {
+@_ReadFromFile_uint16( uint16_t* const v, FILE* const f, bbb_checksum_t* const chk ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint16_t		t;
-	size_t			dummy;
+	size_t			read;
 
-	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &dummy ) ) ) {
+	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &read ) ) ) {
+		goto L_end;
+	}
+	if ( read == 0 ) {
+		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+		result = BBB_ERROR_CORRUPTEDDATA;
 		goto L_end;
 	}
 
@@ -284,21 +248,21 @@ bbb_bio_ReadFromFile_uint16( uint16_t* const v, FILE* const f, bbb_checksum_t* c
 	*v = ntohs( t );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*read = 0;
-	} else {
-		*read = sizeof( t );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_ReadFromFile_uint32( uint32_t* const v, FILE* const f, bbb_checksum_t* const chk, size_t* const read ) {
+@_ReadFromFile_uint32( uint32_t* const v, FILE* const f, bbb_checksum_t* const chk ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint32_t		t;
-	size_t			dummy;
+	size_t			read;
 
-	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &dummy ) ) ) {
+	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &read ) ) ) {
+		goto L_end;
+	}
+	if ( read == 0 ) {
+		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+		result = BBB_ERROR_CORRUPTEDDATA;
 		goto L_end;
 	}
 
@@ -308,21 +272,21 @@ bbb_bio_ReadFromFile_uint32( uint32_t* const v, FILE* const f, bbb_checksum_t* c
 	*v = ntohl( t );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*read = 0;
-	} else {
-		*read = sizeof( t );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_ReadFromFile_uint64( uint64_t* const v, FILE* const f, bbb_checksum_t* const chk, size_t* const read ) {
+@_ReadFromFile_uint64( uint64_t* const v, FILE* const f, bbb_checksum_t* const chk ) {
 	bbb_result_t	result = BBB_SUCCESS;
 	uint64_t		t;
-	size_t			dummy;
+	size_t			read;
 
-	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &dummy ) ) ) {
+	if ( BBB_FAILED( result = bbb_util_Fread( &t, sizeof( t ), 1, f, &read ) ) ) {
+		goto L_end;
+	}
+	if ( read == 0 ) {
+		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+		result = BBB_ERROR_CORRUPTEDDATA;
 		goto L_end;
 	}
 
@@ -330,20 +294,15 @@ bbb_bio_ReadFromFile_uint64( uint64_t* const v, FILE* const f, bbb_checksum_t* c
 	*v = bbb_util_ConvertBinary_ntoh64( t );
 
 L_end:
-	if ( BBB_FAILED( result ) ) {
-		*read = 0;
-	} else {
-		*read = sizeof( t );
-	}
 	return result;
 }
 
 bbb_result_t
-bbb_bio_ReadFromFile_varbuf( bbb_varbuf_t* const vb, FILE* const f, bbb_checksum_t* const chk, size_t* const read ) {
+@_ReadFromFile_varbuf( bbb_varbuf_t* const vb, FILE* const f, bbb_checksum_t* const chk ) {
 	bbb_result_t	result = BBB_SUCCESS;
-	size_t			dummy;
+	size_t			read;
 
-	if ( BBB_FAILED( result = bbb_bio_ReadFromFile_uint32( &( vb->len ), f, chk, read ) ) ) {
+	if ( BBB_FAILED( result = @_ReadFromFile_uint32( &( vb->len ), f, chk ) ) ) {
 		<? c_GotoCleanup(); ?>
 	}
 
@@ -356,27 +315,32 @@ bbb_bio_ReadFromFile_varbuf( bbb_varbuf_t* const vb, FILE* const f, bbb_checksum
 		}
 	<?" ); ?>
 
-	if ( BBB_FAILED( result = bbb_util_Fread( vb->buf, vb->len, 1, f, &dummy ) ) ) {
+	if ( BBB_FAILED( result = bbb_util_Fread( vb->buf, vb->len, 1, f, &read ) ) ) {
+		<? c_GotoCleanup(); ?>
+	}
+	if ( read == 0 ) {
+		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}
 
 	bbb_util_hash_UpdateChecksum( vb->buf, vb->len, chk );
 
 	<? c_Cleanup(); ?>
-	if ( BBB_FAILED( result ) ) {
-		*read = 0;
-	} else {
-		*read = sizeof( vb->len ) + vb->len;
-	}
 	return result;
 }
 
 // ============== Other functions =============
 
 int
-bbb_bio_IsEqual_varbuf( const bbb_varbuf_t vb1, const bbb_varbuf_t vb2 ) {
+@_IsEqual_varbuf( const bbb_varbuf_t vb1, const bbb_varbuf_t vb2 ) {
 	if ( vb1.len != vb2.len ) {
 		return 0;
 	}
 	return ( memcmp( vb1.buf, vb2.buf, vb1.len ) == 0 );
+}
+
+size_t
+@_GetSize_varbuf( const bbb_varbuf_t vb ) {
+	return ( sizeof( vb.len ) + vb.len );
 }

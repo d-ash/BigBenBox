@@ -17,7 +17,7 @@ bbb_result_t
 bbb_result_t
 @_Fread( void* const ptr, const size_t size, const size_t nmemb, FILE* stream, size_t* const read ) {
 	*read = fread( ptr, size, nmemb, stream );
-	if ( *read == 0 ) {
+	if ( *read == 0 && ferror( stream ) ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		return BBB_ERROR_FILESYSTEMIO;
 	}
@@ -25,9 +25,11 @@ bbb_result_t
 }
 
 bbb_result_t
-@_Fwrite( const void* const ptr, const size_t size, const size_t nmemb, FILE* stream, size_t* const written ) {
-	*written = fwrite( ptr, size, nmemb, stream );
-	if ( *written == 0 ) {
+@_Fwrite( const void* const ptr, const size_t size, const size_t nmemb, FILE* stream ) {
+	size_t	written;
+
+	written = fwrite( ptr, size, nmemb, stream );
+	if ( written == 0 && ferror( stream ) ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		return BBB_ERROR_FILESYSTEMIO;
 	}

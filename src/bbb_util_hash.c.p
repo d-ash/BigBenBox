@@ -1,7 +1,13 @@
+<?:include c_lang.p ?>
+
 #include "bbb_util_hash.h"
 #include "bbb_util.h"
 
-uint32_t bbb_util_hash_Calc_uint32( const void* const buf, const size_t len ) {
+<?:prefix @_ bbb_util_hash_ ?>
+<?:prefix @^ BBB_UTIL_HASH_ ?>
+
+uint32_t
+@_Calc_uint32( const void* const buf, const size_t len ) {
 	uint32_t	hash = 0;
 	size_t		i;
 
@@ -12,7 +18,8 @@ uint32_t bbb_util_hash_Calc_uint32( const void* const buf, const size_t len ) {
 	return hash;
 }
 
-uint16_t bbb_util_hash_Calc_uint16( const void* const buf, const size_t len ) {
+uint16_t
+@_Calc_uint16( const void* const buf, const size_t len ) {
 	uint16_t	hash = 0;
 	size_t		i;
 
@@ -23,7 +30,8 @@ uint16_t bbb_util_hash_Calc_uint16( const void* const buf, const size_t len ) {
 	return hash;
 }
 
-void bbb_util_hash_UpdateChecksum( const void* const buf, const size_t len, bbb_checksum_t* const checksum ) {
+void
+@_UpdateChecksum( const void* const buf, const size_t len, bbb_checksum_t* const checksum ) {
 	uint32_t	hash;
 	size_t		i;
 
@@ -36,38 +44,47 @@ void bbb_util_hash_UpdateChecksum( const void* const buf, const size_t len, bbb_
 	( *checksum ) = hash;
 }
 
-int bbb_util_hash_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA256_DIGEST_LENGTH ] ) {
+bbb_result_t
+@_ReadFile_sha256( const char* const path, bbb_byte_t hash[ SHA256_DIGEST_LENGTH ] ) {
+	bbb_result_t		result = BBB_SUCCESS;
 	FILE*				f;
 	SHA256_CTX			sha;
 	char*				buf = NULL;
 	static const size_t len = 32768;
-	size_t				wasRead = 0;
+	size_t				wasRead;
 	
 	f = fopen( path, "rb" );
 	if ( f == NULL ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot open the file %s: %s", path, strerror( errno ) );
-		return 0;
+		result = BBB_ERROR_FILESYSTEMIO;
+		<? c_GotoCleanup(); ?>
 	}
+	<? c_OnCleanup( "?>
+		if ( fclose( f ) != 0 ) {
+			BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
+			result = BBB_ERROR_FILESYSTEMIO;
+		}
+	<?" ); ?>
+
+	if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&buf, len ) ) ) {
+		<? c_GotoCleanup(); ?>
+	}
+	<? c_OnCleanup( "?>
+		free( buf );
+	<?" ); ?>
 
 	SHA256_Init( &sha );
+	<? c_OnCleanup( "?>
+		SHA256_Final( hash, &sha );
+	<?" ); ?>
 
-	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&buf, len ) ) ) {
-		exit( 1 );
-	}
-	while ( ( wasRead = fread( buf, 1, len, f ) ) ) {
+	do {
+		if ( BBB_FAILED( result = bbb_util_Fread( buf, 1, len, f, &wasRead ) ) ) {
+			break;
+		}
 		SHA256_Update( &sha, buf, wasRead );
-	}
+	} while ( wasRead > 0 );
 
-	SHA256_Final( hash, &sha );
-
-	if ( ferror( f ) ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot read the file %s: %s", path, strerror( errno ) );
-		free( buf );
-		fclose( f );
-		return 0;
-	}
-
-	free( buf );
-	fclose( f );
-	return 1;
+	<? c_Cleanup(); ?>
+	return result;
 }

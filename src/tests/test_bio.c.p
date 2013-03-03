@@ -23,7 +23,6 @@ static char* _TestBioBufTypes() {
 	uint16_t		x16;
 	uint32_t		x32;
 	uint64_t		x64;
-	size_t			dummy;
 
 	vb.len = 16;
 	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( vb.buf ), vb.len ) ) ) {
@@ -32,26 +31,26 @@ static char* _TestBioBufTypes() {
 	memcpy( vb.buf, data + 4, vb.len );
 
 	// Testing of writing.
-	MU_ASSERT( "Cannot write to a buffer varbuf_t", !BBB_FAILED( bbb_bio_WriteToBuf_varbuf( vb, xdata, 20, &dummy ) ) );
-	MU_ASSERT( "Cannot write to a buffer uint16_t", !BBB_FAILED( bbb_bio_WriteToBuf_uint16( c16, xdata + 20, 2, &dummy ) ) );
-	MU_ASSERT( "Cannot write to a buffer uint32_t", !BBB_FAILED( bbb_bio_WriteToBuf_uint32( c32, xdata + 22, 4, &dummy ) ) );
-	MU_ASSERT( "Cannot write to a buffer uint64_t", !BBB_FAILED( bbb_bio_WriteToBuf_uint64( c64, xdata + 26, 8, &dummy ) ) );
+	MU_ASSERT( "Cannot write to a buffer varbuf_t", !BBB_FAILED( bbb_bio_WriteToBuf_varbuf( vb, xdata, 20 ) ) );
+	MU_ASSERT( "Cannot write to a buffer uint16_t", !BBB_FAILED( bbb_bio_WriteToBuf_uint16( c16, xdata + 20, 2 ) ) );
+	MU_ASSERT( "Cannot write to a buffer uint32_t", !BBB_FAILED( bbb_bio_WriteToBuf_uint32( c32, xdata + 22, 4 ) ) );
+	MU_ASSERT( "Cannot write to a buffer uint64_t", !BBB_FAILED( bbb_bio_WriteToBuf_uint64( c64, xdata + 26, 8 ) ) );
 	MU_ASSERT( "bbb_bio_WriteToBuf_...() failed", memcmp( xdata, data, sizeof( data ) ) == 0 );
 
 	// Testing of reading.
-	MU_ASSERT( "Cannot read from a buffer varbuf_t", !BBB_FAILED( bbb_bio_ReadFromBuf_varbuf( &xvb, xdata, 20, &dummy ) ) );
+	MU_ASSERT( "Cannot read from a buffer varbuf_t", !BBB_FAILED( bbb_bio_ReadFromBuf_varbuf( &xvb, xdata, 20 ) ) );
 	MU_ASSERT( "bbb_bio_ReadFromBuf_varbuf() failed", bbb_bio_IsEqual_varbuf( xvb, vb ) );
 
-	MU_ASSERT( "Cannot read from a buffer uint16_t", !BBB_FAILED( bbb_bio_ReadFromBuf_uint16( &x16, xdata + 20, 2, &dummy ) ) );
+	MU_ASSERT( "Cannot read from a buffer uint16_t", !BBB_FAILED( bbb_bio_ReadFromBuf_uint16( &x16, xdata + 20, 2 ) ) );
 	MU_ASSERT( "bbb_bio_ReadFromBuf_uint16() failed", x16 == c16 );
-	MU_ASSERT( "Cannot read from a buffer uint32_t", !BBB_FAILED( bbb_bio_ReadFromBuf_uint32( &x32, xdata + 22, 4, &dummy ) ) );
+	MU_ASSERT( "Cannot read from a buffer uint32_t", !BBB_FAILED( bbb_bio_ReadFromBuf_uint32( &x32, xdata + 22, 4 ) ) );
 	MU_ASSERT( "bbb_bio_ReadFromBuf_uint32() failed", x32 == c32 );
-	MU_ASSERT( "Cannot read from a buffer uint64_t", !BBB_FAILED( bbb_bio_ReadFromBuf_uint64( &x64, data + 26, 8, &dummy ) ) );
+	MU_ASSERT( "Cannot read from a buffer uint64_t", !BBB_FAILED( bbb_bio_ReadFromBuf_uint64( &x64, data + 26, 8 ) ) );
 	MU_ASSERT( "bbb_bio_ReadFromBuf_uint64() failed", x64 == c64 );
 
 	free( xvb.buf );
 
-	MU_ASSERT( "Error is not checked correctly (record)", BBB_FAILED( bbb_bio_ReadFromBuf_varbuf( &xvb, xdata, 19, &dummy ) ) );
+	MU_ASSERT( "Error is not checked correctly (record)", BBB_FAILED( bbb_bio_ReadFromBuf_varbuf( &xvb, xdata, 19 ) ) );
 
 	free( vb.buf );
 	vb.len = 0;
@@ -129,7 +128,6 @@ static char* _TestBioFileTypes() {
 	FILE*			f;
 	bbb_checksum_t	chk = 0;
 	bbb_checksum_t	xchk = 0;
-	size_t			dummy;
 
 	vb.len = 16;
 	if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( vb.buf ), vb.len ) ) ) {
@@ -140,10 +138,10 @@ static char* _TestBioFileTypes() {
 	// Testing of writing.
 	f = fopen( path, "wb" );
 	MU_ASSERT( "Cannot create a data file", f != NULL );
-	MU_ASSERT( "Cannot write varbuf_t", !BBB_FAILED( bbb_bio_WriteToFile_varbuf( vb, f, &chk, &dummy ) ) );
-	MU_ASSERT( "Cannot write uint16_t", !BBB_FAILED( bbb_bio_WriteToFile_uint16( c16, f, &chk, &dummy ) ) );
-	MU_ASSERT( "Cannot write uint32_t", !BBB_FAILED( bbb_bio_WriteToFile_uint32( c32, f, &chk, &dummy ) ) );
-	MU_ASSERT( "Cannot write uint64_t", !BBB_FAILED( bbb_bio_WriteToFile_uint64( c64, f, &chk, &dummy ) ) );
+	MU_ASSERT( "Cannot write varbuf_t", !BBB_FAILED( bbb_bio_WriteToFile_varbuf( vb, f, &chk ) ) );
+	MU_ASSERT( "Cannot write uint16_t", !BBB_FAILED( bbb_bio_WriteToFile_uint16( c16, f, &chk ) ) );
+	MU_ASSERT( "Cannot write uint32_t", !BBB_FAILED( bbb_bio_WriteToFile_uint32( c32, f, &chk ) ) );
+	MU_ASSERT( "Cannot write uint64_t", !BBB_FAILED( bbb_bio_WriteToFile_uint64( c64, f, &chk ) ) );
 	MU_ASSERT( "Cannot close a data file", fclose( f ) == 0 );
 
 	f = fopen( path, "rb" );
@@ -155,14 +153,14 @@ static char* _TestBioFileTypes() {
 	// Testing of reading.
 	xchk = 0;
 	fseek( f, 0, SEEK_SET );
-	MU_ASSERT( "Cannot read varbuf_t", !BBB_FAILED( bbb_bio_ReadFromFile_varbuf( &xvb, f, &xchk, &dummy ) ) );
+	MU_ASSERT( "Cannot read varbuf_t", !BBB_FAILED( bbb_bio_ReadFromFile_varbuf( &xvb, f, &xchk ) ) );
 	MU_ASSERT( "bbb_bio_ReadFromFile_varbuf() failed", bbb_bio_IsEqual_varbuf( xvb, vb ) );
 
-	MU_ASSERT( "Cannot read uint16_t", !BBB_FAILED( bbb_bio_ReadFromFile_uint16( &x16, f, &xchk, &dummy ) ) );
+	MU_ASSERT( "Cannot read uint16_t", !BBB_FAILED( bbb_bio_ReadFromFile_uint16( &x16, f, &xchk ) ) );
 	MU_ASSERT( "bbb_bio_ReadFromFile_uint16() failed", x16 == c16 );
-	MU_ASSERT( "Cannot read uint32_t", !BBB_FAILED( bbb_bio_ReadFromFile_uint32( &x32, f, &xchk, &dummy ) ) );
+	MU_ASSERT( "Cannot read uint32_t", !BBB_FAILED( bbb_bio_ReadFromFile_uint32( &x32, f, &xchk ) ) );
 	MU_ASSERT( "bbb_bio_ReadFromFile_uint32() failed", x32 == c32 );
-	MU_ASSERT( "Cannot read uint64_t", !BBB_FAILED( bbb_bio_ReadFromFile_uint64( &x64, f, &xchk, &dummy ) ) );
+	MU_ASSERT( "Cannot read uint64_t", !BBB_FAILED( bbb_bio_ReadFromFile_uint64( &x64, f, &xchk ) ) );
 	MU_ASSERT( "bbb_bio_ReadFromFile_uint64() failed", x64 == c64 );
 	fclose( f );
 
@@ -200,8 +198,8 @@ static char* _TestBioFileRecords() {
 	memcpy( ext[ 0 ].v1.buf, &( hdr.theThird ), 4 );
 	ext[ 0 ].v2.len = pathlen + 1;
 	ext[ 0 ].v2.buf = ( bbb_byte_t* ) strdup( path );
-	MU_ASSERT( "Cannot copy ext333 (1)", test_bio_Copy_ext333( &( ext[ 1 ] ), &( ext[ 0 ] ) ) );
-	MU_ASSERT( "Cannot copy ext333 (2)", test_bio_Copy_ext333( &( ext[ 2 ] ), &( ext[ 0 ] ) ) );
+	MU_ASSERT( "Cannot copy ext333 (1)", !BBB_FAILED( test_bio_Copy_ext333( &( ext[ 1 ] ), &( ext[ 0 ] ) ) ) );
+	MU_ASSERT( "Cannot copy ext333 (2)", !BBB_FAILED( test_bio_Copy_ext333( &( ext[ 2 ] ), &( ext[ 0 ] ) ) ) );
 
 	MU_ASSERT( "test_bio_GetSize_...() failed", test_bio_GetSize_ext333( &( ext[ 2 ] ) ) == 13 + pathlen );
 	MU_ASSERT( "test_bio_GetSizeArray_...() failed", test_bio_GetSizeArray_ext333( ext, 3 ) == 3 * ( 13 + pathlen ) );

@@ -8,36 +8,36 @@ sub GetPrototypes {
 	my %protos = ();
 
 	$protos{ "Copy" } =
-		"?>int		<?= $bio_ns ?>_Copy_<?= $n ?>				( <?= $t ?>* const dst, const <?= $t ?>* const src )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_Copy_<?= $n ?>				( <?= $t ?>* const dst, const <?= $t ?>* const src )<?";
 	$protos{ "IsEqual" } =
-		"?>int		<?= $bio_ns ?>_IsEqual_<?= $n ?>			( const <?= $t ?>* const r1, const <?= $t ?>* const r2 )<?";
+		"?>int		<?= $bio_ns ?>_IsEqual_<?= $n ?>				( const <?= $t ?>* const r1, const <?= $t ?>* const r2 )<?";
 	$protos{ "GetSize" } =
-		"?>size_t	<?= $bio_ns ?>_GetSize_<?= $n ?>			( const <?= $t ?>* const r )<?";
+		"?>size_t	<?= $bio_ns ?>_GetSize_<?= $n ?>				( const <?= $t ?>* const r )<?";
 	$protos{ "GetSizeArray" } =
-		"?>size_t	<?= $bio_ns ?>_GetSizeArray_<?= $n ?>		( const <?= $t ?>* const a, size_t const n )<?";
+		"?>size_t	<?= $bio_ns ?>_GetSizeArray_<?= $n ?>			( const <?= $t ?>* const a, size_t const n )<?";
 
 	$protos{ "ReadFromBuf" } =
-		"?>size_t	<?= $bio_ns ?>_ReadFromBuf_<?= $n ?>		( <?= $t ?>* const r, const bbb_byte_t* const buf, const size_t len )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_ReadFromBuf_<?= $n ?>		( <?= $t ?>* const r, const bbb_byte_t* const buf, const size_t len )<?";
 	$protos{ "ReadFromBufArray" } =
-		"?>size_t	<?= $bio_ns ?>_ReadFromBufArray_<?= $n ?>	( <?= $t ?>* const a, size_t const n, const bbb_byte_t* const buf, const size_t len )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_ReadFromBufArray_<?= $n ?>	( <?= $t ?>* const a, size_t const n, const bbb_byte_t* const buf, const size_t len )<?";
 	$protos{ "WriteToBuf" } =
-		"?>size_t	<?= $bio_ns ?>_WriteToBuf_<?= $n ?>			( const <?= $t ?>* const r, bbb_byte_t* const buf, const size_t len )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_WriteToBuf_<?= $n ?>			( const <?= $t ?>* const r, bbb_byte_t* const buf, const size_t len )<?";
 	$protos{ "WriteToBufArray" } =
-		"?>size_t	<?= $bio_ns ?>_WriteToBufArray_<?= $n ?>	( const <?= $t ?>* const a, size_t const n, bbb_byte_t* const buf, const size_t len )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_WriteToBufArray_<?= $n ?>	( const <?= $t ?>* const a, size_t const n, bbb_byte_t* const buf, const size_t len )<?";
 
 	$protos{ "ReadFromFile" } =
-		"?>size_t	<?= $bio_ns ?>_ReadFromFile_<?= $n ?>		( <?= $t ?>* const r, FILE* const f, bbb_checksum_t* const chk )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_ReadFromFile_<?= $n ?>		( <?= $t ?>* const r, FILE* const f, bbb_checksum_t* const chk )<?";
 	$protos{ "ReadFromFileArray" } =
-		"?>size_t	<?= $bio_ns ?>_ReadFromFileArray_<?= $n ?>	( <?= $t ?>* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_ReadFromFileArray_<?= $n ?>	( <?= $t ?>* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )<?";
 	$protos{ "WriteToFile" } =
-		"?>size_t	<?= $bio_ns ?>_WriteToFile_<?= $n ?>		( const <?= $t ?>* const r, FILE* const f, bbb_checksum_t* const chk )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_WriteToFile_<?= $n ?>		( const <?= $t ?>* const r, FILE* const f, bbb_checksum_t* const chk )<?";
 	$protos{ "WriteToFileArray" } =
-		"?>size_t	<?= $bio_ns ?>_WriteToFileArray_<?= $n ?>	( const <?= $t ?>* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )<?";
+		"?>bbb_result_t	<?= $bio_ns ?>_WriteToFileArray_<?= $n ?>	( const <?= $t ?>* const a, size_t const n, FILE* const f, bbb_checksum_t* const chk )<?";
 
 	$protos{ "Destroy" } =
-		"?>void		<?= $bio_ns ?>_Destroy_<?= $n ?>			( <?= $t ?>* const r )<?";
+		"?>void		<?= $bio_ns ?>_Destroy_<?= $n ?>				( <?= $t ?>* const r )<?";
 	$protos{ "DestroyEach" } =
-		"?>void		<?= $bio_ns ?>_DestroyEach_<?= $n ?>		( <?= $t ?>* const a, size_t const n )<?";
+		"?>void		<?= $bio_ns ?>_DestroyEach_<?= $n ?>			( <?= $t ?>* const a, size_t const n )<?";
 
 	return \%protos;
 }
@@ -52,19 +52,24 @@ sub WriteRecordToH {
 	};
 	my $protos;
 	my $i;
+	my $type;				# type of a field
+	my $name;				# name of a field
 
 	?> typedef struct { <?/
 	foreach $i ( @$fields ) {
-		if ( $i->{ "type" } eq "varbuf" ) {
+		$type = $i->{ "type" };
+		$name = $i->{ "name" };
+
+		if ( $type eq "varbuf" ) {
 			$params->{ "isDynamic" } = 1;
 			$params->{ "isBytesOnly" } = 0;
-			?> bbb_varbuf_t				<?= $i->{ "name" } ?>; <?/
+			?> bbb_varbuf_t				<?= $name ?>; <?/
 			next;
 		}
-		if ( $i->{ "type" } ne "uint8" ) {
+		if ( $type ne "uint8" ) {
 			$params->{ "isBytesOnly" } = 0;
 		}
-		?> <?= $i->{ "type" } ?>_t		<?= $i->{ "name" } ?>; <?/
+		?> <?= $type ?>_t		<?= $name ?>; <?/
 	}
 	?> } <?= $recType ?>; <?/
 
@@ -112,9 +117,6 @@ sub Output_ReadImpl {
 	?> <?= $protos->{ "ReadFrom${mode}" } ?> {
 		size_t	cur = 0;
 		<?
-		if ( !$params->{ "isBytesOnly" } ) {
-			?> size_t	red; <?/
-		}
 		foreach $i ( @$fields ) {
 			$type = $i->{ "type" };
 			$name = $i->{ "name" };
@@ -132,15 +134,17 @@ sub Output_ReadImpl {
 				if ( $mode eq "Buf" ) {
 					Output_Assert( "?> BBB_FAILED(
 						bbb_bio_ReadFrom<?= $mode ?>_<?= $type ?>(
-							&( r-><?= $name ?> ), buf + cur, len - cur, &red ) ) <?", \@allocated );
+							&( r-><?= $name ?> ), buf + cur, len - cur ) ) <?", \@allocated );
 				} else {
 					Output_Assert( "?> BBB_FAILED(
 						bbb_bio_ReadFrom<?= $mode ?>_<?= $type ?>(
-							&( r-><?= $name ?> ), f, chk, &red ) ) <?", \@allocated );
+							&( r-><?= $name ?> ), f, chk ) ) <?", \@allocated );
 				}
-				?> cur += red; <?/
 				if ( $type eq "varbuf" ) {
+					?> cur += bbb_bio_GetSize_varbuf( r-><?= $name ?> ); <?/
 					push( @allocated, $name );
+				} else {
+					?> cur += sizeof( r-><?= $name ?> ); <?/
 				}
 			}
 		}
@@ -193,9 +197,6 @@ sub Output_WriteImpl {
 	?> <?= $protos->{ "WriteTo${mode}" } ?> {
 		size_t	cur = 0;
 		<?
-		if ( !$params->{ "isBytesOnly" } ) {
-			?> size_t	wtn; <?/
-		}
 		foreach $i ( @$fields ) {
 			my $type = $i->{ "type" };
 			my $name = $i->{ "name" };
@@ -214,15 +215,21 @@ sub Output_WriteImpl {
 				}
 				?> cur++; <?/
 			} else {
-				if ( $mode eq "Buf" ) {
-					?> bbb_bio_WriteTo<?= $mode ?>_<?= $type ?>( r-><?= $name ?>, buf + cur, len - cur, &wtn ); <?/
-				} else {
-					?> bbb_bio_WriteToFile_<?= $type ?>( r-><?= $name ?>, f, chk, &wtn ); <?/
+				?> if ( BBB_FAILED( <?
+					if ( $mode eq "Buf" ) {
+						?> bbb_bio_WriteTo<?= $mode ?>_<?= $type ?>( r-><?= $name ?>, buf + cur, len - cur ) <?
+					} else {
+						?> bbb_bio_WriteToFile_<?= $type ?>( r-><?= $name ?>, f, chk ) <?
+					}
+				?> ) ) {
+					return 0;	// TODO
 				}
-				?>
-				if ( wtn == 0 ) { return 0; }
-				cur += wtn;
 				<?
+				if ( $type eq "varbuf" ) {
+					?> cur += bbb_bio_GetSize_varbuf( r-><?= $name ?> ); <?/
+				} else {
+					?> cur += sizeof( r-><?= $name ?> ); <?/
+				}
 			}
 		}
 		?>
@@ -267,6 +274,7 @@ sub WriteRecordToC {
 	my $name;				# name of a field
 
 	?> <?= $protos->{ "Copy" } ?> { <?/
+		?> bbb_result_t	result = BBB_SUCCESS; <?/
 		if ( $params->{ "isDynamic" } ) {
 			?> size_t	len; <?/
 		}
@@ -279,8 +287,8 @@ sub WriteRecordToC {
 			} elsif ( $type eq "varbuf" ) {
 				?>
 				len = dst-><?= $name ?>.len = src-><?= $name ?>.len;
-				if ( BBB_FAILED( bbb_util_Malloc( ( void** )&( dst-><?= $name ?>.buf ), len ) ) ) {
-					exit( 1 );
+				if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&( dst-><?= $name ?>.buf ), len ) ) ) {
+					goto L_end;
 				}
 				memcpy( dst-><?= $name ?>.buf, src-><?= $name ?>.buf, len );
 				<?
@@ -288,8 +296,13 @@ sub WriteRecordToC {
 				die "Unknown field type: $type";
 			}
 		}
+		if ( $params->{ "isDynamic" } ) {
 		?>
-		return 1;
+L_end:
+		<?
+		}
+		?>
+		return result;
 	}
 
 	<?= $protos->{ "IsEqual" } ?> { <?/
@@ -321,7 +334,7 @@ sub WriteRecordToC {
 			if ( IsAtomType $type ) {
 				?> sizeof( r-><?= $name ?> ) <?
 			} elsif ( $type eq "varbuf" ) {
-				?> sizeof( r-><?= $name ?>.len ) + r-><?= $name ?>.len <?
+				?> bbb_bio_GetSize_varbuf( r-><?= $name ?> ) <?
 			} else {
 				die "Unknown field type: $type";
 			}

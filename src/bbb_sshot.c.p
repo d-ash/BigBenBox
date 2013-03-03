@@ -1,11 +1,10 @@
-<?:include c_lang.p ?>
+<?:include bbb.p ?>
+<?:prefix @_ bbb_sshot_ ?>
+<?:prefix @^ BBB_SSHOT_ ?>
 
 #include "bbb_sshot.h"
 #include "bbb_util.h"
 #include "bbb_util_hash.h"
-
-<?:prefix @_ bbb_sshot_ ?>
-<?:prefix @^ BBB_SSHOT_ ?>
 
 static bbb_result_t		_ProcessDir( const char* const path, const size_t skip, @_t* const ss );
 static bbb_result_t		_ProcessEntry( const char* const path, const size_t skip, const char* const name, @_t* const ss );
@@ -17,14 +16,12 @@ bbb_result_t
 
 	ss->restored = 0;				// by default a snapshot is 'generated'
 	ss->takenFrom = NULL;
-	if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&( ss->ht ), sizeof( @_ht_t ) * @^HASH_MAX ) ) ) {
-		goto L_end;
-	}
+	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( ss->ht ), sizeof( @_ht_t ) * @^HASH_MAX ) <?" ); ?>
 
 	// assuming NULL == 0
 	memset( ss->ht, 0, sizeof( @_ht_t ) * @^HASH_MAX );
 
-L_end:
+	<? c_Cleanup(); ?>
 	return result;
 }
 
@@ -62,9 +59,7 @@ bbb_result_t
 	bbb_result_t	result = BBB_SUCCESS;
 	size_t			len = 0;
 
-	if ( BBB_FAILED( result = @_Init( ss ) ) ) {
-		<? c_GotoCleanup(); ?>
-	}
+	<? bbb_Call( "?> @_Init( ss ) <?" ); ?>
 	<? c_OnCleanup( "?>
 		if ( BBB_FAILED( result ) ) {
 			@_Destroy( ss );
@@ -74,22 +69,14 @@ bbb_result_t
 	// this memory will be released in @_Destroy() if not NULL
 	len = strlen( path );
 	ss->takenFrom = strdup( path );
-	if ( ss->takenFrom == NULL ) {
-		BBB_ERR_CODE( BBB_ERROR_NOMEMORY, "strdup()" );
-		result = BBB_ERROR_NOMEMORY;
-		<? c_GotoCleanup(); ?>
-	}
+	<? bbb_Call( "?> bbb_util_Strdup( path, &( ss->takenFrom ) ) <?" ); ?>
 
 	// trim slash at the end if necessary
-	if ( len > 1 &&
-			( ss->takenFrom[ len - 1 ] == '/' || ss->takenFrom[ len - 1 ] == '\\' ) ) {
+	if ( len > 1 && ( ss->takenFrom[ len - 1 ] == '/' || ss->takenFrom[ len - 1 ] == '\\' ) ) {
 		len--;
 		ss->takenFrom[ len ] = 0;
 	}
-
-	if ( BBB_FAILED( result = _ProcessDir( ss->takenFrom, len, ss ) ) ) {
-		<? c_GotoCleanup(); ?>
-	}
+	<? bbb_Call( "?> _ProcessDir( ss->takenFrom, len, ss ) <?" ); ?>
 
 	<? c_Cleanup(); ?>
 	return result;
@@ -186,16 +173,21 @@ _ProcessDir( const char* const path, const size_t skip, @_t* const ss ) {
 	if ( dir == NULL ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot open dir %s: %s", path, strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
-		goto L_end;
+		<? c_GotoCleanup(); ?>
 	}
+	<? c_OnCleanup( "?>
+		if ( closedir( dir ) < 0 ) {
+			BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot close dir %s: %s", path, strerror( errno ) );
+			result = BBB_ERROR_FILESYSTEMIO;
+		}
+	<?" ); ?>
 
 	while ( 1 ) {
 		// Windows port dirent.h does not have readdir_r().
 		// Fortunately we don't need it here.
 		entry = readdir( dir );
 		if ( entry == NULL ) {
-			// an error or the end of the directory
-			break;
+			break;							// an error or the end of the directory
 		}
 
 		// skipping "." and ".."
@@ -207,18 +199,10 @@ _ProcessDir( const char* const path, const size_t skip, @_t* const ss ) {
 			}
 		}
 
-		if ( BBB_FAILED( result = _ProcessEntry( path, skip, entry->d_name, ss ) ) ) {
-			break;
-		}
+		<? bbb_Call( "?> _ProcessEntry( path, skip, entry->d_name, ss ) <?" ); ?>
 	}
 
-	if ( closedir( dir ) < 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot close dir %s: %s", path, strerror( errno ) );
-		result = BBB_ERROR_FILESYSTEMIO;
-		goto L_end;
-	}
-
-L_end:
+	<? c_Cleanup(); ?>
 	return result;
 }
 
@@ -234,18 +218,14 @@ _ProcessEntry( const char* const path, const size_t skip, const char* const name
 	// in order to get properly aligned memory after loading this data from a file.
 	pathMem = ( strlen( path ) - skip + strlen( name ) + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
 
-	if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&entry, sizeof( @_entry_t ) + pathMem ) ) ) {
-		<? c_GotoCleanup(); ?>
-	}
+	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&entry, sizeof( @_entry_t ) + pathMem ) <?" ); ?>
 	<? c_OnCleanup( "?>
 		if ( BBB_FAILED( result ) ) {
 			free( entry );
 		}
 	<?" ); ?>
 
-	if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&fullPath, pathMem + skip + 1 ) ) ) {
-		<? c_GotoCleanup(); ?>
-	}
+	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&fullPath, pathMem + skip + 1 ) <?" ); ?>
 	<? c_OnCleanup( "?>
 		free( fullPath );
 	<?" ); ?>
@@ -270,17 +250,11 @@ _ProcessEntry( const char* const path, const size_t skip, const char* const name
 
 	if ( S_ISDIR( entryInfo.st_mode ) ) {
 		entry->status |= @^ENTRY_STATUS_DIR;
-		if ( BBB_FAILED( result = _AddToSnapshot( entry, ss ) ) ) {
-			<? c_GotoCleanup(); ?>
-		}
-		if ( BBB_FAILED( result = _ProcessDir( fullPath, skip, ss ) ) ) {
-			<? c_GotoCleanup(); ?>
-		}
+		<? bbb_Call( "?> _AddToSnapshot( entry, ss ) <?" ); ?>
+		<? bbb_Call( "?> _ProcessDir( fullPath, skip, ss ) <?" ); ?>
 	} else if ( S_ISREG( entryInfo.st_mode ) ) {
 		entry->status &= ~@^ENTRY_STATUS_DIR;
-		if ( BBB_FAILED( result = _AddToSnapshot( entry, ss ) ) ) {
-			<? c_GotoCleanup(); ?>
-		}
+		<? bbb_Call( "?> _AddToSnapshot( entry, ss ) <?" ); ?>
 	} else {
 		BBB_LOG( "Skipping irregular file: %s", fullPath );
 		<? c_GotoCleanup(); ?>

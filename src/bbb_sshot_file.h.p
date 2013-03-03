@@ -1,3 +1,4 @@
+<?:include bbb.p ?>
 <?:prefix @_ bbb_sshot_file_ ?>
 <?:prefix @^ BBB_SSHOT_FILE_ ?>
 

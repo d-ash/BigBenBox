@@ -1,12 +1,12 @@
-#include "bbb_util.h"
-
+<?:include bbb.p ?>
 <?:prefix @_ bbb_util_ ?>
 <?:prefix @^ BBB_UTIL_ ?>
+
+#include "bbb_util.h"
 
 bbb_result_t
 @_Malloc( void** const ptr, const size_t size ) {
 	*ptr = malloc( size );
-
 	if ( *ptr == NULL ) {
 		BBB_ERR_CODE( BBB_ERROR_NOMEMORY, "%" PRIuPTR " bytes", size );
 		return BBB_ERROR_NOMEMORY;
@@ -15,9 +15,38 @@ bbb_result_t
 }
 
 bbb_result_t
-@_Fread( void* const ptr, const size_t size, const size_t nmemb, FILE* stream, size_t* const read ) {
-	*read = fread( ptr, size, nmemb, stream );
-	if ( *read == 0 && ferror( stream ) ) {
+@_Strdup( const char* src, char** const dst ) {
+	*dst = strdup( src );
+	if ( *dst == NULL ) {
+		BBB_ERR_CODE( BBB_ERROR_NOMEMORY );
+		return BBB_ERROR_NOMEMORY;
+	}
+	return BBB_SUCCESS;
+}
+
+bbb_result_t
+@_Fopen( const char* const path, const char* const mode, FILE** const f ) {
+	*f = fopen( path, mode );
+	if ( *f == NULL ) {
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "path: %s, mode: %s, %s", path, mode, strerror( errno ) );
+		return BBB_ERROR_FILESYSTEMIO;
+	}
+	return BBB_SUCCESS;
+}
+
+bbb_result_t
+@_Fclose( FILE* f ) {
+	if ( fclose( f ) != 0 ) {
+		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
+		return BBB_ERROR_FILESYSTEMIO;
+	}
+	return BBB_SUCCESS;
+}
+
+bbb_result_t
+@_Fread( void* const ptr, const size_t size, const size_t nmemb, FILE* stream, size_t* const nmembRead ) {
+	*nmembRead = fread( ptr, size, nmemb, stream );
+	if ( *nmembRead == 0 && ferror( stream ) ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		return BBB_ERROR_FILESYSTEMIO;
 	}
@@ -26,10 +55,10 @@ bbb_result_t
 
 bbb_result_t
 @_Fwrite( const void* const ptr, const size_t size, const size_t nmemb, FILE* stream ) {
-	size_t	written;
+	size_t	nmembWritten;
 
-	written = fwrite( ptr, size, nmemb, stream );
-	if ( written == 0 && ferror( stream ) ) {
+	nmembWritten = fwrite( ptr, size, nmemb, stream );
+	if ( nmembWritten != nmemb ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		return BBB_ERROR_FILESYSTEMIO;
 	}

@@ -1,7 +1,4 @@
-/**
- *	Portable binary I/O.
- */
-
+<?:include bbb.p ?>
 <?:prefix @_ bbb_bio_ ?>
 <?:prefix @^ BBB_BIO_ ?>
 
@@ -9,6 +6,12 @@
 #define @^H
 
 #include "bbb.h"
+
+/**
+ *	Portable binary I/O.
+ *
+ *	Read/write functions return errors if the value was not fully read/written.
+ */
 
 typedef struct {
 	uint32_t	len;

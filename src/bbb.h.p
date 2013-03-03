@@ -1,5 +1,7 @@
-#ifndef _BBB_H
-#define _BBB_H
+<?:include bbb.p ?>
+
+#ifndef BBB_H
+#define BBB_H
 
 #include <stdio.h>
 #include <stdlib.h>

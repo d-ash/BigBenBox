@@ -1,5 +1,4 @@
-<?:include bbb_errors.p ?>
-
+<?:include bbb.p ?>
 <?:prefix @_ bbb_errors_ ?>
 <?:prefix @^ BBB_ERRORS_ ?>
 

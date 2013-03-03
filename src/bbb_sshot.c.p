@@ -68,7 +68,6 @@ bbb_result_t
 
 	// this memory will be released in @_Destroy() if not NULL
 	len = strlen( path );
-	ss->takenFrom = strdup( path );
 	<? bbb_Call( "?> bbb_util_Strdup( path, &( ss->takenFrom ) ) <?" ); ?>
 
 	// trim slash at the end if necessary
@@ -269,8 +268,8 @@ _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
 	@_hash_t	hash;
 
 	if ( ss->restored ) {
-		BBB_ERR_CODE( BBB_ERROR_DEVELOPER, "Adding entries to restored snapshots is prohibited" );
-		return BBB_ERROR_DEVELOPER;
+		BBB_ERR_CODE( BBB_ERROR_RESTRICTION, "Adding entries to restored snapshots is prohibited" );
+		return BBB_ERROR_RESTRICTION;
 	}
 
 	hash = bbb_util_hash_Calc_uint16( @^ENTRY_PATH( entry ), strlen( @^ENTRY_PATH( entry ) ) );

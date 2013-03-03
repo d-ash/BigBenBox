@@ -121,7 +121,7 @@ bbb_result_t
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
 	<? bbb_Call( "?> _Unpack( f, ss, &checksum ) <?" ); ?>
 
-	// checksum will be read over by the previous fread()
+	// checksum will be passed over by previous readings
 	if ( fseek( f, 0 - sizeof( checksumRead ), SEEK_END ) != 0 ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;

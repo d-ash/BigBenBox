@@ -11,6 +11,9 @@ bbb_result_t
 		BBB_ERR_CODE( BBB_ERROR_NOMEMORY, "%" PRIuPTR " bytes", size );
 		return BBB_ERROR_NOMEMORY;
 	}
+#ifndef BBB_RELEASE
+	memset( *ptr, 0xA5, size );		// poisoning to check for uninitialized using
+#endif
 	return BBB_SUCCESS;
 }
 

@@ -288,6 +288,9 @@ sub WriteRecordToC {
 
 	?> <?= $protos->{ "Copy" } ?> {
 		bbb_result_t	result = BBB_SUCCESS;
+#ifndef BBB_RELEASE
+		int				allocated = 0;				// can become negative
+#endif
 		<?
 		foreach $i ( @$fields ) {
 			$type = $i->{ "type" };
@@ -298,9 +301,15 @@ sub WriteRecordToC {
 			} elsif ( $type eq "varbuf" ) {
 				?>
 				<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( dst-><?= $name ?>.buf ), src-><?= $name ?>.len ) <?" ); ?>
+#ifndef BBB_RELEASE
+				allocated++;
+#endif
 				<? c_OnCleanup( "?>
 					if ( BBB_FAILED( result ) ) {
 						free( dst-><?= $name ?>.buf );
+#ifndef BBB_RELEASE
+						allocated--;
+#endif
 					}
 				<?" ); ?>
 
@@ -314,6 +323,12 @@ sub WriteRecordToC {
 		?>
 
 		<? c_Cleanup(); ?>
+#ifndef BBB_RELEASE
+		if ( BBB_FAILED( result ) && allocated != 0 ) {
+			BBB_ERR_CODE( BBB_ERROR_DEVELOPER, "malloc/free calls inconsistency: %d", allocated );
+			result = BBB_ERROR_DEVELOPER;
+		}
+#endif
 		return result;
 	}
 

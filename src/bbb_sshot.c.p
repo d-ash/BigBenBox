@@ -268,8 +268,8 @@ _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
 	@_hash_t	hash;
 
 	if ( ss->restored ) {
-		BBB_ERR_CODE( BBB_ERROR_RESTRICTION, "Adding entries to restored snapshots is prohibited" );
-		return BBB_ERROR_RESTRICTION;
+		BBB_ERR_CODE( BBB_ERROR_DEVELOPER, "Adding entries to restored snapshots is prohibited" );
+		return BBB_ERROR_DEVELOPER;
 	}
 
 	hash = bbb_util_hash_Calc_uint16( @^ENTRY_PATH( entry ), strlen( @^ENTRY_PATH( entry ) ) );

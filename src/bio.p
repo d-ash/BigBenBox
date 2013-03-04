@@ -286,11 +286,9 @@ sub WriteRecordToC {
 	my $type;				# type of a field
 	my $name;				# name of a field
 
-	?> <?= $protos->{ "Copy" } ?> { <?/
-		?> bbb_result_t	result = BBB_SUCCESS; <?/
-		if ( $params->{ "isDynamic" } ) {
-			?> size_t	len; <?/
-		}
+	?> <?= $protos->{ "Copy" } ?> {
+		bbb_result_t	result = BBB_SUCCESS;
+		<?
 		foreach $i ( @$fields ) {
 			$type = $i->{ "type" };
 			$name = $i->{ "name" };
@@ -299,22 +297,23 @@ sub WriteRecordToC {
 				?> dst-><?= $name ?> = src-><?= $name ?>; <?/
 			} elsif ( $type eq "varbuf" ) {
 				?>
-				len = dst-><?= $name ?>.len = src-><?= $name ?>.len;
-				if ( BBB_FAILED( result = bbb_util_Malloc( ( void** )&( dst-><?= $name ?>.buf ), len ) ) ) {
-					goto L_end;
-				}
-				memcpy( dst-><?= $name ?>.buf, src-><?= $name ?>.buf, len );
+				<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( dst-><?= $name ?>.buf ), src-><?= $name ?>.len ) <?" ); ?>
+				<? c_OnCleanup( "?>
+					if ( BBB_FAILED( result ) ) {
+						free( dst-><?= $name ?>.buf );
+					}
+				<?" ); ?>
+
+				memcpy( dst-><?= $name ?>.buf, src-><?= $name ?>.buf, src-><?= $name ?>.len );
+				dst-><?= $name ?>.len = src-><?= $name ?>.len;
 				<?
 			} else {
 				die "Unknown field type: $type";
 			}
 		}
-		if ( $params->{ "isDynamic" } ) {
 		?>
-L_end:
-		<?
-		}
-		?>
+
+		<? c_Cleanup(); ?>
 		return result;
 	}
 

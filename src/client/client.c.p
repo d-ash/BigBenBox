@@ -9,6 +9,8 @@ int main() {
 	bbb_sshot_t	ss0;
 	bbb_sshot_t	ss1;
 
+	printf( "\n======= Executing the client =======\n" );
+
 	bbb_sshot_Take( DATA_DIR "/tmp0", &ss0 );
 	bbb_sshot_Take( DATA_DIR "/tmp1", &ss1 );
 

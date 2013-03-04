@@ -141,9 +141,11 @@ sub Output_ReadImpl {
 				if ( $type eq "varbuf" ) {
 					?> cur += bbb_bio_GetSize_varbuf( r-><?= $name ?> ); <?/
 					c_OnCleanup( "?>
-						free( r-><?= $name ?>.buf );
-						r-><?= $name ?>.buf = NULL;
-						r-><?= $name ?>.len = 0;
+						if ( BBB_FAILED( result ) ) {
+							free( r-><?= $name ?>.buf );
+							r-><?= $name ?>.buf = NULL;
+							r-><?= $name ?>.len = 0;
+						}
 					<?" );
 				} else {
 					?> cur += sizeof( r-><?= $name ?> ); <?/
@@ -167,28 +169,26 @@ sub Output_ReadArrayImpl {
 
 	?> <?= $protos->{ "ReadFrom${mode}Array" } ?> {
 		bbb_result_t	result = BBB_SUCCESS;
-		size_t	i;
-		size_t	cur = 0;
-		size_t	red;
-
-!!!!!!!!!!!!!!!!!!!!!! TODO --------------- AND WriteArrayImpl ++++++++++++++ AND Copy freeing memory !!!!!!!!!!!!!!!!!!!!!!!!!
+		size_t			cur = 0;
+		size_t			i;
 
 		for ( i = 0; i < n; i++ ) { <?/
 			if ( $mode eq "Buf" ) {
-				?> red = <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur ); <?/
+				bbb_Call( "?> <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur ) <?" );
 			} else {
-				?> red = <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), f, chk ); <?/
+				bbb_Call( "?> <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), f, chk ) <?" );
 			}
-			?> if ( red == 0 ) { <?/
-				if ( $params->{ "isDynamic" } ) {
-					?> <?= $bio_ns ?>_DestroyEach_<?= $recName ?>( a, i ); <?/
-				}
-				?>
-				return 0;
-			}
-			cur += red;
+			?>
+			cur += <?= $bio_ns ?>_GetSize_<?= $recName ?>( &( a[ i ] ) );
 		}
-		return cur;
+
+		<? c_Cleanup(); ?>
+		<? if ( $params->{ "isDynamic" } ) { ?>
+			if ( BBB_FAILED( result ) ) {
+				<?= $bio_ns ?>_DestroyEach_<?= $recName ?>( a, i );			// destroy previously created records
+			}
+		<? } ?>
+		return result;
 	}
 	<?/
 }
@@ -257,20 +257,22 @@ sub Output_WriteArrayImpl {
 	my $protos = shift;
 
 	?> <?= $protos->{ "WriteTo${mode}Array" } ?> {
-		size_t	i;
-		size_t	cur = 0;
-		size_t	wtn;
+		bbb_result_t	result = BBB_SUCCESS;
+		size_t			cur = 0;
+		size_t			i;
+
 		for ( i = 0; i < n; i++ ) { <?/
 			if ( $mode eq "Buf" ) {
-				?> wtn = <?= $bio_ns ?>_WriteTo<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur ); <?/
+				bbb_Call( "?> <?= $bio_ns ?>_WriteTo<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur ) <?" );
 			} else {
-				?> wtn = <?= $bio_ns ?>_WriteTo<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), f, chk ); <?/
+				bbb_Call( "?> <?= $bio_ns ?>_WriteTo<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), f, chk ) <?" );
 			}
 			?>
-			if ( wtn == 0 ) { return 0; }
-			cur += wtn;
+			cur += <?= $bio_ns ?>_GetSize_<?= $recName ?>( &( a[ i ] ) );
 		}
-		return cur;
+
+		<? c_Cleanup(); ?>
+		return result;
 	}
 	<?/
 }

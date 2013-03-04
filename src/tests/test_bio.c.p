@@ -82,27 +82,29 @@ static char* _TestBioBufRecords() {
 	test_bio_Copy_fileHeader( &( hdr[ 2 ] ), &( hdr[ 0 ] ) );
 
 	// Testing of writing.
-	MU_ASSERT( "Cannot write a record to a buffer", test_bio_WriteToBuf_fileHeader( &( hdr[ 0 ] ), xdata, 24 ) );
-	MU_ASSERT( "Writing to a buffer failed", memcmp( xdata, data, 24 ) == 0 );
-	MU_ASSERT( "Cannot write array of records to a buffer", test_bio_WriteToBufArray_fileHeader( hdr, 3, xdata, 24 * 3 ) );
+	MU_ASSERT( "Cannot write a record to a buffer", !BBB_FAILED( test_bio_WriteToBuf_fileHeader( &( hdr[ 0 ] ), xdata, 24 ) ) );
+	MU_ASSERT( "Writing to a buffer failed (0)", memcmp( xdata, data, 24 ) == 0 );
+	MU_ASSERT( "Cannot write array of records to a buffer", !BBB_FAILED( test_bio_WriteToBufArray_fileHeader( hdr, 3, xdata, 24 * 3 ) ) );
+	MU_ASSERT( "Writing to a buffer failed (1)", memcmp( xdata, data, 24 ) == 0 );
+	MU_ASSERT( "Writing to a buffer failed (2)", memcmp( xdata + 24, data, 24 ) == 0 );
+	MU_ASSERT( "Writing to a buffer failed (3)", memcmp( xdata + 24 + 24, data, 24 ) == 0 );
 
 	// Testing of reading.
-	MU_ASSERT( "Cannot read a record from a buffer", test_bio_ReadFromBuf_fileHeader( &( xhdr[ 0 ] ), xdata, 24 ) );
+	MU_ASSERT( "Cannot read a record from a buffer", !BBB_FAILED( test_bio_ReadFromBuf_fileHeader( &( xhdr[ 0 ] ), xdata, 24 ) ) );
 	MU_ASSERT( "Reading from a buffer failed (0)", test_bio_IsEqual_fileHeader( &( xhdr[ 0 ] ), &( hdr[ 0 ] ) ) );
 	test_bio_Destroy_fileHeader( &( xhdr[ 0 ] ) );
-	MU_ASSERT( "Cannot read array of records from a buffer", test_bio_ReadFromBufArray_fileHeader( xhdr, 3, xdata, 24 * 3 ) );
-	MU_ASSERT( "Reading from a buffer failed (0)", test_bio_IsEqual_fileHeader( &( xhdr[ 0 ] ), &( hdr[ 0 ] ) ) );
-	MU_ASSERT( "Reading from a buffer failed (1)", test_bio_IsEqual_fileHeader( &( xhdr[ 1 ] ), &( hdr[ 1 ] ) ) );
-	MU_ASSERT( "Reading from a buffer failed (2)", test_bio_IsEqual_fileHeader( &( xhdr[ 2 ] ), &( hdr[ 2 ] ) ) );
-
+	MU_ASSERT( "Cannot read array of records from a buffer", !BBB_FAILED( test_bio_ReadFromBufArray_fileHeader( xhdr, 3, xdata, 24 * 3 ) ) );
+	MU_ASSERT( "Reading from a buffer failed (1)", test_bio_IsEqual_fileHeader( &( xhdr[ 0 ] ), &( hdr[ 0 ] ) ) );
+	MU_ASSERT( "Reading from a buffer failed (2)", test_bio_IsEqual_fileHeader( &( xhdr[ 1 ] ), &( hdr[ 1 ] ) ) );
+	MU_ASSERT( "Reading from a buffer failed (3)", test_bio_IsEqual_fileHeader( &( xhdr[ 2 ] ), &( hdr[ 2 ] ) ) );
 	test_bio_DestroyEach_fileHeader( xhdr, 3 );
 
-	MU_ASSERT( "Error is not checked correctly (array)", test_bio_ReadFromBufArray_fileHeader( xhdr, 3, xdata, 24 * 3 - 1 ) == 0 );
+	MU_ASSERT( "Error is not checked correctly (array)", BBB_FAILED( test_bio_ReadFromBufArray_fileHeader( xhdr, 3, xdata, 24 * 3 - 1 ) ) );
 	MU_ASSERT( "Varbufs are not freed correctly (array)",
-		xhdr[ 0 ].var_buf_777.len == 0 && xhdr[ 1 ].var_buf_777.len == 0
-		&& xhdr[ 0 ].var_buf_777.buf == NULL && xhdr[ 1 ].var_buf_777.buf == NULL );
-
+		xhdr[ 0 ].var_buf_777.len == 0 && xhdr[ 1 ].var_buf_777.len == 0 && 
+		xhdr[ 0 ].var_buf_777.buf == NULL && xhdr[ 1 ].var_buf_777.buf == NULL );
 	test_bio_DestroyEach_fileHeader( hdr, 3 );
+
 	return 0;
 }
 
@@ -207,15 +209,15 @@ static char* _TestBioFileRecords() {
 	// Testing of writing.
 	f = fopen( path, "wb" );
 	MU_ASSERT( "Cannot create a data file", f != NULL );
-	MU_ASSERT( "Cannot write a record", test_bio_WriteToFile_fileHeader( &hdr, f, &chk ) );
-	MU_ASSERT( "Cannot write array of records", test_bio_WriteToFileArray_ext333( ext, 3, f, &chk ) );
+	MU_ASSERT( "Cannot write a record", !BBB_FAILED( test_bio_WriteToFile_fileHeader( &hdr, f, &chk ) ) );
+	MU_ASSERT( "Cannot write array of records", !BBB_FAILED( test_bio_WriteToFileArray_ext333( ext, 3, f, &chk ) ) );
 	MU_ASSERT( "Cannot close a data file", fclose( f ) == 0 );
 
 	// Testing of reading.
 	f = fopen( path, "rb" );
-	MU_ASSERT( "Cannot read a record", test_bio_ReadFromFile_fileHeader( &xhdr, f, &xchk ) );
+	MU_ASSERT( "Cannot read a record", !BBB_FAILED( test_bio_ReadFromFile_fileHeader( &xhdr, f, &xchk ) ) );
 	MU_ASSERT( "fileHeader I/O failed", test_bio_IsEqual_fileHeader( &xhdr, &hdr ) );
-	MU_ASSERT( "Cannot read array of records", test_bio_ReadFromFileArray_ext333( xext, 3, f, &xchk ) );
+	MU_ASSERT( "Cannot read array of records", !BBB_FAILED( test_bio_ReadFromFileArray_ext333( xext, 3, f, &xchk ) ) );
 	MU_ASSERT( "ext333 I/O failed (0)", test_bio_IsEqual_ext333( &( xext[ 0 ] ), &( xext[ 0 ] ) ) );
 	MU_ASSERT( "ext333 I/O failed (1)", test_bio_IsEqual_ext333( &( xext[ 1 ] ), &( xext[ 1 ] ) ) );
 	MU_ASSERT( "ext333 I/O failed (2)", test_bio_IsEqual_ext333( &( xext[ 2 ] ), &( xext[ 2 ] ) ) );

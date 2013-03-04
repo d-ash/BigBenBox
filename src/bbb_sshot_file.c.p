@@ -101,7 +101,7 @@ bbb_result_t
 	// Reading extended header. Platform dependent types are already in use!
 	// We can correctly read files only created with this same program on this machine.
 	<? bbb_Call( "?> bbb_util_Fread( &hdrExt, sizeof( hdrExt ), 1, f, &wasRead ) <?" ); ?>
-	if ( wasRead == 0 ) {
+	if ( wasRead != 1 ) {
 		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "Cannot read an 'hdrExt' from %s", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
@@ -112,7 +112,7 @@ bbb_result_t
 	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( ss->takenFrom ), hdrExt.takenFromMem ) <?" ); ?>
 
 	<? bbb_Call( "?> bbb_util_Fread( ss->takenFrom, hdrExt.takenFromMem, 1, f, &wasRead ) <?" ); ?>
-	if ( wasRead == 0 ) {
+	if ( wasRead != 1 ) {
 		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "Cannot read 'takenFrom' from %s", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
@@ -121,7 +121,7 @@ bbb_result_t
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
 	<? bbb_Call( "?> _Unpack( f, ss, &checksum ) <?" ); ?>
 
-	// checksum will be passed over by previous readings
+	// checksum might be passed over by previous readings
 	if ( fseek( f, 0 - sizeof( checksumRead ), SEEK_END ) != 0 ) {
 		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
@@ -194,7 +194,7 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 	// iterating over the hash list
 	while ( 1 ) {
 		<? bbb_Call( "?> bbb_util_Fread( &fileHashHdr, sizeof( fileHashHdr ), 1, f, &wasRead ) <?" ); ?>
-		if ( wasRead == 0 ) {
+		if ( wasRead != 1 ) {
 			break;							// end of file
 		}
 
@@ -207,7 +207,7 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 		<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( hashHdr->first ), fileHashHdr.size ) <?" ); ?>
 
 		<? bbb_Call( "?> bbb_util_Fread( hashHdr->first, fileHashHdr.size, 1, f, &wasRead ) <?" ); ?>
-		if ( wasRead == 0 ) {
+		if ( wasRead != 1 ) {
 			BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "Unexpected end of the snapshot file (entities)" );
 			result = BBB_ERROR_CORRUPTEDDATA;
 			<? c_GotoCleanup(); ?>

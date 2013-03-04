@@ -1,3 +1,4 @@
+<?:include bbb.p ?>
 <?
 
 my $bio_ns;				# shortcut
@@ -47,6 +48,7 @@ sub WriteRecordToH {
 	my $fields = shift;
 	my $recType = "${bio_ns}_${recName}_t";
 	my $params = {
+		"hasBytes"		=> 0,
 		"isBytesOnly"	=> 1,
 		"isDynamic"		=> 0
 	};
@@ -66,7 +68,9 @@ sub WriteRecordToH {
 			?> bbb_varbuf_t				<?= $name ?>; <?/
 			next;
 		}
-		if ( $type ne "uint8" ) {
+		if ( $type eq "uint8" ) {
+			$params->{ "hasBytes" } = 1;
+		} else {
 			$params->{ "isBytesOnly" } = 0;
 		}
 		?> <?= $type ?>_t		<?= $name ?>; <?/
@@ -85,71 +89,71 @@ sub IsAtomType {
 	return ( shift =~ m/^uint(?:8|16|32|64)$/ );
 }
 
-sub Output_Assert {
-    my $_;
-	my $ifexp = shift;
-	my $fields = shift;
-
-	?> if ( <?= $ifexp ?> ) { <?/
-		foreach ( @$fields ) {
-			?>
-			free( r-><?= $_ ?>.buf );
-			r-><?= $_ ?>.buf = NULL;
-			r-><?= $_ ?>.len = 0;
-			<?
-		}
-		?>
-		return 0;
-	}
-	<?
-}
-
 sub Output_ReadImpl {
 	my $mode = shift;
 	my $fields = shift;
 	my $params = shift;
 	my $protos = shift;
-	my @allocated = ();		# collection of fields with dynamically allocated memory
 	my $i;
 	my $type;				# type of a field
 	my $name;				# name of a field
 
 	?> <?= $protos->{ "ReadFrom${mode}" } ?> {
-		size_t	cur = 0;
-		<?
+		bbb_result_t	result = BBB_SUCCESS;
+		size_t			cur = 0;
+		<? if ( $mode eq "File" && $params->{ "hasBytes" } ) { ?>
+			size_t			wasRead;
+		<? }
+
 		foreach $i ( @$fields ) {
 			$type = $i->{ "type" };
 			$name = $i->{ "name" };
 
 			if ( $type eq "uint8" ) {
 				if ( $mode eq "Buf" ) {
-					Output_Assert( "cur >= len", \@allocated );
-					?> r-><?= $name ?> = *( buf + cur ); <?/
+					?>
+					if ( cur >= len ) {
+						BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER, "%" PRIuPTR " bytes", len );
+						result = BBB_ERROR_SMALLBUFFER;
+						<? c_GotoCleanup(); ?>
+					}
+					r-><?= $name ?> = *( buf + cur );
+					<?
 				} else {
-					Output_Assert( "fread( &( r->${name} ), 1, 1, f ) == 0", \@allocated );
-					?> bbb_util_hash_UpdateChecksum( &( r-><?= $name ?> ), 1, chk ); <?/
+					bbb_Call( "?> bbb_util_Fread( &( r-><?= $name ?> ), 1, 1, f, &wasRead ) <?" );
+					?>
+					if ( wasRead != 1 ) {
+						BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+						result = BBB_ERROR_CORRUPTEDDATA;
+						<? c_GotoCleanup(); ?>
+					}
+					bbb_util_hash_UpdateChecksum( &( r-><?= $name ?> ), 1, chk );
+					<?
 				}
 				?> cur++; <?/
 			} else {
 				if ( $mode eq "Buf" ) {
-					Output_Assert( "?> BBB_FAILED(
-						bbb_bio_ReadFrom<?= $mode ?>_<?= $type ?>(
-							&( r-><?= $name ?> ), buf + cur, len - cur ) ) <?", \@allocated );
+					bbb_Call( "?> bbb_bio_ReadFromBuf_<?= $type ?>( &( r-><?= $name ?> ), buf + cur, len - cur ) <?" );
 				} else {
-					Output_Assert( "?> BBB_FAILED(
-						bbb_bio_ReadFrom<?= $mode ?>_<?= $type ?>(
-							&( r-><?= $name ?> ), f, chk ) ) <?", \@allocated );
+					bbb_Call( "?> bbb_bio_ReadFromFile_<?= $type ?>( &( r-><?= $name ?> ), f, chk ) <?" );
 				}
+
 				if ( $type eq "varbuf" ) {
 					?> cur += bbb_bio_GetSize_varbuf( r-><?= $name ?> ); <?/
-					push( @allocated, $name );
+					c_OnCleanup( "?>
+						free( r-><?= $name ?>.buf );
+						r-><?= $name ?>.buf = NULL;
+						r-><?= $name ?>.len = 0;
+					<?" );
 				} else {
 					?> cur += sizeof( r-><?= $name ?> ); <?/
 				}
 			}
 		}
 		?>
-		return cur;
+
+		<? c_Cleanup(); ?>
+		return result;
 	}
 	<?/
 }
@@ -162,9 +166,13 @@ sub Output_ReadArrayImpl {
 	my $protos = shift;
 
 	?> <?= $protos->{ "ReadFrom${mode}Array" } ?> {
+		bbb_result_t	result = BBB_SUCCESS;
 		size_t	i;
 		size_t	cur = 0;
 		size_t	red;
+
+!!!!!!!!!!!!!!!!!!!!!! TODO --------------- AND WriteArrayImpl ++++++++++++++ AND Copy freeing memory !!!!!!!!!!!!!!!!!!!!!!!!!
+
 		for ( i = 0; i < n; i++ ) { <?/
 			if ( $mode eq "Buf" ) {
 				?> red = <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur ); <?/
@@ -195,7 +203,8 @@ sub Output_WriteImpl {
 	my $name;				# name of a field
 
 	?> <?= $protos->{ "WriteTo${mode}" } ?> {
-		size_t	cur = 0;
+		bbb_result_t	result = BBB_SUCCESS;
+		size_t			cur = 0;
 		<?
 		foreach $i ( @$fields ) {
 			my $type = $i->{ "type" };
@@ -204,27 +213,27 @@ sub Output_WriteImpl {
 			if ( $type eq "uint8" ) {
 				if ( $mode eq "Buf" ) {
 					?>
-					if ( cur >= len ) { return 0; }
+					if ( cur >= len ) {
+						BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER, "%" PRIuPTR " bytes", len );
+						result = BBB_ERROR_SMALLBUFFER;
+						<? c_GotoCleanup(); ?>
+					}
 					*( buf + cur ) = r-><?= $name ?>;
 					<?
 				} else {
 					?>
 					bbb_util_hash_UpdateChecksum( &( r-><?= $name ?> ), 1, chk );
-					if ( fwrite( &( r-><?= $name ?> ), 1, 1, f ) == 0 ) { return 0; }
+					<? bbb_Call( "?> bbb_util_Fwrite( &( r-><?= $name ?> ), 1, 1, f ) <?" ); ?>
 					<?
 				}
 				?> cur++; <?/
 			} else {
-				?> if ( BBB_FAILED( <?
-					if ( $mode eq "Buf" ) {
-						?> bbb_bio_WriteTo<?= $mode ?>_<?= $type ?>( r-><?= $name ?>, buf + cur, len - cur ) <?
-					} else {
-						?> bbb_bio_WriteToFile_<?= $type ?>( r-><?= $name ?>, f, chk ) <?
-					}
-				?> ) ) {
-					return 0;	// TODO
+				if ( $mode eq "Buf" ) {
+					bbb_Call( "?> bbb_bio_WriteToBuf_<?= $type ?>( r-><?= $name ?>, buf + cur, len - cur ) <?" );
+				} else {
+					bbb_Call( "?> bbb_bio_WriteToFile_<?= $type ?>( r-><?= $name ?>, f, chk ) <?" );
 				}
-				<?
+
 				if ( $type eq "varbuf" ) {
 					?> cur += bbb_bio_GetSize_varbuf( r-><?= $name ?> ); <?/
 				} else {
@@ -233,7 +242,9 @@ sub Output_WriteImpl {
 			}
 		}
 		?>
-		return cur;
+
+		<? c_Cleanup(); ?>
+		return result;
 	}
 	<?/
 }
@@ -413,6 +424,7 @@ sub bio_Start {
 	} else {
 		?>
 #include "<?= $DEF{ "hFilename" } ?>"
+#include "bbb_util.h"
 #include "bbb_util_hash.h"
 		<?
 	}

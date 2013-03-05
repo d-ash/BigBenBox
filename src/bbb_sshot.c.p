@@ -1,6 +1,6 @@
-<?:include bbb.p ?>
-<?:prefix @_ bbb_sshot_ ?>
-<?:prefix @^ BBB_SSHOT_ ?>
+<?:include	bbb.p ?>
+<?:prefix	@_ bbb_sshot_ ?>
+<?:prefix	@^ BBB_SSHOT_ ?>
 
 #include "bbb_sshot.h"
 #include "bbb_util.h"

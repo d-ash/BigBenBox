@@ -1,6 +1,6 @@
-<?:include bbb.p ?>
-<?:prefix @_ bbb_sshot_ ?>
-<?:prefix @^ BBB_SSHOT_ ?>
+<?:include	bbb.p ?>
+<?:prefix	@_ bbb_sshot_ ?>
+<?:prefix	@^ BBB_SSHOT_ ?>
 
 #ifndef @^H_FILE
 #define @^H_FILE
@@ -20,7 +20,6 @@
  */
 
 typedef uint16_t		@_hash_t;
-
 #define @^HASH_MAX		UINT16_MAX
 
 typedef struct {
@@ -29,11 +28,11 @@ typedef struct {
 } @_content_t;
 
 typedef struct {
-	uint8_t			status;
-	uint8_t			custom;		// can be used by used code, at the end it has to be reset to 0
-	@_content_t		content;
-	size_t			pathMem;	// strlen( path ) + 1 + additional bytes for memory alignment
-	void*			next;		// link to the next @_entry_t
+	uint8_t		status;
+	uint8_t		custom;			// can be used by used code, at the end it has to be reset to 0
+	@_content_t	content;
+	size_t		pathMem;		// strlen( path ) + 1 + additional bytes for memory alignment
+	void*		next;			// link to the next @_entry_t
 } @_entry_t;
 
 /**

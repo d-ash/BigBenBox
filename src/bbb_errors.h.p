@@ -1,6 +1,6 @@
-<?:include bbb.p ?>
-<?:prefix @_ bbb_errors_ ?>
-<?:prefix @^ BBB_ERRORS_ ?>
+<?:include	bbb.p ?>
+<?:prefix	@_ bbb_errors_ ?>
+<?:prefix	@^ BBB_ERRORS_ ?>
 
 #ifndef @^H
 #define @^H
@@ -11,10 +11,8 @@
 #define <?= $bbb_errors[ $i ] ?>		<?= $i ?>
 <? } ?>
 
-
 #define BBB_FAILED( call )				( ( call ) != BBB_SUCCESS )
-
-#define BBB_ERR_CODE( code, ... )		do { \
+#define BBB_ERR( code, ... )			do { \
 											fprintf( stderr, "%s at %s:%u - ", @_GetText( code ), __FILE__, __LINE__ ); \
 											fprintf( stderr, " " __VA_ARGS__ ); \
 											fprintf( stderr, "\n" ); \

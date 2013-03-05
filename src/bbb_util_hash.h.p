@@ -1,6 +1,6 @@
-<?:include bbb.p ?>
-<?:prefix @_ bbb_util_hash_ ?>
-<?:prefix @^ BBB_UTIL_HASH_ ?>
+<?:include	bbb.p ?>
+<?:prefix	@_ bbb_util_hash_ ?>
+<?:prefix	@^ BBB_UTIL_HASH_ ?>
 
 #ifndef @^H
 #define @^H

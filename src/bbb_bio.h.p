@@ -1,6 +1,6 @@
-<?:include bbb.p ?>
-<?:prefix @_ bbb_bio_ ?>
-<?:prefix @^ BBB_BIO_ ?>
+<?:include	bbb.p ?>
+<?:prefix	@_ bbb_bio_ ?>
+<?:prefix	@^ BBB_BIO_ ?>
 
 #ifndef @^H
 #define @^H

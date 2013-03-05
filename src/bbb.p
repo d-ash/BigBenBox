@@ -1,4 +1,4 @@
-<?:include c_lang.p ?>
+<?:include	c_lang.p ?>
 <?
 	my @bbb_errors = qw(
 		BBB_SUCCESS

@@ -1,6 +1,6 @@
-<?:include bbb.p ?>
-<?:prefix @_ bbb_bio_ ?>
-<?:prefix @^ BBB_BIO_ ?>
+<?:include	bbb.p ?>
+<?:prefix	@_ bbb_bio_ ?>
+<?:prefix	@^ BBB_BIO_ ?>
 
 #include "bbb_bio.h"
 #include "bbb_util.h"
@@ -14,7 +14,7 @@ bbb_result_t
 	uint16_t		t;
 
 	if ( len < sizeof( t ) ) {
-		BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER );
+		BBB_ERR( BBB_ERROR_SMALLBUFFER );
 		result = BBB_ERROR_SMALLBUFFER;
 		<? c_GotoCleanup(); ?>
 	}
@@ -32,7 +32,7 @@ bbb_result_t
 	uint32_t		t;
 
 	if ( len < sizeof( t ) ) {
-		BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER );
+		BBB_ERR( BBB_ERROR_SMALLBUFFER );
 		result = BBB_ERROR_SMALLBUFFER;
 		<? c_GotoCleanup(); ?>
 	}
@@ -50,7 +50,7 @@ bbb_result_t
 	uint64_t		t;
 
 	if ( len < sizeof( t ) ) {
-		BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER );
+		BBB_ERR( BBB_ERROR_SMALLBUFFER );
 		result = BBB_ERROR_SMALLBUFFER;
 		<? c_GotoCleanup(); ?>
 	}
@@ -67,7 +67,7 @@ bbb_result_t
 	bbb_result_t	result = BBB_SUCCESS;
 
 	if ( len < ( sizeof( vb.len ) + vb.len ) ) {
-		BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER );
+		BBB_ERR( BBB_ERROR_SMALLBUFFER );
 		result = BBB_ERROR_SMALLBUFFER;
 		<? c_GotoCleanup(); ?>
 	}
@@ -86,7 +86,7 @@ bbb_result_t
 	bbb_result_t	result = BBB_SUCCESS;
 
 	if ( len < sizeof( *v ) ) {
-		BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER );
+		BBB_ERR( BBB_ERROR_SMALLBUFFER );
 		result = BBB_ERROR_SMALLBUFFER;
 		<? c_GotoCleanup(); ?>
 	}
@@ -102,7 +102,7 @@ bbb_result_t
 	bbb_result_t	result = BBB_SUCCESS;
 
 	if ( len < sizeof( *v ) ) {
-		BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER );
+		BBB_ERR( BBB_ERROR_SMALLBUFFER );
 		result = BBB_ERROR_SMALLBUFFER;
 		<? c_GotoCleanup(); ?>
 	}
@@ -118,7 +118,7 @@ bbb_result_t
 	bbb_result_t	result = BBB_SUCCESS;
 
 	if ( len < sizeof( *v ) ) {
-		BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER );
+		BBB_ERR( BBB_ERROR_SMALLBUFFER );
 		result = BBB_ERROR_SMALLBUFFER;
 		<? c_GotoCleanup(); ?>
 	}
@@ -135,7 +135,7 @@ bbb_result_t
 
 	<? bbb_Call( "?> @_ReadFromBuf_uint32( &( vb->len ), buf, len ) <?" ); ?>
 	if ( len < sizeof( vb->len ) + vb->len ) {
-		BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER );
+		BBB_ERR( BBB_ERROR_SMALLBUFFER );
 		result = BBB_ERROR_SMALLBUFFER;
 		<? c_GotoCleanup(); ?>
 	}
@@ -212,7 +212,7 @@ bbb_result_t
 
 	<? bbb_Call( "?> bbb_util_Fread( &t, sizeof( t ), 1, f, &wasRead ) <?" ); ?>
 	if ( wasRead != 1 ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}
@@ -231,7 +231,7 @@ bbb_result_t
 
 	<? bbb_Call( "?> bbb_util_Fread( &t, sizeof( t ), 1, f, &wasRead ) <?" ); ?>
 	if ( wasRead != 1 ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}
@@ -252,7 +252,7 @@ bbb_result_t
 
 	<? bbb_Call( "?> bbb_util_Fread( &t, sizeof( t ), 1, f, &wasRead ) <?" ); ?>
 	if ( wasRead != 1 ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}
@@ -279,7 +279,7 @@ bbb_result_t
 
 	<? bbb_Call( "?> bbb_util_Fread( vb->buf, vb->len, 1, f, &wasRead ) <?" ); ?>
 	if ( wasRead != 1 ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}

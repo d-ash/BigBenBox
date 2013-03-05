@@ -1,4 +1,4 @@
-<?:include bbb.p ?>
+<?:include	bbb.p ?>
 
 #ifndef BBB_H
 #define BBB_H
@@ -16,18 +16,18 @@
 
 // ===========================================
 
-#define BBB_VERSION				"0.1.0"		// J.N.PP (J - major, N - minor, PP - patch)
-#define BBB_VERNUM				0x0100		// 0xJNPP
-#define BBB_WORD_SIZE			sizeof( size_t )
+#define		BBB_VERSION			"0.1.0"		// J.N.PP (J - major, N - minor, PP - patch)
+#define		BBB_VERNUM			0x0100		// 0xJNPP
+#define		BBB_WORD_SIZE		sizeof( size_t )
 
-#undef BBB_PLATFORM_ID
+#undef		BBB_PLATFORM_ID
 
 #if BBB_PLATFORM_LINUX
-  #define BBB_PLATFORM_ID		0x01
+  #define	BBB_PLATFORM_ID		0x01
 #elif BBB_PLATFORM_OSX
-  #define BBB_PLATFORM_ID		0x20
+  #define	BBB_PLATFORM_ID		0x20
 #elif BBB_PLATFORM_WINDOWS
-  #define BBB_PLATFORM_ID		0x80
+  #define	BBB_PLATFORM_ID		0x80
 #endif
 
 #ifndef BBB_PLATFORM_ID
@@ -50,18 +50,18 @@
 #endif
 
 #ifdef BBB_VERBOSE
-  #define BBB_LOG( ... )		do { \
+  #define	BBB_LOG( ... )		do { \
 									fprintf( stderr, __VA_ARGS__ ); \
 									fprintf( stderr, "\n" ); \
 								} while ( 0 );
 #else
-  #define BBB_LOG( ... )		do {} while ( 0 );
+  #define	BBB_LOG( ... )		do {} while ( 0 );
 #endif
 
 // ===========================================
 
-typedef unsigned char			bbb_byte_t;
-typedef uint32_t				bbb_checksum_t;
+typedef		unsigned char		bbb_byte_t;
+typedef		uint32_t			bbb_checksum_t;
 
 #include "bbb_errors.h"
 

@@ -1,6 +1,6 @@
-<?:include bbb.p ?>
-<?:prefix @_ bbb_sshot_file_ ?>
-<?:prefix @^ BBB_SSHOT_FILE_ ?>
+<?:include	bbb.p ?>
+<?:prefix	@_ bbb_sshot_file_ ?>
+<?:prefix	@^ BBB_SSHOT_FILE_ ?>
 
 #ifndef @^H_FILE
 #define @^H_FILE
@@ -8,8 +8,8 @@
 #include "bbb_sshot.h"
 #include "bbb_sshot_file.bio.h"
 
-#define @^MAGIC		0x8D
-#define @^FORMAT	0x01
+#define @^MAGIC			0x8D
+#define @^FORMAT		0x01
 
 /**
  *	Structure of a saved snapshot after a file header:

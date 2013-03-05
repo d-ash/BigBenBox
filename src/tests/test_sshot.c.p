@@ -2,6 +2,8 @@
 
 static int	_testsRun = 0;
 
+// TODO test for bbb_sshot_Search()
+
 static char* _TestSsEntrySize() {
 	printf( "sizeof( size_t ): %" PRIuPTR "\n", sizeof( size_t ) );
 	printf( "sizeof( bbb_sshot_entry_t ): %" PRIuPTR "\n", sizeof( bbb_sshot_entry_t ) );

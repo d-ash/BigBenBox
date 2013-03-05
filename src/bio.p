@@ -113,7 +113,7 @@ sub Output_ReadImpl {
 				if ( $mode eq "Buf" ) {
 					?>
 					if ( cur >= len ) {
-						BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER, "%" PRIuPTR " bytes", len );
+						BBB_ERR( BBB_ERROR_SMALLBUFFER, "%" PRIuPTR " bytes", len );
 						result = BBB_ERROR_SMALLBUFFER;
 						<? c_GotoCleanup(); ?>
 					}
@@ -123,7 +123,7 @@ sub Output_ReadImpl {
 					bbb_Call( "?> bbb_util_Fread( &( r-><?= $name ?> ), 1, 1, f, &wasRead ) <?" );
 					?>
 					if ( wasRead != 1 ) {
-						BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA );
+						BBB_ERR( BBB_ERROR_CORRUPTEDDATA );
 						result = BBB_ERROR_CORRUPTEDDATA;
 						<? c_GotoCleanup(); ?>
 					}
@@ -214,7 +214,7 @@ sub Output_WriteImpl {
 				if ( $mode eq "Buf" ) {
 					?>
 					if ( cur >= len ) {
-						BBB_ERR_CODE( BBB_ERROR_SMALLBUFFER, "%" PRIuPTR " bytes", len );
+						BBB_ERR( BBB_ERROR_SMALLBUFFER, "%" PRIuPTR " bytes", len );
 						result = BBB_ERROR_SMALLBUFFER;
 						<? c_GotoCleanup(); ?>
 					}
@@ -325,7 +325,7 @@ sub WriteRecordToC {
 		<? c_Cleanup(); ?>
 #ifndef BBB_RELEASE
 		if ( BBB_FAILED( result ) && allocated != 0 ) {
-			BBB_ERR_CODE( BBB_ERROR_DEVELOPER, "malloc/free calls inconsistency: %d", allocated );
+			BBB_ERR( BBB_ERROR_DEVELOPER, "malloc/free calls inconsistency: %d", allocated );
 			result = BBB_ERROR_DEVELOPER;
 		}
 #endif

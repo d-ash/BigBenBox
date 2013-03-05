@@ -170,13 +170,13 @@ _ProcessDir( const char* const path, const size_t skip, @_t* const ss ) {
 	BBB_LOG( "Processing dir: %s", path );
 	dir = opendir( path );
 	if ( dir == NULL ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot open dir %s: %s", path, strerror( errno ) );
+		BBB_ERR( BBB_ERROR_FILESYSTEMIO, "Cannot open dir %s: %s", path, strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
 	<? c_OnCleanup( "?>
 		if ( closedir( dir ) < 0 ) {
-			BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot close dir %s: %s", path, strerror( errno ) );
+			BBB_ERR( BBB_ERROR_FILESYSTEMIO, "Cannot close dir %s: %s", path, strerror( errno ) );
 			result = BBB_ERROR_FILESYSTEMIO;
 		}
 	<?" ); ?>
@@ -239,7 +239,7 @@ _ProcessEntry( const char* const path, const size_t skip, const char* const name
 	strcpy( @^ENTRY_PATH( entry ), fullPath + skip + 1 );
 
 	if ( stat( fullPath, &entryInfo ) ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "Cannot get info about %s: %s", fullPath, strerror( errno ) );
+		BBB_ERR( BBB_ERROR_FILESYSTEMIO, "Cannot get info about %s: %s", fullPath, strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
@@ -268,7 +268,7 @@ _AddToSnapshot( @_entry_t* const entry, @_t* const ss ) {
 	@_hash_t	hash;
 
 	if ( ss->restored ) {
-		BBB_ERR_CODE( BBB_ERROR_DEVELOPER, "Adding entries to restored snapshots is prohibited" );
+		BBB_ERR( BBB_ERROR_DEVELOPER, "Adding entries to restored snapshots is prohibited" );
 		return BBB_ERROR_DEVELOPER;
 	}
 

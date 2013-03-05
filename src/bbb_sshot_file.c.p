@@ -1,6 +1,6 @@
-<?:include bbb.p ?>
-<?:prefix @_ bbb_sshot_file_ ?>
-<?:prefix @^ BBB_SSHOT_FILE_ ?>
+<?:include	bbb.p ?>
+<?:prefix	@_ bbb_sshot_file_ ?>
+<?:prefix	@^ BBB_SSHOT_FILE_ ?>
 
 #include "bbb_sshot_file.h"
 #include "bbb_util.h"
@@ -93,7 +93,7 @@ bbb_result_t
 	<?" ); ?>
 
 	if ( !@_IsEqual_hdr( &hdr, &hdrControl ) ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "The snapshot %s was saved on another machine", path );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "The snapshot %s was saved on another machine", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}
@@ -102,7 +102,7 @@ bbb_result_t
 	// We can correctly read files only created with this same program on this machine.
 	<? bbb_Call( "?> bbb_util_Fread( &hdrExt, sizeof( hdrExt ), 1, f, &wasRead ) <?" ); ?>
 	if ( wasRead != 1 ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "Cannot read an 'hdrExt' from %s", path );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "Cannot read an 'hdrExt' from %s", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}
@@ -113,7 +113,7 @@ bbb_result_t
 
 	<? bbb_Call( "?> bbb_util_Fread( ss->takenFrom, hdrExt.takenFromMem, 1, f, &wasRead ) <?" ); ?>
 	if ( wasRead != 1 ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "Cannot read 'takenFrom' from %s", path );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "Cannot read 'takenFrom' from %s", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}
@@ -123,7 +123,7 @@ bbb_result_t
 
 	// checksum might be passed over by previous readings
 	if ( fseek( f, 0 - sizeof( checksumRead ), SEEK_END ) != 0 ) {
-		BBB_ERR_CODE( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
+		BBB_ERR( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
 		<? c_GotoCleanup(); ?>
 	}
@@ -131,7 +131,7 @@ bbb_result_t
 	<? bbb_Call( "?> bbb_bio_ReadFromFile_uint32( &checksumRead, f, NULL ) <?" ); ?>
 
 	if ( checksum != checksumRead ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "Incorrect checksum of the snapshot file %s", path );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "Incorrect checksum of the snapshot file %s", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}
@@ -208,7 +208,7 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 
 		<? bbb_Call( "?> bbb_util_Fread( hashHdr->first, fileHashHdr.size, 1, f, &wasRead ) <?" ); ?>
 		if ( wasRead != 1 ) {
-			BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "Unexpected end of the snapshot file (entities)" );
+			BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "Unexpected end of the snapshot file (entities)" );
 			result = BBB_ERROR_CORRUPTEDDATA;
 			<? c_GotoCleanup(); ?>
 		}
@@ -223,7 +223,7 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 		while ( entry->next != NULL ) {
 			entry->next = ( bbb_byte_t* ) entry + sizeof( bbb_sshot_entry_t ) + entry->pathMem;
 			if ( ( bbb_byte_t* ) entry->next > maxPtr ) {
-				BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "The snapshot file is damaged (maxPtr)" );
+				BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "The snapshot file is damaged (maxPtr)" );
 				result = BBB_ERROR_CORRUPTEDDATA;
 				<? c_GotoCleanup(); ?>
 			}
@@ -232,7 +232,7 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 	}
 
 	if ( ferror( f ) ) {
-		BBB_ERR_CODE( BBB_ERROR_CORRUPTEDDATA, "%s", strerror( errno ) );
+		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "%s", strerror( errno ) );
 		result = BBB_ERROR_CORRUPTEDDATA;
 		<? c_GotoCleanup(); ?>
 	}

@@ -6,21 +6,27 @@
 
 bbb_result_t
 @_Malloc( void** const ptr, const size_t size ) {
-	*ptr = malloc( size );
-	if ( *ptr == NULL ) {
+	void*	p;						// to eliminate multiple dereferencing
+
+	p = malloc( size );
+	*ptr = p;
+	if ( p == NULL ) {
 		BBB_ERR( BBB_ERROR_NOMEMORY, "%" PRIuPTR " bytes", size );
 		return BBB_ERROR_NOMEMORY;
 	}
 #ifndef BBB_RELEASE
-	memset( *ptr, 0xA5, size );		// poisoning to check for uninitialized using
+	memset( p, 0xA5, size );		// poisoning to check for uninitialized using
 #endif
 	return BBB_SUCCESS;
 }
 
 bbb_result_t
 @_Strdup( const char* src, char** const dst ) {
-	*dst = strdup( src );
-	if ( *dst == NULL ) {
+	char*	d;
+
+	d = strdup( src );
+	*dst = d;
+	if ( d == NULL ) {
 		BBB_ERR( BBB_ERROR_NOMEMORY );
 		return BBB_ERROR_NOMEMORY;
 	}
@@ -29,8 +35,11 @@ bbb_result_t
 
 bbb_result_t
 @_Fopen( const char* const path, const char* const mode, FILE** const f ) {
-	*f = fopen( path, mode );
-	if ( *f == NULL ) {
+	FILE*	fh;
+
+	fh = fopen( path, mode );
+	*f = fh;
+	if ( fh == NULL ) {
 		BBB_ERR( BBB_ERROR_FILESYSTEMIO, "path: %s, mode: %s, %s", path, mode, strerror( errno ) );
 		return BBB_ERROR_FILESYSTEMIO;
 	}
@@ -48,8 +57,11 @@ bbb_result_t
 
 bbb_result_t
 @_Fread( void* const ptr, const size_t size, const size_t nmemb, FILE* stream, size_t* const nmembRead ) {
-	*nmembRead = fread( ptr, size, nmemb, stream );
-	if ( *nmembRead == 0 && ferror( stream ) ) {
+	size_t	wasRead;
+
+	wasRead = fread( ptr, size, nmemb, stream );
+	*nmembRead = wasRead;
+	if ( wasRead == 0 && ferror( stream ) ) {
 		BBB_ERR( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		return BBB_ERROR_FILESYSTEMIO;
 	}

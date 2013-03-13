@@ -48,30 +48,30 @@ bbb_result_t
 	static const size_t len = 32768;
 	size_t				wasRead;
 	
-	<? bbb_Call( "?> bbb_util_Fopen( path, "rb", &f ) <?" ); ?>
-	<? c_OnCleanup( "?>
+	$call bbb_util_Fopen( path, "rb", &f );
+	$onCleanup
 		if ( BBB_FAILED( result ) ) {
 			bbb_util_Fclose( f );
 		} else {
 			result = bbb_util_Fclose( f );
 		}
-	<?" ); ?>
+	$$
 
-	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&buf, len ) <?" ); ?>
-	<? c_OnCleanup( "?>
+	$call bbb_util_Malloc( ( void** )&buf, len );
+	$onCleanup
 		free( buf );
-	<?" ); ?>
+	$$
 
 	SHA256_Init( &sha );
-	<? c_OnCleanup( "?>
+	$onCleanup
 		SHA256_Final( hash, &sha );
-	<?" ); ?>
+	$$
 
 	do {
-		<? bbb_Call( "?> bbb_util_Fread( buf, 1, len, f, &wasRead ) <?" ); ?>
+		$call bbb_util_Fread( buf, 1, len, f, &wasRead );
 		SHA256_Update( &sha, buf, wasRead );
 	} while ( wasRead > 0 );
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }

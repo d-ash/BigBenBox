@@ -20,8 +20,8 @@ bbb_result_t
 	@_hdr2_t		hdrExt;
 	bbb_checksum_t	checksum = 0;
 
-	<? bbb_Call( "?> bbb_util_Fopen( path, "wb", &f ) <?" ); ?>
-	<? c_OnCleanup( "?>
+	$call bbb_util_Fopen( path, "wb", &f );
+	$onCleanup
 		if ( BBB_FAILED( result ) ) {
 			bbb_util_Fclose( f );
 		} else {
@@ -31,26 +31,26 @@ bbb_result_t
 		if ( BBB_FAILED( result ) ) {
 			unlink( path );
 		}
-	<?" ); ?>
+	$$
 
 	_ConstructHdr( &hdr );
-	<? c_OnCleanup( "?>
+	$onCleanup
 		@_Destroy_hdr( &hdr );
-	<?" ); ?>
+	$$
 
-	<? bbb_Call( "?> @_WriteToFile_hdr( &hdr, f, &checksum ) <?" ); ?>
+	$call @_WriteToFile_hdr( &hdr, f, &checksum );
 
 	hdrExt.takenFromMem = strlen( ss->takenFrom ) + 1;
-	<? bbb_Call( "?> bbb_util_Fwrite( &hdrExt, sizeof( hdrExt ), 1, f ) <?" ); ?>
+	$call bbb_util_Fwrite( &hdrExt, sizeof( hdrExt ), 1, f );
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
-	<? bbb_Call( "?> bbb_util_Fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f ) <?" ); ?>
+	$call bbb_util_Fwrite( ss->takenFrom, hdrExt.takenFromMem, 1, f );
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
 
-	<? bbb_Call( "?> _Pack( f, ss, &checksum ) <?" ); ?>
-	<? bbb_Call( "?> bbb_bio_WriteToFile_uint32( checksum, f, NULL ) <?" ); ?>
+	$call _Pack( f, ss, &checksum );
+	$call bbb_bio_WriteToFile_uint32( checksum, f, NULL );
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }
 
@@ -66,77 +66,77 @@ bbb_result_t
 	size_t			wasRead;
 
 	bbb_sshot_Init( ss );
-	<? c_OnCleanup( "?>
+	$onCleanup
 		if ( BBB_FAILED( result ) ) {
 			bbb_sshot_Destroy( ss );
 		}
-	<?" ); ?>
+	$$
 	ss->restored = 1;
 
-	<? bbb_Call( "?> bbb_util_Fopen( path, "rb", &f ) <?" ); ?>
-	<? c_OnCleanup( "?>
+	$call bbb_util_Fopen( path, "rb", &f );
+	$onCleanup
 		if ( BBB_FAILED( result ) ) {
 			bbb_util_Fclose( f );
 		} else {
 			result = bbb_util_Fclose( f );
 		}
-	<?" ); ?>
+	$$
 
-	<? bbb_Call( "?> @_ReadFromFile_hdr( &hdr, f, &checksum ) <?" ); ?>
-	<? c_OnCleanup( "?>
+	$call @_ReadFromFile_hdr( &hdr, f, &checksum );
+	$onCleanup
 		@_Destroy_hdr( &hdr );
-	<?" ); ?>
+	$$
 
 	_ConstructHdr( &hdrControl );
-	<? c_OnCleanup( "?>
+	$onCleanup
 		@_Destroy_hdr( &hdrControl );
-	<?" ); ?>
+	$$
 
 	if ( !@_IsEqual_hdr( &hdr, &hdrControl ) ) {
 		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "The snapshot %s was saved on another machine", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
 
 	// Reading extended header. Platform dependent types are already in use!
 	// We can correctly read files only created with this same program on this machine.
-	<? bbb_Call( "?> bbb_util_Fread( &hdrExt, sizeof( hdrExt ), 1, f, &wasRead ) <?" ); ?>
+	$call bbb_util_Fread( &hdrExt, sizeof( hdrExt ), 1, f, &wasRead );
 	if ( wasRead != 1 ) {
 		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "Cannot read an 'hdrExt' from %s", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
 	bbb_util_hash_UpdateChecksum( &hdrExt, sizeof( hdrExt ), &checksum );
 
 	// takenFrom will be released in bbb_sshot_Destroy() if is not NULL
-	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( ss->takenFrom ), hdrExt.takenFromMem ) <?" ); ?>
+	$call bbb_util_Malloc( ( void** )&( ss->takenFrom ), hdrExt.takenFromMem );
 
-	<? bbb_Call( "?> bbb_util_Fread( ss->takenFrom, hdrExt.takenFromMem, 1, f, &wasRead ) <?" ); ?>
+	$call bbb_util_Fread( ss->takenFrom, hdrExt.takenFromMem, 1, f, &wasRead );
 	if ( wasRead != 1 ) {
 		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "Cannot read 'takenFrom' from %s", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
 
 	bbb_util_hash_UpdateChecksum( ss->takenFrom, hdrExt.takenFromMem, &checksum );
-	<? bbb_Call( "?> _Unpack( f, ss, &checksum ) <?" ); ?>
+	$call _Unpack( f, ss, &checksum );
 
 	// checksum might be passed over by previous readings
 	if ( fseek( f, 0 - sizeof( checksumRead ), SEEK_END ) != 0 ) {
 		BBB_ERR( BBB_ERROR_FILESYSTEMIO, "%s", strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
 
-	<? bbb_Call( "?> bbb_bio_ReadFromFile_uint32( &checksumRead, f, NULL ) <?" ); ?>
+	$call bbb_bio_ReadFromFile_uint32( &checksumRead, f, NULL );
 
 	if ( checksum != checksumRead ) {
 		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "Incorrect checksum of the snapshot file %s", path );
 		result = BBB_ERROR_CORRUPTEDDATA;
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }
 
@@ -167,18 +167,18 @@ _Pack( FILE* const f, const bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) 
 		fileHashHdr.hash = i;
 		fileHashHdr.size = hashHdr->size;
 
-		<? bbb_Call( "?> bbb_util_Fwrite( &fileHashHdr, sizeof( fileHashHdr ), 1, f ) <?" ); ?>
+		$call bbb_util_Fwrite( &fileHashHdr, sizeof( fileHashHdr ), 1, f );
 		bbb_util_hash_UpdateChecksum( &fileHashHdr, sizeof( fileHashHdr ), checksum_p );
 		entry = hashHdr->first;
 
 		do {
-			<? bbb_Call( "?> bbb_util_Fwrite( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, 1, f ) <?" ); ?>
+			$call bbb_util_Fwrite( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, 1, f );
 			bbb_util_hash_UpdateChecksum( entry, sizeof( bbb_sshot_entry_t ) + entry->pathMem, checksum_p );
 			entry = entry->next;
 		} while ( entry != NULL );
 	}
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }
 
@@ -193,7 +193,7 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 
 	// iterating over the hash list
 	while ( 1 ) {
-		<? bbb_Call( "?> bbb_util_Fread( &fileHashHdr, sizeof( fileHashHdr ), 1, f, &wasRead ) <?" ); ?>
+		$call bbb_util_Fread( &fileHashHdr, sizeof( fileHashHdr ), 1, f, &wasRead );
 		if ( wasRead != 1 ) {
 			break;							// end of file
 		}
@@ -204,13 +204,13 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 		// In case of error this will be released at snapshot's destruction.
 		hashHdr = &( ss->ht[ fileHashHdr.hash ] );
 		hashHdr->size = fileHashHdr.size;
-		<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( hashHdr->first ), fileHashHdr.size ) <?" ); ?>
+		$call bbb_util_Malloc( ( void** )&( hashHdr->first ), fileHashHdr.size );
 
-		<? bbb_Call( "?> bbb_util_Fread( hashHdr->first, fileHashHdr.size, 1, f, &wasRead ) <?" ); ?>
+		$call bbb_util_Fread( hashHdr->first, fileHashHdr.size, 1, f, &wasRead );
 		if ( wasRead != 1 ) {
 			BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "Unexpected end of the snapshot file (entities)" );
 			result = BBB_ERROR_CORRUPTEDDATA;
-			<? c_GotoCleanup(); ?>
+			$gotoCleanup;
 		}
 		bbb_util_hash_UpdateChecksum( hashHdr->first, fileHashHdr.size, checksum_p );
 
@@ -225,7 +225,7 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 			if ( ( bbb_byte_t* ) entry->next > maxPtr ) {
 				BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "The snapshot file is damaged (maxPtr)" );
 				result = BBB_ERROR_CORRUPTEDDATA;
-				<? c_GotoCleanup(); ?>
+				$gotoCleanup;
 			}
 			entry = entry->next;
 		}
@@ -234,9 +234,9 @@ _Unpack( FILE* const f, bbb_sshot_t* const ss, bbb_checksum_t* checksum_p ) {
 	if ( ferror( f ) ) {
 		BBB_ERR( BBB_ERROR_CORRUPTEDDATA, "%s", strerror( errno ) );
 		result = BBB_ERROR_CORRUPTEDDATA;
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }

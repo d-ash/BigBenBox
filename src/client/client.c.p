@@ -1,3 +1,4 @@
+#include "client.h"
 #include "bbb.h"
 
 #define DATA_DIR	"../../../test_data"

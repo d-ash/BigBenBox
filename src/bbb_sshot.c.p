@@ -16,12 +16,12 @@ bbb_result_t
 
 	ss->restored = 0;				// by default a snapshot is 'generated'
 	ss->takenFrom = NULL;
-	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( ss->ht ), sizeof( @_ht_t ) * @^HASH_MAX ) <?" ); ?>
+	$call bbb_util_Malloc( ( void** )&( ss->ht ), sizeof( @_ht_t ) * @^HASH_MAX );
 
 	// assuming NULL == 0
 	memset( ss->ht, 0, sizeof( @_ht_t ) * @^HASH_MAX );
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }
 
@@ -59,25 +59,25 @@ bbb_result_t
 	bbb_result_t	result = BBB_SUCCESS;
 	size_t			len = 0;
 
-	<? bbb_Call( "?> @_Init( ss ) <?" ); ?>
-	<? c_OnCleanup( "?>
+	$call @_Init( ss );
+	$onCleanup
 		if ( BBB_FAILED( result ) ) {
 			@_Destroy( ss );
 		}
-	<?" ); ?>
+	$$
 
 	// this memory will be released in @_Destroy() if not NULL
 	len = strlen( path );
-	<? bbb_Call( "?> bbb_util_Strdup( path, &( ss->takenFrom ) ) <?" ); ?>
+	$call bbb_util_Strdup( path, &( ss->takenFrom ) );
 
 	// trim slash at the end if necessary
 	if ( len > 1 && ( ss->takenFrom[ len - 1 ] == '/' || ss->takenFrom[ len - 1 ] == '\\' ) ) {
 		len--;
 		ss->takenFrom[ len ] = 0;
 	}
-	<? bbb_Call( "?> _ProcessDir( ss->takenFrom, len, ss ) <?" ); ?>
+	$call _ProcessDir( ss->takenFrom, len, ss );
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }
 
@@ -172,14 +172,14 @@ _ProcessDir( const char* const path, const size_t skip, @_t* const ss ) {
 	if ( dir == NULL ) {
 		BBB_ERR( BBB_ERROR_FILESYSTEMIO, "Cannot open dir %s: %s", path, strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
-	<? c_OnCleanup( "?>
+	$onCleanup
 		if ( closedir( dir ) < 0 ) {
 			BBB_ERR( BBB_ERROR_FILESYSTEMIO, "Cannot close dir %s: %s", path, strerror( errno ) );
 			result = BBB_ERROR_FILESYSTEMIO;
 		}
-	<?" ); ?>
+	$$
 
 	while ( 1 ) {
 		// Windows port dirent.h does not have readdir_r().
@@ -198,10 +198,10 @@ _ProcessDir( const char* const path, const size_t skip, @_t* const ss ) {
 			}
 		}
 
-		<? bbb_Call( "?> _ProcessEntry( path, skip, entry->d_name, ss ) <?" ); ?>
+		$call _ProcessEntry( path, skip, entry->d_name, ss );
 	}
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }
 
@@ -217,17 +217,17 @@ _ProcessEntry( const char* const path, const size_t skip, const char* const name
 	// in order to get properly aligned memory after loading this data from a file.
 	pathMem = ( strlen( path ) - skip + strlen( name ) + 1 + BBB_WORD_SIZE ) & ~( BBB_WORD_SIZE - 1 );
 
-	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&entry, sizeof( @_entry_t ) + pathMem ) <?" ); ?>
-	<? c_OnCleanup( "?>
+	$call bbb_util_Malloc( ( void** )&entry, sizeof( @_entry_t ) + pathMem );
+	$onCleanup
 		if ( BBB_FAILED( result ) ) {
 			free( entry );
 		}
-	<?" ); ?>
+	$$
 
-	<? bbb_Call( "?> bbb_util_Malloc( ( void** )&fullPath, pathMem + skip + 1 ) <?" ); ?>
-	<? c_OnCleanup( "?>
+	$call bbb_util_Malloc( ( void** )&fullPath, pathMem + skip + 1 );
+	$onCleanup
 		free( fullPath );
-	<?" ); ?>
+	$$
 
 	strcpy( fullPath, path );
 	strcat( fullPath, "/" );
@@ -241,7 +241,7 @@ _ProcessEntry( const char* const path, const size_t skip, const char* const name
 	if ( stat( fullPath, &entryInfo ) ) {
 		BBB_ERR( BBB_ERROR_FILESYSTEMIO, "Cannot get info about %s: %s", fullPath, strerror( errno ) );
 		result = BBB_ERROR_FILESYSTEMIO;
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
 
 	entry->content.size = entryInfo.st_size;
@@ -249,17 +249,17 @@ _ProcessEntry( const char* const path, const size_t skip, const char* const name
 
 	if ( S_ISDIR( entryInfo.st_mode ) ) {
 		entry->status |= @^ENTRY_STATUS_DIR;
-		<? bbb_Call( "?> _AddToSnapshot( entry, ss ) <?" ); ?>
-		<? bbb_Call( "?> _ProcessDir( fullPath, skip, ss ) <?" ); ?>
+		$call _AddToSnapshot( entry, ss );
+		$call _ProcessDir( fullPath, skip, ss );
 	} else if ( S_ISREG( entryInfo.st_mode ) ) {
 		entry->status &= ~@^ENTRY_STATUS_DIR;
-		<? bbb_Call( "?> _AddToSnapshot( entry, ss ) <?" ); ?>
+		$call _AddToSnapshot( entry, ss );
 	} else {
 		BBB_LOG( "Skipping irregular file: %s", fullPath );
-		<? c_GotoCleanup(); ?>
+		$gotoCleanup;
 	}
 
-	<? c_Cleanup(); ?>
+	$cleanup;
 	return result;
 }
 

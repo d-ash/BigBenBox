@@ -115,38 +115,38 @@ sub Output_ReadImpl {
 					if ( cur >= len ) {
 						BBB_ERR( BBB_ERROR_SMALLBUFFER, "%" PRIuPTR " bytes", len );
 						result = BBB_ERROR_SMALLBUFFER;
-						<? c_GotoCleanup(); ?>
+						$gotoCleanup;
 					}
 					r-><?= $name ?> = *( buf + cur );
-					<?
-				} else {
-					bbb_Call( "?> bbb_util_Fread( &( r-><?= $name ?> ), 1, 1, f, &wasRead ) <?" );
-					?>
+				<? } else { ?>
+					$call bbb_util_Fread( &( r-><?= $name ?> ), 1, 1, f, &wasRead );
 					if ( wasRead != 1 ) {
 						BBB_ERR( BBB_ERROR_CORRUPTEDDATA );
 						result = BBB_ERROR_CORRUPTEDDATA;
-						<? c_GotoCleanup(); ?>
+						$gotoCleanup;
 					}
 					bbb_util_hash_UpdateChecksum( &( r-><?= $name ?> ), 1, chk );
 					<?
 				}
 				?> cur++; <?/
 			} else {
-				if ( $mode eq "Buf" ) {
-					bbb_Call( "?> bbb_bio_ReadFromBuf_<?= $type ?>( &( r-><?= $name ?> ), buf + cur, len - cur ) <?" );
-				} else {
-					bbb_Call( "?> bbb_bio_ReadFromFile_<?= $type ?>( &( r-><?= $name ?> ), f, chk ) <?" );
+				if ( $mode eq "Buf" ) { ?>
+					$call bbb_bio_ReadFromBuf_<?= $type ?>( &( r-><?= $name ?> ), buf + cur, len - cur );
+				<? } else { ?>
+					$call bbb_bio_ReadFromFile_<?= $type ?>( &( r-><?= $name ?> ), f, chk );
+				<?
 				}
 
 				if ( $type eq "varbuf" ) {
-					?> cur += bbb_bio_GetSize_varbuf( r-><?= $name ?> ); <?/
-					c_OnCleanup( "?>
+					?> cur += bbb_bio_GetSize_varbuf( r-><?= $name ?> );
+					$onCleanup
 						if ( BBB_FAILED( result ) ) {
 							free( r-><?= $name ?>.buf );
 							r-><?= $name ?>.buf = NULL;
 							r-><?= $name ?>.len = 0;
 						}
-					<?" );
+					$$
+				<?
 				} else {
 					?> cur += sizeof( r-><?= $name ?> ); <?/
 				}
@@ -154,7 +154,7 @@ sub Output_ReadImpl {
 		}
 		?>
 
-		<? c_Cleanup(); ?>
+		$cleanup;
 		return result;
 	}
 	<?/
@@ -172,17 +172,16 @@ sub Output_ReadArrayImpl {
 		size_t			cur = 0;
 		size_t			i;
 
-		for ( i = 0; i < n; i++ ) { <?/
-			if ( $mode eq "Buf" ) {
-				bbb_Call( "?> <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur ) <?" );
-			} else {
-				bbb_Call( "?> <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), f, chk ) <?" );
-			}
-			?>
+		for ( i = 0; i < n; i++ ) {
+			<? if ( $mode eq "Buf" ) { ?>
+				$call <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur );
+			<? } else { ?>
+				$call <?= $bio_ns ?>_ReadFrom<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), f, chk );
+			<? } ?>
 			cur += <?= $bio_ns ?>_GetSize_<?= $recName ?>( &( a[ i ] ) );
 		}
 
-		<? c_Cleanup(); ?>
+		$cleanup;
 		<? if ( $params->{ "isDynamic" } ) { ?>
 			if ( BBB_FAILED( result ) ) {
 				<?= $bio_ns ?>_DestroyEach_<?= $recName ?>( a, i );			// destroy previously created records
@@ -216,22 +215,23 @@ sub Output_WriteImpl {
 					if ( cur >= len ) {
 						BBB_ERR( BBB_ERROR_SMALLBUFFER, "%" PRIuPTR " bytes", len );
 						result = BBB_ERROR_SMALLBUFFER;
-						<? c_GotoCleanup(); ?>
+						$gotoCleanup;
 					}
 					*( buf + cur ) = r-><?= $name ?>;
 					<?
 				} else {
 					?>
 					bbb_util_hash_UpdateChecksum( &( r-><?= $name ?> ), 1, chk );
-					<? bbb_Call( "?> bbb_util_Fwrite( &( r-><?= $name ?> ), 1, 1, f ) <?" ); ?>
+					$call bbb_util_Fwrite( &( r-><?= $name ?> ), 1, 1, f );
 					<?
 				}
 				?> cur++; <?/
 			} else {
-				if ( $mode eq "Buf" ) {
-					bbb_Call( "?> bbb_bio_WriteToBuf_<?= $type ?>( r-><?= $name ?>, buf + cur, len - cur ) <?" );
-				} else {
-					bbb_Call( "?> bbb_bio_WriteToFile_<?= $type ?>( r-><?= $name ?>, f, chk ) <?" );
+				if ( $mode eq "Buf" ) { ?>
+					$call bbb_bio_WriteToBuf_<?= $type ?>( r-><?= $name ?>, buf + cur, len - cur );
+				<? } else { ?>
+					$call bbb_bio_WriteToFile_<?= $type ?>( r-><?= $name ?>, f, chk );
+				<?
 				}
 
 				if ( $type eq "varbuf" ) {
@@ -243,7 +243,7 @@ sub Output_WriteImpl {
 		}
 		?>
 
-		<? c_Cleanup(); ?>
+		$cleanup;
 		return result;
 	}
 	<?/
@@ -261,17 +261,16 @@ sub Output_WriteArrayImpl {
 		size_t			cur = 0;
 		size_t			i;
 
-		for ( i = 0; i < n; i++ ) { <?/
-			if ( $mode eq "Buf" ) {
-				bbb_Call( "?> <?= $bio_ns ?>_WriteTo<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur ) <?" );
-			} else {
-				bbb_Call( "?> <?= $bio_ns ?>_WriteTo<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), f, chk ) <?" );
-			}
-			?>
+		for ( i = 0; i < n; i++ ) {
+			<? if ( $mode eq "Buf" ) { ?>
+				$call <?= $bio_ns ?>_WriteTo<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), buf + cur, len - cur );
+			<? } else { ?>
+				$call <?= $bio_ns ?>_WriteTo<?= $mode ?>_<?= $recName ?>( &( a[ i ] ), f, chk );
+			<? } ?>
 			cur += <?= $bio_ns ?>_GetSize_<?= $recName ?>( &( a[ i ] ) );
 		}
 
-		<? c_Cleanup(); ?>
+		$cleanup;
 		return result;
 	}
 	<?/
@@ -300,18 +299,18 @@ sub WriteRecordToC {
 				?> dst-><?= $name ?> = src-><?= $name ?>; <?/
 			} elsif ( $type eq "varbuf" ) {
 				?>
-				<? bbb_Call( "?> bbb_util_Malloc( ( void** )&( dst-><?= $name ?>.buf ), src-><?= $name ?>.len ) <?" ); ?>
+				$call bbb_util_Malloc( ( void** )&( dst-><?= $name ?>.buf ), src-><?= $name ?>.len );
 #ifndef BBB_RELEASE
 				allocated++;
 #endif
-				<? c_OnCleanup( "?>
+				$onCleanup
 					if ( BBB_FAILED( result ) ) {
 						free( dst-><?= $name ?>.buf );
 #ifndef BBB_RELEASE
 						allocated--;
 #endif
 					}
-				<?" ); ?>
+				$$
 
 				memcpy( dst-><?= $name ?>.buf, src-><?= $name ?>.buf, src-><?= $name ?>.len );
 				dst-><?= $name ?>.len = src-><?= $name ?>.len;
@@ -322,7 +321,7 @@ sub WriteRecordToC {
 		}
 		?>
 
-		<? c_Cleanup(); ?>
+		$cleanup;
 #ifndef BBB_RELEASE
 		if ( BBB_FAILED( result ) && allocated != 0 ) {
 			BBB_ERR( BBB_ERROR_DEVELOPER, "malloc/free calls inconsistency: %d", allocated );

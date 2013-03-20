@@ -1,9 +1,11 @@
 CUT THE FEATURES, SHIP EARLY!
+ * test Malloc() failures (#ifndef RESEALSE)
  * clients on Mac, Win, Linux (libuv)
  * server (libuv)
  * no encryption
  * simple web-configuration (MySQL or even text files)
  * simple GUI (little QT-app)
+ * Transport via HTTP(S) to pass firewalls and proxies
 
 
 	SLA parameters!!!

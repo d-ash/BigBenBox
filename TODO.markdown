@@ -1,4 +1,10 @@
 CUT THE FEATURES, SHIP EARLY!
+ * Behaviour driven development
+	! rename test methods to "should_allow/do_XYZ"
+	Given that [initial context]
+	if and when [some events occurs]
+	then [ensure some outcomes]
+
  * test Malloc() failures (#ifndef RESEALSE)
  * clients on Mac, Win, Linux (libuv)
  * server (libuv)

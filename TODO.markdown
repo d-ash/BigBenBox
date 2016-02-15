@@ -23,6 +23,9 @@ READ
   using libuv: http://vimeo.com/24713213
 
 Competitors:
+ https://www.aerofs.com/	(search news.ycombinator.com for comments)
+ http://www.tonido.com/cloud/
+
  * box.net (.com, enterprise version)
  * powerfolder.com (?)
  * filosync.com (?)

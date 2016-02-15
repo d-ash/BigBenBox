@@ -1,0 +1,17 @@
+SQL database:
+
+"bbb_users"
+	id
+	name
+	email
+	password
+
+"bbb_repos"
+	id
+	name
+	path
+
+"bbb_repo_access"
+	user_id
+	repo_id
+	flags (0: none, 1: readonly, 2: readwrite)

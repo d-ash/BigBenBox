@@ -6,7 +6,7 @@ It's not finished, and never will be. I'm hosting it here for demonstration purp
 
 ## Implementation
 
-During a synchronization process only a difference between file versions is transfered over the network.  
+During synchronization only difference between file versions is transfered over the network.  
 Files are hashed into parts, which are stored on the server in trees, just like in a Git repository.  
 Thus, it's possible to see the whole history of a node, and rollback any changes.
 

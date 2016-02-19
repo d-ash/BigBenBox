@@ -12,6 +12,8 @@ Thus, it's possible to see the whole history of a node, and rollback any changes
 
 The code is cross-platform (compiles on Linux, OSX, and Windows). It's written in C, and source files are preprocessed with [PerlPP](https://github.com/d-ash/perlpp). This preprocessor turned out to be very helpful as it's much more flexible than the standard C-preprocessor.
 
+### Preprocessing
+
 For example, it's very important to correctly manage memory in C programs.  
 In the code below, pay attention to `<<<<<<<<<<<<<<<<<<<<<<<`. Cleanup actions `$onCleanup` are placed near the code, where this memory is allocated. However, all of the cleanup will be done at the very end `$cleanup`. The cleanup will be executed even if any internal `$call` fails.
 
@@ -58,7 +60,7 @@ _ProcessEntry( const char* const path, const size_t skip, const char* const name
 }
 ```
 
-The resulting C-code looks like:
+The final C-code looks like this:
 ```C
 static bbb_result_t
 _ProcessEntry( const char* const path, const size_t skip, const char* const name, bbb_sshot_t* const ss ) {
